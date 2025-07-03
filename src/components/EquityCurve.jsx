@@ -122,8 +122,7 @@ const EquityCurve = ({ trades }) => {
   }
 
   return (
-    <div className={styles.card}>
-      <h3>Equity Curve</h3>
+    <div className={styles.chartContainer}>
       <ResponsiveContainer width="100%" height={250}>
         <LineChart data={monthlyData}>
           <CartesianGrid stroke="#22304a" strokeDasharray="3 3" />
