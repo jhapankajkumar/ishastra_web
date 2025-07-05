@@ -123,7 +123,7 @@
 }
 
 .card h3 {
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   font-weight: 600;
   margin-bottom: 16px;
   color: #fff;
@@ -227,9 +227,129 @@
   }
 }
 
+/* Add to Dashboard.module.css */
+@media (max-width: 900px) {
+  .card {
+    overflow-x: auto;
+  }
+  .card input,
+  .card select,
+  .card textarea {
+    font-size: 1rem;
+  }
+}
+@media (max-width: 700px) {
+  .card {
+    padding: 12px;
+  }
+  .card > div[style*="grid"] {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
 .chartContainer {
   width: 100%;
   height: 250px;
   /* background: none; */
   /* border-radius: 0; */
+}
+
+/* You can reuse this class for header inner container */
+.headerContainer {
+  width: 80%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 40px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.formInput {
+  width: 120px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #22304a;
+  background: #181f2a;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.formTextarea {
+  width: 100%;
+  min-width: 120px;
+  max-width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #22304a;
+  background: #181f2a;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.formSelect {
+  width: 100%;
+  min-width: 120px;
+  max-width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #22304a;
+  background: #181f2a;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+
+.responsiveFlex {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 700px) {
+  .responsiveFlex {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.formInput, .formTextarea, .formSelect {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Reduce font size for TradeLog form */
+.tradeLogForm,
+.tradeLogForm * {
+  font-size: 0.95rem;
+}
+
+.card h3 {
+  font-size: 1.05rem;
+}
+
+.formInput,
+.formTextarea,
+.formSelect {
+  font-size: 0.95rem;
+}
+
+@media (max-width: 700px) {
+  .tradeLogForm,
+  .tradeLogForm * {
+    font-size: 0.9rem;
+  }
+  .card h3 {
+    font-size: 1rem;
+  }
 }

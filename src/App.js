@@ -1,15 +1,18 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/dashboard'; // Updated import to match correct file name and casing
+import Dashboard from './pages/dashboard';
 import TradeList from './pages/TradeList';
-import TradeForm from './pages/TradeForm';
+import TradeLog from './pages/TradeLog'; // Import your new TradeLog page
+import Header from './components/Header'; // Import the Header component
 
 function App() {
   return (
     <BrowserRouter>
+      <Header />
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        {/* <Route path="/trades" element={<TradeList />} />
-        <Route path="/trades/new" element={<TradeForm />} /> */}
+        <Route path="/trades" element={<TradeList />} />
+        <Route path="/trades/new" element={<TradeLog />} />
+        {/* Add more routes as needed */}
       </Routes>
     </BrowserRouter>
   );
