@@ -111,14 +111,15 @@
 }
 
 .actionButton {
-  padding: 8px 16px;
-  margin-right: 8px;
-  font-size: 14px;
+  padding: 6px 12px;
+  margin: 0;
+  font-size: 12px;
   font-weight: 500;
   border-radius: 6px;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .viewButton {
@@ -148,6 +149,16 @@
 
 .reviewButton:hover {
   background: #6D28D9;
+  transform: translateY(-1px);
+}
+
+.deleteButton {
+  background: #EF4444;
+  color: #fff;
+}
+
+.deleteButton:hover {
+  background: #DC2626;
   transform: translateY(-1px);
 }
 
@@ -183,10 +194,9 @@
   }
   
   .actionButton {
-    padding: 6px 12px;
-    font-size: 12px;
-    margin-right: 4px;
-    margin-bottom: 4px;
+    padding: 5px 10px;
+    font-size: 11px;
+    margin: 0;
   }
 }
 
@@ -202,6 +212,7 @@
   
   .actionButton {
     padding: 4px 8px;
-    font-size: 11px;
+    font-size: 10px;
+    margin: 0;
   }
 }

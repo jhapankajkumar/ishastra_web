@@ -68,3 +68,6 @@ export async function createTrade(form) {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
 }
+
+// Delete trade
+export const deleteTrade = (id) => API.delete(`/trades/${id}`);
