@@ -5,6 +5,7 @@ import TradeDetailsPopup from "../components/TradeDetailsPopup";
 import PageHeader from "../components/PageHeader";
 import ErrorPage from "../components/ErrorPage";
 import { useNotification } from "../components/NotificationProvider";
+import { getTickerBySymbol } from '../data/tickerData';
 import styles from "./TradeList.module.css";
 
 export default function TradeList() {
@@ -159,9 +160,12 @@ export default function TradeList() {
     };
     
     const getSubtitle = () => {
-      if (mode === "update") return `Update exit details for ${selectedTrade.ticker}`;
-      if (mode === "review") return `Add post-trade analysis for ${selectedTrade.ticker}`;
-      return `Edit trade details for ${selectedTrade.ticker}`;
+      const companyName = getTickerBySymbol(selectedTrade.ticker)?.name;
+      const tickerDisplay = companyName ? `${selectedTrade.ticker} (${companyName})` : selectedTrade.ticker;
+      
+      if (mode === "update") return `Update exit details for ${tickerDisplay}`;
+      if (mode === "review") return `Add post-trade analysis for ${tickerDisplay}`;
+      return `Edit trade details for ${tickerDisplay}`;
     };
 
     return (
@@ -237,7 +241,14 @@ export default function TradeList() {
                 className={styles.tableRow}
                 onClick={() => handleShowDetails(trade.id)}
               >
-                <td className={`${styles.tableCell} ${styles.tickerCell}`}>{trade.ticker}</td>
+                <td className={`${styles.tableCell} ${styles.tickerCell}`}>
+                  <div className={styles.tickerContainer}>
+                    <span className={styles.tickerSymbol}>{trade.ticker}</span>
+                    {getTickerBySymbol(trade.ticker)?.name && (
+                      <span className={styles.companyName}>{getTickerBySymbol(trade.ticker).name}</span>
+                    )}
+                  </div>
+                </td>
                 <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.entry_date ? formatDate(trade.entry_date) : "-"}</td>
                 <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.exit_date ? formatDate(trade.exit_date) : "-"}</td>
                 <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.entry_price !== undefined && trade.entry_price !== null ? Number(trade.entry_price).toFixed(2) : "-"}</td>

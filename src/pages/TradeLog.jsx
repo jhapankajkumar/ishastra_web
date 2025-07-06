@@ -2,12 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./TradeLog.module.css";
 import PageHeader from "../components/PageHeader";
+import TickerSearch from "../components/TickerSearch";
 import { createTrade, updateTrade, addPostAnalysis, fetchExitTactics, fetchSetups } from '../api/tradeApi';
 import { useNotification } from '../components/NotificationProvider';
 import ErrorPage from '../components/ErrorPage';
+import { getTickerBySymbol } from '../data/tickerData';
 
 const initialState = {
   ticker: "",
+  companyName: "",
   symbol: "",
   reasonForEntry: "",
   entryCharts: [],
@@ -48,6 +51,7 @@ function mapTradeDataToForm(tradeData) {
   return {
     ...initialState,
     ticker: tradeData.ticker || "",
+    companyName: tradeData.ticker ? (getTickerBySymbol(tradeData.ticker)?.name || "") : "",
     reasonForEntry: tradeData.reason_for_entry || "",
     entryDate: formatDateForInput(tradeData.entry_date),
     entryOrderPrice: tradeData.entry_price ?? "",
@@ -139,22 +143,43 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
     setForm((prev) => ({ ...prev, [name]: Array.from(files) }));
   };
 
+  // Handle ticker search change (when user types)
+  const handleTickerChange = (value) => {
+    setForm((prev) => ({ 
+      ...prev, 
+      ticker: value,
+      companyName: "" // Clear company name when ticker changes
+    }));
+  };
+
+  // Handle ticker selection (when user selects from dropdown)
+  const handleTickerSelect = (tickerData) => {
+    setForm((prev) => ({ 
+      ...prev, 
+      ticker: tickerData.symbol,
+      companyName: tickerData.name // Auto-populate company name
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
     try {
+      // Create form data without frontend-only fields
+      const { companyName, ...formDataForBackend } = form;
+      
       if (isAdd) {
-        await createTrade(form);
+        await createTrade(formDataForBackend);
         notification.success("Trade added successfully!");
         navigate("/trades", { replace: true });
         window.location.reload();
         return;
       } else if (isUpdate) {
-        await updateTrade(form.id, form);
+        await updateTrade(formDataForBackend.id, formDataForBackend);
         notification.success("Trade updated successfully!");
       } else if (isReview) {
-        await addPostAnalysis(form.id, { postTradeAnalysis: form.postTradeAnalysis, postTradeFiles: form.postTradeFiles });
+        await addPostAnalysis(formDataForBackend.id, { postTradeAnalysis: formDataForBackend.postTradeAnalysis, postTradeFiles: formDataForBackend.postTradeFiles });
         notification.success("Post trade analysis saved successfully!");
       }
       if (onSubmit) onSubmit();
@@ -212,15 +237,34 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
             
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Ticker Symbol</label>
+              {entryDisabled ? (
+                <input
+                  type="text"
+                  value={form.ticker}
+                  className={`${styles.input} ${styles.inputDisabled}`}
+                  disabled
+                  readOnly
+                />
+              ) : (
+                <TickerSearch
+                  value={form.ticker}
+                  onChange={handleTickerChange}
+                  onSelect={handleTickerSelect}
+                  placeholder="Search ticker (e.g. AAPL, RELIANCE)"
+                />
+              )}
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Company Name</label>
               <input
                 type="text"
-                name="ticker"
-                value={form.ticker}
-                onChange={handleChange}
-                className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
-                placeholder="e.g. AAPL"
-                required
-                disabled={entryDisabled}
+                name="companyName"
+                value={form.companyName}
+                className={`${styles.input} ${styles.inputDisabled}`}
+                placeholder="Auto-populated when ticker is selected"
+                disabled
+                readOnly
               />
             </div>
 

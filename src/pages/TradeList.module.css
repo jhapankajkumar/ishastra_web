@@ -69,6 +69,25 @@
   color: #fff;
 }
 
+.tickerContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tickerSymbol {
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+}
+
+.companyName {
+  font-weight: 400;
+  color: #9CA3AF;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
 .dateCell {
   color: #9CA3AF;
 }
