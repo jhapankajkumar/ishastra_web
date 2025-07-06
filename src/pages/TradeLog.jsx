@@ -12,6 +12,7 @@ const initialState = {
   ticker: "",
   companyName: "",
   symbol: "",
+  direction: "long", // Default to long
   reasonForEntry: "",
   entryCharts: [],
   entryDate: "",
@@ -52,6 +53,7 @@ function mapTradeDataToForm(tradeData) {
     ...initialState,
     ticker: tradeData.ticker || "",
     companyName: tradeData.ticker ? (getTickerBySymbol(tradeData.ticker)?.name || "") : "",
+    direction: tradeData.direction || "long",
     reasonForEntry: tradeData.reason_for_entry || "",
     entryDate: formatDateForInput(tradeData.entry_date),
     entryOrderPrice: tradeData.entry_price ?? "",
@@ -266,6 +268,20 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
                 disabled
                 readOnly
               />
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Direction</label>
+              <select
+                name="direction"
+                value={form.direction}
+                onChange={handleChange}
+                className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                disabled={entryDisabled}
+              >
+                <option value="long">Long (Buy)</option>
+                <option value="short">Short (Sell)</option>
+              </select>
             </div>
 
             <div className={styles.fieldGroup}>

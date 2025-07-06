@@ -56,6 +56,11 @@ export async function createTrade(form) {
     formData.append('tradeSetup', form.setupType);
   }
   
+  // Add direction
+  if (form.direction) {
+    formData.append('direction', form.direction);
+  }
+  
   // Only append entryCharts
   (form.entryCharts || []).forEach(file => formData.append('entryCharts', file));
 

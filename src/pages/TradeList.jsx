@@ -144,9 +144,14 @@ export default function TradeList() {
       trade.entry_price !== undefined &&
       trade.entry_price !== null &&
       trade.quantity !== undefined &&
-      trade.quantity !== null
+      trade.quantity !== null &&
+      trade.direction
     ) {
-      const pl = (Number(trade.exit_price) - Number(trade.entry_price)) * Number(trade.quantity);
+      // Calculate P&L correctly for both LONG and SHORT trades
+      const priceDiff = trade.direction.toLowerCase() === 'long'
+        ? Number(trade.exit_price) - Number(trade.entry_price)
+        : Number(trade.entry_price) - Number(trade.exit_price);
+      const pl = priceDiff * Number(trade.quantity);
       return pl.toFixed(2);
     }
     return "-";
