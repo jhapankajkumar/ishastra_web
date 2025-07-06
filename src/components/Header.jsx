@@ -11,16 +11,37 @@ const navLinks = [
 export default function Header() {
   const location = useLocation();
   
-  // Use a state to handle responsive design properly
-  const [windowWidth, setWindowWidth] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-  
+  // Add responsive styles
   React.useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const style = document.createElement('style');
+    style.textContent = `
+      .header-container {
+        max-width: none;
+        margin: 0;
+        padding: 0 5%;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 64px;
+      }
+      
+      @media (max-width: 768px) {
+        .header-container {
+          padding: 0 4%;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .header-container {
+          padding: 0 3%;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => document.head.removeChild(style);
   }, []);
-  
-  const isSmallScreen = windowWidth <= 900;
   
   return (
     <header
@@ -35,17 +56,7 @@ export default function Header() {
         boxSizing: "border-box"
       }}
     >
-      <div style={{
-        width: "80%",
-        maxWidth: "1400px",
-        margin: "0 auto",
-        padding: isSmallScreen ? "0 12px" : "0 40px",
-        boxSizing: "border-box",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        height: "64px"
-      }}>
+      <div className="header-container">
         <div style={{ 
           display: "flex", 
           alignItems: "center", 
@@ -53,7 +64,7 @@ export default function Header() {
         }}>
           <span style={{ 
             fontWeight: 700, 
-            fontSize: 24, 
+            fontSize: "clamp(20px, 3vw, 24px)", 
             letterSpacing: "-0.5px",
             color: "#fff"
           }}>
@@ -62,7 +73,7 @@ export default function Header() {
         </div>
         <nav style={{ 
           display: "flex", 
-          gap: 32,
+          gap: "clamp(16px, 4vw, 32px)",
           alignItems: "center"
         }}>
           {navLinks.map(link => (
@@ -73,11 +84,12 @@ export default function Header() {
                 color: location.pathname === link.to ? "#4F8CFF" : "#9CA3AF",
                 textDecoration: "none",
                 fontWeight: 500,
-                fontSize: 16,
+                fontSize: "clamp(14px, 2.5vw, 16px)",
                 padding: "8px 12px",
                 borderRadius: "6px",
                 transition: "all 0.2s ease",
-                position: "relative"
+                position: "relative",
+                whiteSpace: "nowrap"
               }}
               onMouseOver={(e) => {
                 if (location.pathname !== link.to) {

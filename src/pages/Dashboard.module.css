@@ -1,8 +1,7 @@
 .dashboardContainer {
-  width: 80%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px 40px 24px 40px; /* <-- Add horizontal padding */
+  max-width: none;
+  margin: 0;
+  padding: 24px 5%;
   box-sizing: border-box;
   background: #101828;
   min-height: 100vh;
@@ -11,9 +10,15 @@
 }
 
 /* Responsive: reduce horizontal padding on small screens */
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .dashboardContainer {
-    padding: 0 12px 12px 12px;
+    padding: 24px 4%;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboardContainer {
+    padding: 24px 3%;
   }
 }
 
