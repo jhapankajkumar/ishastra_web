@@ -20,6 +20,7 @@ function App() {
             <Route path="/trades/new" element={<TradeLog />} />
             <Route path="/journal" element={<JournalList />} />
             <Route path="/journal/new" element={<JournalLog />} />
+            <Route path="/journal/edit/:id" element={<JournalLog />} />
             {/* Add more routes as needed */}
           </Routes>
         </BrowserRouter>

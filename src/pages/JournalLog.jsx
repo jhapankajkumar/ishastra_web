@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import styles from "./JournalLog.module.css";
 import PageHeader from "../components/PageHeader";
 import TickerSearch from "../components/TickerSearch";
-import { createJournal } from '../api/journalApi';
+import { createJournal, updateJournal, getJournalById } from '../api/journalApi';
 import { useNotification } from '../components/NotificationProvider';
 import ErrorPage from '../components/ErrorPage';
 import { getTickerBySymbol } from '../data/tickerData';
@@ -25,17 +25,22 @@ const initialState = {
   action_plan: "",
   notes: "",
   screenshot: null,
+  reviewScreenshot: null,
 };
 
 export default function JournalLog({ onSubmit }) {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [initialLoading, setInitialLoading] = useState(false);
   
   // Get today's date in YYYY-MM-DD format for max date validation
   const today = new Date().toISOString().split('T')[0];
   const navigate = useNavigate();
   const notification = useNotification();
+  const { id } = useParams(); // Get ID from URL for edit mode
+  
+  const isEditMode = !!id;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -46,8 +51,9 @@ export default function JournalLog({ onSubmit }) {
   };
 
   const handleFileChange = (e) => {
-    const { files } = e.target;
-    setForm((prev) => ({ ...prev, screenshot: files[0] || null }));
+    const { files, name } = e.target;
+    const fieldName = name || 'screenshot'; // Default to screenshot for backward compatibility
+    setForm((prev) => ({ ...prev, [fieldName]: files[0] || null }));
   };
 
   // Handle ticker search change (when user types)
@@ -76,13 +82,19 @@ export default function JournalLog({ onSubmit }) {
       // Create form data without frontend-only fields
       const { companyName, ...formDataForBackend } = form;
       
-      await createJournal(formDataForBackend);
-      notification.success("Journal entry added successfully!");
+      if (isEditMode) {
+        await updateJournal(id, formDataForBackend);
+        notification.success("Journal entry updated successfully!");
+      } else {
+        await createJournal(formDataForBackend);
+        notification.success("Journal entry added successfully!");
+      }
+      
       navigate("/journal", { replace: true });
       window.location.reload();
     } catch (err) {
       console.error('Operation failed:', err);
-      let errorMessage = "Operation failed. Please try again.";
+      let errorMessage = isEditMode ? "Failed to update journal entry. Please try again." : "Operation failed. Please try again.";
       
       if (err.type === 'NETWORK_ERROR') {
         errorMessage = "Unable to connect to server. Please check your internet connection.";
@@ -104,6 +116,45 @@ export default function JournalLog({ onSubmit }) {
     window.location.reload();
   };
 
+  // Load journal data for edit mode
+  useEffect(() => {
+    if (isEditMode) {
+      setInitialLoading(true);
+      getJournalById(id)
+        .then(res => {
+          const journal = res.data;
+          setForm({
+            date: journal.date ? new Date(journal.date).toISOString().split('T')[0] : "",
+            stock: journal.stock || "",
+            companyName: getTickerBySymbol(journal.stock)?.name || "",
+            trend: journal.trend || "",
+            candle_type: journal.candle_type || "",
+            near_support: journal.near_support || false,
+            near_resistance: journal.near_resistance || false,
+            support_level: journal.support_level?.toString() || "",
+            resistance_level: journal.resistance_level?.toString() || "",
+            ema_touch: journal.ema_touch || false,
+            volume_spike: journal.volume_spike || false,
+            rsi_value: journal.rsi_value?.toString() || "",
+            entry_considered: journal.entry_considered || false,
+            action_plan: journal.action_plan || "",
+            notes: journal.notes || "",
+            screenshot: null, // Reset screenshot for editing
+            reviewScreenshot: null, // Reset review screenshot for editing
+          });
+          setError(null);
+        })
+        .catch(err => {
+          console.error('Failed to load journal:', err);
+          setError(err);
+          notification.error('Failed to load journal for editing');
+        })
+        .finally(() => {
+          setInitialLoading(false);
+        });
+    }
+  }, [id, isEditMode, notification]);
+
   // Show error page if there's a network error during initial load
   if (error && error.type === 'NETWORK_ERROR') {
     return (
@@ -115,12 +166,33 @@ export default function JournalLog({ onSubmit }) {
     );
   }
 
+  // Show loading state for edit mode initial load
+  if (isEditMode && initialLoading) {
+    return (
+      <div className={styles.container}>
+        <PageHeader 
+          title="Edit Chart Reading"
+          subtitle="Loading journal data..."
+        />
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '200px',
+          color: '#9CA3AF'
+        }}>
+          Loading journal data for editing...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       {!onSubmit && (
         <PageHeader 
-          title="Add Chart Reading"
-          subtitle="Log your chart analysis and market observations"
+          title={isEditMode ? "Edit Chart Reading" : "Add Chart Reading"}
+          subtitle={isEditMode ? "Update your chart analysis and observations" : "Log your chart analysis and market observations"}
         />
       )}
 
@@ -141,9 +213,10 @@ export default function JournalLog({ onSubmit }) {
                   value={form.date}
                   onChange={handleChange}
                   max={today}
-                  className={`${styles.input} ${styles.inputEnabled}`}
+                  className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   title="Select the date for this chart reading (today or earlier)"
                   placeholder="Select date..."
+                  disabled={isEditMode}
                   required
                 />
               </div>
@@ -155,6 +228,7 @@ export default function JournalLog({ onSubmit }) {
                   onChange={handleTickerChange}
                   onSelect={handleTickerSelect}
                   placeholder="Search ticker (e.g. AAPL, RELIANCE)"
+                  disabled={isEditMode}
                 />
               </div>
 
@@ -177,7 +251,8 @@ export default function JournalLog({ onSubmit }) {
                   name="trend"
                   value={form.trend}
                   onChange={handleChange}
-                  className={`${styles.input} ${styles.inputEnabled}`}
+                  className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
+                  disabled={isEditMode}
                   required
                 >
                   <option value="">Select trend...</option>
@@ -193,7 +268,7 @@ export default function JournalLog({ onSubmit }) {
           {/* Technical Analysis Section */}
           <div className={styles.card}>
             <h3 className={`${styles.cardTitle} ${styles.technicalTitle}`}>
-              Technical Analysis
+              Technical Analysis {isEditMode && "(Read-only)"}
             </h3>
             
             <div className={styles.gridTwoCol}>
@@ -203,7 +278,8 @@ export default function JournalLog({ onSubmit }) {
                   name="candle_type"
                   value={form.candle_type}
                   onChange={handleChange}
-                  className={`${styles.input} ${styles.inputEnabled}`}
+                  className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
+                  disabled={isEditMode}
                 >
                   <option value="">Select candle type...</option>
                   <option value="Doji">Doji</option>
@@ -223,11 +299,12 @@ export default function JournalLog({ onSubmit }) {
                   name="rsi_value"
                   value={form.rsi_value}
                   onChange={handleChange}
-                  className={`${styles.input} ${styles.inputEnabled}`}
+                  className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   placeholder="0-100"
                   min="0"
                   max="100"
                   step="0.1"
+                  disabled={isEditMode}
                 />
               </div>
 
@@ -238,9 +315,10 @@ export default function JournalLog({ onSubmit }) {
                   name="support_level"
                   value={form.support_level}
                   onChange={handleChange}
-                  className={`${styles.input} ${styles.inputEnabled}`}
+                  className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   placeholder="0.00"
                   step="0.01"
+                  disabled={isEditMode}
                 />
               </div>
 
@@ -251,9 +329,10 @@ export default function JournalLog({ onSubmit }) {
                   name="resistance_level"
                   value={form.resistance_level}
                   onChange={handleChange}
-                  className={`${styles.input} ${styles.inputEnabled}`}
+                  className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   placeholder="0.00"
                   step="0.01"
+                  disabled={isEditMode}
                 />
               </div>
             </div>
@@ -268,6 +347,7 @@ export default function JournalLog({ onSubmit }) {
                   checked={form.near_support}
                   onChange={handleChange}
                   className={styles.checkbox}
+                  disabled={isEditMode}
                 />
                 <label htmlFor="near_support" className={styles.checkboxLabel}>
                   Near Support
@@ -282,6 +362,7 @@ export default function JournalLog({ onSubmit }) {
                   checked={form.near_resistance}
                   onChange={handleChange}
                   className={styles.checkbox}
+                  disabled={isEditMode}
                 />
                 <label htmlFor="near_resistance" className={styles.checkboxLabel}>
                   Near Resistance
@@ -296,6 +377,7 @@ export default function JournalLog({ onSubmit }) {
                   checked={form.ema_touch}
                   onChange={handleChange}
                   className={styles.checkbox}
+                  disabled={isEditMode}
                 />
                 <label htmlFor="ema_touch" className={styles.checkboxLabel}>
                   EMA Touch
@@ -310,6 +392,7 @@ export default function JournalLog({ onSubmit }) {
                   checked={form.volume_spike}
                   onChange={handleChange}
                   className={styles.checkbox}
+                  disabled={isEditMode}
                 />
                 <label htmlFor="volume_spike" className={styles.checkboxLabel}>
                   Volume Spike
@@ -324,6 +407,7 @@ export default function JournalLog({ onSubmit }) {
                   checked={form.entry_considered}
                   onChange={handleChange}
                   className={styles.checkbox}
+                  disabled={isEditMode}
                 />
                 <label htmlFor="entry_considered" className={styles.checkboxLabel}>
                   Entry Considered
@@ -332,51 +416,85 @@ export default function JournalLog({ onSubmit }) {
             </div>
           </div>
 
-          {/* Analysis Section */}
-          <div className={styles.card}>
-            <h3 className={`${styles.cardTitle} ${styles.analysisTitle}`}>
-              Analysis & Notes
-            </h3>
+          {/* Analysis Section - Only show in create mode */}
+          {!isEditMode && (
+            <div className={styles.card}>
+              <h3 className={`${styles.cardTitle} ${styles.analysisTitle}`}>
+                Analysis & Notes
+              </h3>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Action Plan</label>
-              <textarea
-                name="action_plan"
-                value={form.action_plan}
-                onChange={handleChange}
-                rows={4}
-                className={`${styles.textarea} ${styles.inputEnabled}`}
-                placeholder="What's your plan based on this analysis?"
-              />
-            </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Action Plan</label>
+                <textarea
+                  name="action_plan"
+                  value={form.action_plan}
+                  onChange={handleChange}
+                  rows={4}
+                  className={`${styles.textarea} ${styles.inputEnabled}`}
+                  placeholder="What's your plan based on this analysis?"
+                />
+              </div>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Notes</label>
-              <textarea
-                name="notes"
-                value={form.notes}
-                onChange={handleChange}
-                rows={6}
-                className={`${styles.textarea} ${styles.inputEnabled}`}
-                placeholder="Additional observations, insights, or thoughts..."
-                required
-              />
-            </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Notes</label>
+                <textarea
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleChange}
+                  rows={6}
+                  className={`${styles.textarea} ${styles.inputEnabled}`}
+                  placeholder="Additional observations, insights, or thoughts..."
+                  required
+                />
+              </div>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Chart Screenshot</label>
-              <input
-                type="file"
-                name="screenshot"
-                accept="image/*"
-                onChange={handleFileChange}
-                className={`${styles.fileInput} ${styles.inputEnabled}`}
-              />
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Chart Screenshot</label>
+                <input
+                  type="file"
+                  name="screenshot"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className={`${styles.fileInput} ${styles.inputEnabled}`}
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Review Section - Only show in edit mode */}
+          {isEditMode && (
+            <div className={styles.card}>
+              <h3 className={`${styles.cardTitle} ${styles.technicalTitle}`}>
+                Review Analysis
+              </h3>
+              
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Updated Analysis & Notes</label>
+                <textarea
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleChange}
+                  className={`${styles.textarea} ${styles.inputEnabled}`}
+                  placeholder="Add your updated analysis, observations, and learnings..."
+                  rows="6"
+                />
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Review Chart Screenshot</label>
+                <input
+                  type="file"
+                  name="reviewScreenshot"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className={`${styles.fileInput} ${styles.inputEnabled}`}
+                />
+              </div>
+            </div>
+          )}
 
           <button type="submit" className={styles.submitButton} disabled={loading}>
-            {loading ? "Processing..." : "Add Journal Entry"}
+            {loading ? "Processing..." : (isEditMode ? "Update Journal Entry" : "Add Journal Entry")}
           </button>
         </form>
       </div>

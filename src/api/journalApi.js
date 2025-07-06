@@ -3,6 +3,21 @@ import {API} from './baseApi';
 export const getAllJournals = () => API.get('/journal');
 export const getJournalById = (id) => API.get(`/journal/${id}`);
 export const deleteJournal = (id) => API.delete(`/journal/${id}`);
+export const updateJournal = (id, form) => {
+  const formData = new FormData();
+  formData.append('notes', form.notes);
+
+  // Append review screenshot if provided
+  if (form.reviewScreenshot) {
+    formData.append('reviewScreenshot', form.reviewScreenshot);
+  }
+
+  return API.put(`/journal/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
 
 // Create journal entry
 export async function createJournal(form) {

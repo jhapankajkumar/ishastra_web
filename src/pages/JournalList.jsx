@@ -5,6 +5,7 @@ import PageHeader from "../components/PageHeader";
 import ErrorPage from "../components/ErrorPage";
 import { useNotification } from "../components/NotificationProvider";
 import { getTickerBySymbol } from '../data/tickerData';
+import { useNavigate } from "react-router-dom";
 import styles from "./JournalList.module.css";
 
 export default function JournalList() {
@@ -16,6 +17,7 @@ export default function JournalList() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [journalToDelete, setJournalToDelete] = useState(null);
   const notification = useNotification();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
@@ -111,6 +113,10 @@ export default function JournalList() {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  const handleEdit = (journal) => {
+    navigate(`/journal/edit/${journal.id}`);
   };
 
   const formatDate = (dateStr) => {
@@ -229,6 +235,12 @@ export default function JournalList() {
                       className={`${styles.actionButton} ${styles.viewButton}`}
                     >
                       View
+                    </button>
+                    <button 
+                      onClick={e => { e.stopPropagation(); handleEdit(journal); }}
+                      className={`${styles.actionButton} ${styles.editButton}`}
+                    >
+                      Edit
                     </button>
                     <button 
                       onClick={e => { e.stopPropagation(); handleDeleteClick(journal); }}

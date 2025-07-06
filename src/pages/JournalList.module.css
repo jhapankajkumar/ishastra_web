@@ -161,6 +161,16 @@
   transform: translateY(-1px);
 }
 
+.editButton {
+  background: #F59E0B;
+  color: #fff;
+}
+
+.editButton:hover {
+  background: #D97706;
+  transform: translateY(-1px);
+}
+
 .deleteButton {
   background: #EF4444;
   color: #fff;

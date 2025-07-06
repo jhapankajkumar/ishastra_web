@@ -440,6 +440,35 @@ export default function JournalDetailsPopup({ journal, onClose }) {
 
           {/* Screenshot */}
           {journal.screenshot_url && (
+            <div style={{ marginBottom: journal.review_screenshot_url ? 24 : 0 }}>
+              <label style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#9CA3AF",
+                display: "block",
+                marginBottom: 8
+              }}>
+                Original Chart Screenshot
+              </label>
+              <div style={{ marginBottom: 0 }}>
+                <img
+                  src={`http://localhost:8000/${journal.screenshot_url}`}
+                  alt="Original Chart Screenshot"
+                  style={{ 
+                    width: "100%", 
+                    maxHeight: "500px", 
+                    objectFit: "contain", 
+                    borderRadius: 8, 
+                    border: "1px solid #2A3441",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.25)" 
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Review Screenshot */}
+          {journal.review_screenshot_url && (
             <div>
               <label style={{
                 fontSize: "14px",
@@ -448,12 +477,12 @@ export default function JournalDetailsPopup({ journal, onClose }) {
                 display: "block",
                 marginBottom: 8
               }}>
-                Chart Screenshot
+                Review Chart Screenshot
               </label>
               <div style={{ marginBottom: 0 }}>
                 <img
-                  src={`http://localhost:8000/${journal.screenshot_url}`}
-                  alt="Chart Screenshot"
+                  src={`http://localhost:8000/${journal.review_screenshot_url}`}
+                  alt="Review Chart Screenshot"
                   style={{ 
                     width: "100%", 
                     maxHeight: "500px", 
