@@ -1,0 +1,216 @@
+/* JournalList specific styles */
+.container {
+  max-width: none;
+  margin: 0;
+  padding: 24px 5%;
+  box-sizing: border-box;
+  background: #101828;
+  min-height: 100vh;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Responsive: reduce horizontal padding on small screens */
+@media (max-width: 768px) {
+  .container {
+    padding: 24px 4%;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 24px 3%;
+  }
+}
+
+.tableContainer {
+  background: #1A2332;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #2A3441;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.tableHeader {
+  background: #0F1419;
+}
+
+.tableHeaderCell {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #9CA3AF;
+  font-size: 14px;
+  border-bottom: 1px solid #2A3441;
+}
+
+.tableRow {
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.tableRow:hover {
+  background: #0F1419;
+}
+
+.tableCell {
+  padding: 16px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid #2A3441;
+}
+
+.stockCell {
+  font-weight: 600;
+  color: #fff;
+}
+
+.stockContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stockSymbol {
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+}
+
+.companyName {
+  font-weight: 400;
+  color: #9CA3AF;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.dateCell {
+  color: #9CA3AF;
+}
+
+.trendBadge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  text-transform: capitalize;
+}
+
+.signalsContainer {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.signal {
+  padding: 2px 6px;
+  background: #4F46E5;
+  color: #fff;
+  font-size: 10px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.noSignals {
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+.entryBadge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.entryYes {
+  background: #10B981;
+  color: #fff;
+}
+
+.entryNo {
+  background: #6B7280;
+  color: #fff;
+}
+
+.actionButton {
+  padding: 6px 12px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.viewButton {
+  background: #1E40AF;
+  color: #fff;
+}
+
+.viewButton:hover {
+  background: #1D4ED8;
+  transform: translateY(-1px);
+}
+
+.deleteButton {
+  background: #EF4444;
+  color: #fff;
+}
+
+.deleteButton:hover {
+  background: #DC2626;
+  transform: translateY(-1px);
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  .tableContainer {
+    padding: 16px;
+  }
+  
+  .tableHeaderCell,
+  .tableCell {
+    padding: 12px 8px;
+    font-size: 12px;
+  }
+  
+  .actionButton {
+    padding: 5px 10px;
+    font-size: 11px;
+    margin: 0;
+  }
+
+  .signalsContainer {
+    gap: 2px;
+  }
+
+  .signal {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .table {
+    font-size: 12px;
+  }
+  
+  .tableHeaderCell,
+  .tableCell {
+    padding: 8px 4px;
+  }
+  
+  .actionButton {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+}
