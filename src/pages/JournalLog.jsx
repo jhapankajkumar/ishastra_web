@@ -78,7 +78,7 @@ export default function JournalLog({ onSubmit }) {
       
       await createJournal(formDataForBackend);
       notification.success("Journal entry added successfully!");
-      navigate("/journals", { replace: true });
+      navigate("/journal", { replace: true });
       window.location.reload();
     } catch (err) {
       console.error('Operation failed:', err);
@@ -142,6 +142,8 @@ export default function JournalLog({ onSubmit }) {
                   onChange={handleChange}
                   max={today}
                   className={`${styles.input} ${styles.inputEnabled}`}
+                  title="Select the date for this chart reading (today or earlier)"
+                  placeholder="Select date..."
                   required
                 />
               </div>
