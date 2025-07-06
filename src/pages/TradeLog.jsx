@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./Dashboard.module.css";
+import PageHeader from "../components/PageHeader";
 import { createTrade, updateTrade, addPostAnalysis, fetchExitTactics, fetchSetups } from '../api/tradeApi';
 
 const initialState = {
@@ -110,151 +111,519 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
 
   return (
     <div className={styles.dashboardContainer}>
-      <h2 className={styles.heading}>
-        {isAdd && "Add New Trade"}
-        {isUpdate && "Update Trade (Exit)"}
-        {isReview && "Review Trade"}
-      </h2>
-      <form onSubmit={handleSubmit} className="tradeLogForm" style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>
-        {/* Entry Section */}
-        <div className={styles.card}>
-          <div className={styles.responsiveFlex}>
-            <div style={{ flex: 1 }}>
-              <label className={styles.formLabel}>Ticker</label>
-              <input
-                type="text"
-                name="ticker"
-                value={form.ticker}
-                onChange={handleChange}
-                className={styles.formInput}
-                placeholder="e.g. AAPL"
-                required
-                disabled={entryDisabled}
-              />
-            </div>
+      {/* Only show header if not being used as a nested component */}
+      {!onSubmit && (
+        <PageHeader 
+          title={isAdd ? "Add New Trade" : isUpdate ? "Update Trade Exit" : "Review Trade"}
+          subtitle={isAdd ? "Enter the details for your new trade" : isUpdate ? "Update the exit details for this trade" : "Add your post-trade analysis"}
+        />
+      )}
 
-          </div>
-          <h3>Reason for Entry</h3>
-          <textarea
-            name="reasonForEntry"
-            value={form.reasonForEntry}
-            onChange={handleChange}
-            rows={3}
-            className={styles.formTextarea}
-            placeholder="Describe your reason for entry..."
-            disabled={entryDisabled}
-          />
-          <div>
-            <label>
-              Entry Chart(s):{" "}
-              <input
-                type="file"
-                name="entryCharts"
-                accept="image/*"
-                multiple
-                onChange={handleFileChange}
-                disabled={entryDisabled}
-              />
+      <form onSubmit={handleSubmit} style={{ maxWidth: 1000, margin: "0 auto" }}>
+        {/* Entry Section */}
+        <div style={{
+          backgroundColor: "#1A2332",
+          borderRadius: 12,
+          padding: 24,
+          marginBottom: 24,
+          border: "1px solid #2A3441"
+        }}>
+          <h3 style={{
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#fff",
+            margin: "0 0 20px 0"
+          }}>
+            Entry Details
+          </h3>
+          
+          <div style={{ marginBottom: 20 }}>
+            <label style={{
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#9CA3AF",
+              display: "block",
+              marginBottom: 8
+            }}>
+              Ticker Symbol
             </label>
+            <input
+              type="text"
+              name="ticker"
+              value={form.ticker}
+              onChange={handleChange}
+              style={{
+                width: "200px",
+                padding: "12px 16px",
+                fontSize: "16px",
+                border: "1px solid #2A3441",
+                borderRadius: "8px",
+                backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
+                color: "#E5E7EB",
+                outline: "none"
+              }}
+              placeholder="e.g. AAPL"
+              required
+              disabled={entryDisabled}
+            />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={{
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#9CA3AF",
+              display: "block",
+              marginBottom: 8
+            }}>
+              Reason for Entry
+            </label>
+            <textarea
+              name="reasonForEntry"
+              value={form.reasonForEntry}
+              onChange={handleChange}
+              rows={4}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                fontSize: "15px",
+                border: "1px solid #2A3441",
+                borderRadius: "8px",
+                backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
+                color: "#E5E7EB",
+                outline: "none",
+                resize: "vertical",
+                lineHeight: "1.5",
+                boxSizing: "border-box"
+              }}
+              placeholder="Describe your reason for entry..."
+              disabled={entryDisabled}
+            />
+          </div>
+
+          <div>
+            <label style={{
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#9CA3AF",
+              display: "block",
+              marginBottom: 8
+            }}>
+              Entry Chart(s)
+            </label>
+            <input
+              type="file"
+              name="entryCharts"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              disabled={entryDisabled}
+              style={{
+                padding: "8px",
+                border: "1px solid #2A3441",
+                borderRadius: "8px",
+                backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
+                color: "#E5E7EB"
+              }}
+            />
           </div>
         </div>
 
-        {/* Entry Inputs */}
-        <div className={styles.card}>
-          <h3 style={{ color: "#4f8cff" }}>Entry</h3>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 12,
-              marginBottom: 8,
-              fontWeight: 600,
-              color: "#b0c4d8"
-            }}
-          >
-            <span>Date</span>
-            <span>Average Price</span>
-            <span>Quantity</span>
-            <span>Setup</span>
+        {/* Entry Details Grid */}
+        <div style={{
+          backgroundColor: "#1A2332",
+          borderRadius: 12,
+          padding: 24,
+          marginBottom: 24,
+          border: "1px solid #2A3441"
+        }}>
+          <h3 style={{
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#4F46E5",
+            margin: "0 0 20px 0"
+          }}>
+            Entry Information
+          </h3>
+          
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 20,
+            marginBottom: 20
+          }}>
+            <div>
+              <label style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#9CA3AF",
+                display: "block",
+                marginBottom: 8
+              }}>
+                Entry Date
+              </label>
+              <input
+                type="date"
+                name="entryDate"
+                value={form.entryDate}
+                onChange={handleChange}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  fontSize: "16px",
+                  border: "1px solid #2A3441",
+                  borderRadius: "8px",
+                  backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
+                  color: "#E5E7EB",
+                  outline: "none",
+                  boxSizing: "border-box"
+                }}
+                disabled={entryDisabled}
+              />
+            </div>                <div>
+                  <label style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#9CA3AF",
+                    display: "block",
+                    marginBottom: 8
+                  }}>
+                    Average Price ($)
+                  </label>
+                  <input
+                    type="text"
+                    name="entryOrderPrice"
+                    value={form.entryOrderPrice || ""}
+                    onChange={handleChange}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "16px",
+                      border: "1px solid #2A3441",
+                      borderRadius: "8px",
+                      backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
+                      color: "#E5E7EB",
+                      outline: "none",
+                      boxSizing: "border-box"
+                    }}
+                    placeholder="0.00"
+                    disabled={entryDisabled}
+                  />
+                </div>
           </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 12,
-              marginBottom: 8
-            }}
-          >
-            <input
-              type="date"
-              name="entryDate"
-              value={form.entryDate}
-              onChange={handleChange}
-              className={styles.formInput}
-              disabled={entryDisabled}
-            />
-            <input
-              type="text"
-              name="entryOrderPrice"
-              value={form.entryOrderPrice || ""}
-              onChange={handleChange}
-              className={styles.formInput}
-              disabled={entryDisabled}
-            />
-            <input
-              type="text"
-              name="entryFilledShares"
-              value={form.entryFilledShares || ""}
-              onChange={handleChange}
-              className={styles.formInput}
-              disabled={entryDisabled}
-            />
-            <select
-              name="setupType"
-              value={form.setupType}
-              onChange={handleChange}
-              className={styles.formSelect}
-              required
-              disabled={entryDisabled}
-              style={{ minWidth: 0 }}
-            >
-              <option value="">Select setup...</option>
-              {setups.map((setup) => (
-                <option key={setup.id || setup.trade_setup_id} value={setup.id || setup.trade_setup_id}>
-                  {setup.name}
-                </option>
-              ))}
-            </select>
+          
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 20
+          }}>
+            
+            <div>
+              <label style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#9CA3AF",
+                display: "block",
+                marginBottom: 8
+              }}>
+                Quantity
+              </label>
+              <input
+                type="text"
+                name="entryFilledShares"
+                value={form.entryFilledShares || ""}
+                onChange={handleChange}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  fontSize: "16px",
+                  border: "1px solid #2A3441",
+                  borderRadius: "8px",
+                  backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
+                  color: "#E5E7EB",
+                  outline: "none",
+                  boxSizing: "border-box"
+                }}
+                placeholder="0"
+                disabled={entryDisabled}
+              />
+            </div>
+            
+            <div>
+              <label style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#9CA3AF",
+                display: "block",
+                marginBottom: 8
+              }}>
+                Setup Type
+              </label>
+              {isReview ? (
+                <div style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  fontSize: "16px",
+                  border: "1px solid #2A3441",
+                  borderRadius: "8px",
+                  backgroundColor: "#0F1419",
+                  color: "#E5E7EB",
+                  boxSizing: "border-box"
+                }}>
+                  {setups.find(setup => (setup.id || setup.trade_setup_id) == form.setupType)?.name || "N/A"}
+                </div>
+              ) : (
+                <select
+                  name="setupType"
+                  value={form.setupType}
+                  onChange={handleChange}
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    fontSize: "16px",
+                    border: "1px solid #2A3441",
+                    borderRadius: "8px",
+                    backgroundColor: "#1A2332",
+                    color: "#E5E7EB",
+                    outline: "none",
+                    boxSizing: "border-box"
+                  }}
+                  required
+                >
+                  <option value="">Select setup...</option>
+                  {setups.map((setup) => (
+                    <option key={setup.id || setup.trade_setup_id} value={setup.id || setup.trade_setup_id}>
+                      {setup.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Exit Section */}
         {!isAdd && (
-          <div className={styles.card}>
-            <h3 style={{ color: "#4f8cff" }}>Exit</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 8, fontWeight: 600, color: "#b0c4d8" }}>
-              <span>Date</span>
-              <span>Average Price</span>
-              <span>Quantity</span>
+          <>
+            {/* Exit Details Grid */}
+            <div style={{
+              backgroundColor: "#1A2332",
+              borderRadius: 12,
+              padding: 24,
+              marginBottom: 24,
+              border: "1px solid #2A3441"
+            }}>
+              <h3 style={{
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#F59E0B",
+                margin: "0 0 20px 0"
+              }}>
+                Exit Information
+              </h3>
+              
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: 20,
+                marginBottom: 20
+              }}>
+                <div>
+                  <label style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#9CA3AF",
+                    display: "block",
+                    marginBottom: 8
+                  }}>
+                    Exit Date
+                  </label>
+                  <input
+                    type="date"
+                    name="exitDate"
+                    value={form.exitDate}
+                    onChange={handleChange}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "16px",
+                      border: "1px solid #2A3441",
+                      borderRadius: "8px",
+                      backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
+                      color: "#E5E7EB",
+                      outline: "none",
+                      boxSizing: "border-box"
+                    }}
+                    disabled={exitDisabled}
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#9CA3AF",
+                    display: "block",
+                    marginBottom: 8
+                  }}>
+                    Average Price ($)
+                  </label>
+                  <input
+                    type="text"
+                    name="exitOrderPrice"
+                    value={form.exitOrderPrice || ""}
+                    onChange={handleChange}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "16px",
+                      border: "1px solid #2A3441",
+                      borderRadius: "8px",
+                      backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
+                      color: "#E5E7EB",
+                      outline: "none",
+                      boxSizing: "border-box"
+                    }}
+                    placeholder="0.00"
+                    disabled={exitDisabled}
+                  />
+                </div>
+              </div>
+              
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: 20
+              }}>
+                <div>
+                  <label style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#9CA3AF",
+                    display: "block",
+                    marginBottom: 8
+                  }}>
+                    Quantity
+                  </label>
+                  <input
+                    type="text"
+                    name="exitFilledShares"
+                    value={form.exitFilledShares || ""}
+                    onChange={handleChange}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "16px",
+                      border: "1px solid #2A3441",
+                      borderRadius: "8px",
+                      backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
+                      color: "#E5E7EB",
+                      outline: "none",
+                      boxSizing: "border-box"
+                    }}
+                    placeholder="0"
+                    disabled={exitDisabled}
+                  />
+                </div>
+                
+                <div>
+                  <label style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#9CA3AF",
+                    display: "block",
+                    marginBottom: 8
+                  }}>
+                    Exit Tactic
+                  </label>
+                  <select
+                    name="exitTactic"
+                    value={form.exitTactic}
+                    onChange={handleChange}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "16px",
+                      border: "1px solid #2A3441",
+                      borderRadius: "8px",
+                      backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
+                      color: "#E5E7EB",
+                      outline: "none",
+                      boxSizing: "border-box"
+                    }}
+                    disabled={exitDisabled}
+                  >
+                    <option value="">Select tactic...</option>
+                    {exitTactics.map((t) => (
+                      <option key={t.tactic_id || t.id} value={t.tactic_id || t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
-              <input type="date" name="exitDate" value={form.exitDate} onChange={handleChange} className={styles.formInput} disabled={exitDisabled} />
-              <input type="text" name="exitOrderPrice" value={form.exitOrderPrice || ""} onChange={handleChange} className={styles.formInput} disabled={exitDisabled} />
-              <input type="text" name="exitFilledShares" value={form.exitFilledShares || ""} onChange={handleChange} className={styles.formInput} disabled={exitDisabled} />
-            </div>
-            <h3>Reason for Exit & Exit Tactic</h3>
-            <textarea
-              name="reasonForExit"
-              value={form.reasonForExit}
-              onChange={handleChange}
-              rows={2}
-              className={styles.formTextarea}
-              placeholder="Describe your reason for exit..."
-              disabled={exitDisabled}
-            />
-            <div>
-              <label>
-                Exit Chart(s):{" "}
+
+            {/* Exit Analysis */}
+            <div style={{
+              backgroundColor: "#1A2332",
+              borderRadius: 12,
+              padding: 24,
+              marginBottom: 24,
+              border: "1px solid #2A3441"
+            }}>
+              <h3 style={{
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#F59E0B",
+                margin: "0 0 20px 0"
+              }}>
+                Exit Analysis
+              </h3>
+              
+              <div style={{ marginBottom: 20 }}>
+                <label style={{
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#9CA3AF",
+                  display: "block",
+                  marginBottom: 8
+                }}>
+                  Reason for Exit
+                </label>
+                <textarea
+                  name="reasonForExit"
+                  value={form.reasonForExit}
+                  onChange={handleChange}
+                  rows={4}
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    fontSize: "15px",
+                    border: "1px solid #2A3441",
+                    borderRadius: "8px",
+                    backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
+                    color: "#E5E7EB",
+                    outline: "none",
+                    resize: "vertical",
+                    lineHeight: "1.5",
+                    boxSizing: "border-box"
+                  }}
+                  placeholder="Describe your reason for exit..."
+                  disabled={exitDisabled}
+                />
+              </div>
+
+              <div>
+                <label style={{
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#9CA3AF",
+                  display: "block",
+                  marginBottom: 8
+                }}>
+                  Exit Chart(s)
+                </label>
                 <input
                   type="file"
                   name="exitCharts"
@@ -262,53 +631,94 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
                   multiple
                   onChange={handleFileChange}
                   disabled={exitDisabled}
+                  style={{
+                    padding: "8px",
+                    border: "1px solid #2A3441",
+                    borderRadius: "8px",
+                    backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
+                    color: "#E5E7EB"
+                  }}
                 />
-              </label>
+              </div>
             </div>
-            <div style={{ marginTop: 16 }}>
-              <label className={styles.formLabel}>Exit Tactic</label>
-              <select
-                name="exitTactic"
-                value={form.exitTactic}
-                onChange={handleChange}
-                className={styles.formSelect}
-                disabled={exitDisabled}
-              >
-                <option value="">Select tactic...</option>
-                {exitTactics.map((t) => (
-                  <option key={t.tactic_id || t.id} value={t.tactic_id || t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          </>
         )}
 
         {/* Post Trade Analysis */}
         {isReview && (
-          <div className={styles.card}>
-            <h3 style={{ color: "#4f8cff" }}>Post Trade Analysis</h3>
-            <textarea
-              name="postTradeAnalysis"
-              value={form.postTradeAnalysis}
-              onChange={handleChange}
-              rows={2}
-              className={styles.formTextarea}
-              placeholder="Your notes or analysis..."
-              disabled={postDisabled}
-            />
-            <div>
-              <label>
-                Attach File:{" "}
-                <input
-                  type="file"
-                  name="postTradeFiles"
-                  multiple
-                  onChange={handleFileChange}
-                  disabled={postDisabled}
-                />
+          <div style={{
+            backgroundColor: "#1A2332",
+            borderRadius: 12,
+            padding: 24,
+            marginBottom: 24,
+            border: "1px solid #2A3441"
+          }}>
+            <h3 style={{
+              fontSize: "18px",
+              fontWeight: "600",
+              color: "#8B5CF6",
+              margin: "0 0 20px 0"
+            }}>
+              Post Trade Analysis
+            </h3>
+            
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#9CA3AF",
+                display: "block",
+                marginBottom: 8
+              }}>
+                Analysis Notes
               </label>
+              <textarea
+                name="postTradeAnalysis"
+                value={form.postTradeAnalysis}
+                onChange={handleChange}
+                rows={4}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  fontSize: "15px",
+                  border: "1px solid #2A3441",
+                  borderRadius: "8px",
+                  backgroundColor: postDisabled ? "#0F1419" : "#1A2332",
+                  color: "#E5E7EB",
+                  outline: "none",
+                  resize: "vertical",
+                  lineHeight: "1.5",
+                  boxSizing: "border-box"
+                }}
+                placeholder="Your notes or analysis..."
+                disabled={postDisabled}
+              />
+            </div>
+
+            <div>
+              <label style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#9CA3AF",
+                display: "block",
+                marginBottom: 8
+              }}>
+                Post Trade Files
+              </label>
+              <input
+                type="file"
+                name="postTradeFiles"
+                multiple
+                onChange={handleFileChange}
+                disabled={postDisabled}
+                style={{
+                  padding: "8px",
+                  border: "1px solid #2A3441",
+                  borderRadius: "8px",
+                  backgroundColor: postDisabled ? "#0F1419" : "#1A2332",
+                  color: "#E5E7EB"
+                }}
+              />
             </div>
           </div>
         )}
@@ -316,13 +726,25 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
         <button
           type="submit"
           style={{
-            padding: "10px 32px",
-            fontSize: 18,
-            borderRadius: 8,
-            background: "#4f8cff",
+            padding: "16px 32px",
+            fontSize: "16px",
+            fontWeight: "600",
+            borderRadius: "8px",
+            background: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)",
             color: "#fff",
             border: "none",
-            marginTop: 24
+            marginTop: 32,
+            cursor: "pointer",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+            boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)"
+          }}
+          onMouseOver={(e) => {
+            e.target.style.transform = "translateY(-2px)";
+            e.target.style.boxShadow = "0 6px 20px rgba(79, 70, 229, 0.4)";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.transform = "translateY(0)";
+            e.target.style.boxShadow = "0 4px 12px rgba(79, 70, 229, 0.3)";
           }}
         >
           {isAdd ? "Add Trade" : isUpdate ? "Update Trade" : "Save Analysis"}

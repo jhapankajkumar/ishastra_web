@@ -268,6 +268,14 @@
   height: 64px;
 }
 
+/* Responsive header adjustments */
+@media (max-width: 768px) {
+  .headerContainer {
+    padding: 0 20px;
+    height: 56px;
+  }
+}
+
 .formInput {
   width: 120px;
   padding: 6px 8px;
@@ -277,6 +285,20 @@
   color: #fff;
   font-size: 0.95rem;
   margin-bottom: 6px;
+}
+
+.textDisplay {
+  width: 120px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #22304a;
+  background: #2a3441;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
 }
 
 .formTextarea {
