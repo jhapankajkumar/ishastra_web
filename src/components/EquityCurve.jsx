@@ -59,7 +59,7 @@ const EquityCurve = ({ trades }) => {
   });
 
   // Find the first trade's month
-  const firstTradeMonth = data.length > 0 ? data[0].month : null;
+  // const firstTradeMonth = data.length > 0 ? data[0].month : null; // Reserved for future use
 
   // Add initial capital point at the very start
   const monthlyData = [{

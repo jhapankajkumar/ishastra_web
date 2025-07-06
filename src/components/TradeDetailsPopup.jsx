@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import styles from "../pages/Dashboard.module.css";
+// import styles from "../pages/Dashboard.module.css"; // Reserved for future styling
 import { fetchExitTactics, fetchSetups } from '../api/tradeApi';
 
 export default function TradeDetailsPopup({ trade, onClose }) {

@@ -5,6 +5,8 @@ import EquityCurve from '../components/EquityCurve';
 import PerformanceChart from '../components/PerformanceChart';
 import DonutChart from '../components/DonutChart';
 import PageHeader from '../components/PageHeader';
+import ErrorPage from '../components/ErrorPage';
+// import { useNotification } from '../components/NotificationProvider'; // Reserved for future use
 import styles from './Dashboard.module.css';
 import { getAllTags } from "../api/tagApi";
 
@@ -12,28 +14,69 @@ const Dashboard = () => {
   const [trades, setTrades] = useState([]);
   const [stats, setStats] = useState(null);
   const [tags, setTags] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  // const notification = useNotification(); // Reserved for future use
 
   useEffect(() => {
-    getDashboardSummary()
-      .then(res => setStats(res.data))
-      .catch(err => {
-        console.error('Fetch error:', err);
-        setStats(null);
-      });
+    const loadDashboardData = async () => {
+      setLoading(true);
+      let hasNetworkError = false;
+      
+      try {
+        const [dashboardRes, tradesRes, tagsRes] = await Promise.allSettled([
+          getDashboardSummary(),
+          getAllTrades(),
+          getAllTags()
+        ]);
 
-    getAllTrades()
-      .then(res => setTrades(res.data))
-      .catch(err => {
-        console.error('Fetch trades error:', err);
-        setTrades([]);
-      });
+        if (dashboardRes.status === 'fulfilled') {
+          setStats(dashboardRes.value.data);
+        } else {
+          console.error('Dashboard summary error:', dashboardRes.reason);
+          if (dashboardRes.reason?.type === 'NETWORK_ERROR') {
+            hasNetworkError = true;
+          }
+        }
 
-    getAllTags()
-      .then(res => setTags(res.data))
-      .catch(err => {
-        console.error('Fetch tags error:', err);
-        setTags([]);
-      });
+        if (tradesRes.status === 'fulfilled') {
+          setTrades(tradesRes.value.data);
+        } else {
+          console.error('Trades error:', tradesRes.reason);
+          if (tradesRes.reason?.type === 'NETWORK_ERROR') {
+            hasNetworkError = true;
+          }
+        }
+
+        if (tagsRes.status === 'fulfilled') {
+          setTags(tagsRes.value.data);
+        } else {
+          console.error('Tags error:', tagsRes.reason);
+          if (tagsRes.reason?.type === 'NETWORK_ERROR') {
+            hasNetworkError = true;
+          }
+        }
+
+        if (hasNetworkError) {
+          setError({
+            type: 'NETWORK_ERROR',
+            message: 'Unable to connect to server. Please check your internet connection.'
+          });
+        } else {
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        setError({
+          type: 'UNKNOWN_ERROR',
+          message: 'An unexpected error occurred. Please try again.'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
   }, []);
 
   // Calculate additional metrics
@@ -103,27 +146,27 @@ const Dashboard = () => {
     [setupCounts]
   );
 
-  const pnlBuckets = [
-    { label: '< -10K', min: -Infinity, max: -10000 },
-    { label: '-10K', min: -10000, max: -5000 },
-    { label: '-5K', min: -5000, max: -1000 },
-    { label: '-1K', min: -1000, max: 0 },
-    { label: '0', min: 0, max: 1000 },
-    { label: '1K', min: 1000, max: 5000 },
-    { label: '5K', min: 5000, max: 10000 },
-    { label: '> 10K', min: 10000, max: Infinity }
-  ];
-  const perfData = pnlBuckets.map(bucket => {
-    const count = trades.filter(t => {
-      const pnl = calculatePnl(t);
-      return pnl > bucket.min && pnl <= bucket.max;
-    }).length;
-    // Invert count for negative buckets
-    return {
-      label: bucket.label,
-      count: bucket.max <= 0 ? -count : count
-    };
-  });
+  // const pnlBuckets = [ // Reserved for future chart implementation
+  //   { label: '< -10K', min: -Infinity, max: -10000 },
+  //   { label: '-10K', min: -10000, max: -5000 },
+  //   { label: '-5K', min: -5000, max: -1000 },
+  //   { label: '-1K', min: -1000, max: 0 },
+  //   { label: '0', min: 0, max: 1000 },
+  //   { label: '1K', min: 1000, max: 5000 },
+  //   { label: '5K', min: 5000, max: 10000 },
+  //   { label: '> 10K', min: 10000, max: Infinity }
+  // ];
+  // const perfData = pnlBuckets.map(bucket => { // Reserved for future chart implementation
+    // const count = trades.filter(t => {
+    //   const pnl = calculatePnl(t);
+    //   return pnl > bucket.min && pnl <= bucket.max;
+    // }).length;
+    // // Invert count for negative buckets
+    // return {
+    //   label: bucket.label,
+    //   count: bucket.max <= 0 ? -count : count
+    // };
+  // });
 
   // --- Recent Trades ---
   const recentTrades = trades
@@ -133,10 +176,10 @@ const Dashboard = () => {
 
   // --- Monthly PnL ---
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  function getMonthKey(dateStr) {
-    const date = new Date(dateStr);
-    return MONTHS[date.getMonth()];
-  }
+  // function getMonthKey(dateStr) { // Reserved for future use
+  //   const date = new Date(dateStr);
+  //   return MONTHS[date.getMonth()];
+  // }
 
   // Get the last 6 months as Date objects
   const now = new Date();
@@ -174,6 +217,43 @@ const Dashboard = () => {
   });
 
   // ---- Now you can conditionally return ----
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    // Reload page to retry all data
+    window.location.reload();
+  };
+
+  if (error && error.type === 'NETWORK_ERROR') {
+    return (
+      <ErrorPage
+        title="Unable to Connect"
+        message={error.message}
+        onRetry={handleRetry}
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className={styles.dashboardContainer}>
+        <PageHeader 
+          title="Trading Dashboard"
+          subtitle="Track your trading performance and analytics"
+        />
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '200px',
+          color: '#9CA3AF'
+        }}>
+          Loading dashboard...
+        </div>
+      </div>
+    );
+  }
+
   if (!stats) return <div>Loading...</div>;
 
   console.log("tags", tags);
@@ -544,9 +624,9 @@ function calculatePnl(trade) {
   return priceDiff * trade.quantity;
 }
 
-function formatYAxisTick(value) {
-  if (value >= 1000 || value <= -1000) return (value / 1000) + 'K';
-  return value;
-}
+// function formatYAxisTick(value) { // Reserved for future chart implementation
+//   if (value >= 1000 || value <= -1000) return (value / 1000) + 'K';
+//   return value;
+// }
 
 export default Dashboard;

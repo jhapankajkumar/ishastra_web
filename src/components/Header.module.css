@@ -1,0 +1,90 @@
+/* Header component styles */
+.header {
+  background: #181f2a;
+  color: #fff;
+  border-bottom: 1px solid #2A3441;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.headerContainer {
+  max-width: none;
+  margin: 0;
+  padding: 0 5%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoText {
+  font-weight: 700;
+  font-size: clamp(20px, 3vw, 24px);
+  letter-spacing: -0.5px;
+  color: #fff;
+}
+
+.nav {
+  display: flex;
+  gap: clamp(16px, 4vw, 32px);
+  align-items: center;
+}
+
+.navLink {
+  color: #9CA3AF;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: clamp(14px, 2.5vw, 16px);
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  color: #fff;
+  background-color: #2A3441;
+}
+
+.navLinkActive {
+  color: #4F8CFF;
+}
+
+.navLinkActive:hover {
+  color: #4F8CFF;
+  background-color: transparent;
+}
+
+.activeIndicator {
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 2px;
+  background-color: #4F8CFF;
+  border-radius: 1px;
+}
+
+@media (max-width: 768px) {
+  .headerContainer {
+    padding: 0 4%;
+  }
+}
+
+@media (max-width: 480px) {
+  .headerContainer {
+    padding: 0 3%;
+  }
+}

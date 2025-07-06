@@ -1,3 +1,4 @@
+/* Dashboard specific styles */
 .dashboardContainer {
   max-width: none;
   margin: 0;
@@ -281,102 +282,8 @@
   }
 }
 
-.formInput {
-  width: 120px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #22304a;
-  background: #181f2a;
-  color: #fff;
-  font-size: 0.95rem;
-  margin-bottom: 6px;
-}
-
-.textDisplay {
-  width: 120px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #22304a;
-  background: #2a3441;
-  color: #fff;
-  font-size: 0.95rem;
-  margin-bottom: 6px;
-  min-height: 20px;
-  display: flex;
-  align-items: center;
-}
-
-.formTextarea {
+/* Chart component styles */
+.chartContainer {
   width: 100%;
-  min-width: 120px;
-  max-width: 100%;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid #22304a;
-  background: #181f2a;
-  color: #fff;
-  font-size: 0.95rem;
-  margin-bottom: 6px;
-  resize: vertical;
-  box-sizing: border-box;
-}
-
-.formSelect {
-  width: 100%;
-  min-width: 120px;
-  max-width: 100%;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid #22304a;
-  background: #181f2a;
-  color: #fff;
-  font-size: 0.95rem;
-  margin-bottom: 6px;
-  box-sizing: border-box;
-}
-
-.responsiveFlex {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 700px) {
-  .responsiveFlex {
-    flex-direction: column;
-    gap: 12px;
-  }
-}
-
-.formInput, .formTextarea, .formSelect {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
-/* Reduce font size for TradeLog form */
-.tradeLogForm,
-.tradeLogForm * {
-  font-size: 0.95rem;
-}
-
-.card h3 {
-  font-size: 1.05rem;
-}
-
-.formInput,
-.formTextarea,
-.formSelect {
-  font-size: 0.95rem;
-}
-
-@media (max-width: 700px) {
-  .tradeLogForm,
-  .tradeLogForm * {
-    font-size: 0.9rem;
-  }
-  .card h3 {
-    font-size: 1rem;
-  }
+  height: 250px;
 }

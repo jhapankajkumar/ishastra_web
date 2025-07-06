@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import styles from "./Dashboard.module.css";
+import styles from "./TradeLog.module.css";
 import PageHeader from "../components/PageHeader";
 import { createTrade, updateTrade, addPostAnalysis, fetchExitTactics, fetchSetups } from '../api/tradeApi';
+import { useNotification } from '../components/NotificationProvider';
+import ErrorPage from '../components/ErrorPage';
 
 const initialState = {
   ticker: "",
@@ -24,14 +26,33 @@ const initialState = {
 };
 
 function mapTradeDataToForm(tradeData) {
+  // Use trade_setup_id directly since that's what we store and what the dropdown uses
+  const setupValue = tradeData.trade_setup_id || "";
+  
+  // Helper function to safely format dates for input[type="date"]
+  const formatDateForInput = (dateValue) => {
+    if (!dateValue) return "";
+    
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return "";
+      
+      // Return date in YYYY-MM-DD format required by input[type="date"]
+      return date.toISOString().split('T')[0];
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return "";
+    }
+  };
+  
   return {
     ...initialState,
     ticker: tradeData.ticker || "",
     reasonForEntry: tradeData.reason_for_entry || "",
-    entryDate: tradeData.entry_date ? tradeData.entry_date.slice(0, 10) : "",
+    entryDate: formatDateForInput(tradeData.entry_date),
     entryOrderPrice: tradeData.entry_price ?? "",
     entryFilledShares: tradeData.entry_filled_shares ?? tradeData.quantity ?? "",
-    exitDate: tradeData.exit_date ? tradeData.exit_date.slice(0, 10) : "",
+    exitDate: formatDateForInput(tradeData.exit_date),
     exitOrderPrice: tradeData.exit_order_price ?? "",
     exitFilledShares: tradeData.exit_filled_shares ?? "",
     reasonForExit: tradeData.reason_for_exit ?? "",
@@ -41,30 +62,51 @@ function mapTradeDataToForm(tradeData) {
     exitCharts: [],
     postTradeFiles: [],
     id: tradeData.id,
-    setupType: tradeData.trade_setup_id ?? "",
+    setupType: setupValue,
   };
 }
 
 export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
-  // mode: "add" | "update" | "review"
   const [form, setForm] = useState(tradeData ? mapTradeDataToForm(tradeData) : initialState);
   const [exitTactics, setExitTactics] = useState([]);
   const [setups, setSetups] = useState([]);
+  const [setupsLoaded, setSetupsLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // Get today's date in YYYY-MM-DD format for max date validation
+  const today = new Date().toISOString().split('T')[0];
   const navigate = useNavigate();
+  const notification = useNotification();
 
   useEffect(() => {
     fetchExitTactics()
       .then(res => setExitTactics(res.data))
-      .catch(() => setExitTactics([]));
+      .catch((err) => {
+        console.error('Failed to fetch exit tactics:', err);
+        setExitTactics([]);
+        if (err.type === 'NETWORK_ERROR') {
+          setError(err);
+        }
+      });
   }, []);
 
   useEffect(() => {
     fetchSetups()
-      .then(res => setSetups(res.data))
-      .catch(() => setSetups([]));
+      .then(res => {
+        setSetups(res.data);
+        setSetupsLoaded(true);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch setups:', err);
+        setSetups([]);
+        setSetupsLoaded(true);
+        if (err.type === 'NETWORK_ERROR') {
+          setError(err);
+        }
+      });
   }, []);
 
-  // Update form if tradeData changes (for update/review)
   useEffect(() => {
     if (tradeData) setForm(mapTradeDataToForm(tradeData));
   }, [tradeData]);
@@ -73,45 +115,86 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
   const isUpdate = mode === "update";
   const isReview = mode === "review";
 
-  // Helper for disabling fields
   const entryDisabled = isUpdate || isReview;
   const exitDisabled = isAdd || isReview;
   const postDisabled = isAdd || isUpdate;
 
-  // Handle text/number input
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    
+    setForm((prev) => {
+      const newForm = { ...prev, [name]: value };
+      
+      // If entry date changes and exit date is before the new entry date, clear exit date
+      if (name === 'entryDate' && prev.exitDate && value && prev.exitDate < value) {
+        newForm.exitDate = '';
+      }
+      
+      return newForm;
+    });
   };
 
-  // Handle file input
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     setForm((prev) => ({ ...prev, [name]: Array.from(files) }));
   };
 
-  // Submit handler (replace with your API call)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isAdd) {
-      await createTrade(form);
-      alert("Trade added!");
-      navigate("/trades", { replace: true });
-      window.location.reload();
-      return;
-    } else if (isUpdate) {
-      await updateTrade(form.id, form);
-      alert("Trade updated!");
-    } else if (isReview) {
-      await addPostAnalysis(form.id, { postTradeAnalysis: form.postTradeAnalysis, postTradeFiles: form.postTradeFiles });
-      alert("Post trade analysis saved!");
+    setLoading(true);
+    
+    try {
+      if (isAdd) {
+        await createTrade(form);
+        notification.success("Trade added successfully!");
+        navigate("/trades", { replace: true });
+        window.location.reload();
+        return;
+      } else if (isUpdate) {
+        await updateTrade(form.id, form);
+        notification.success("Trade updated successfully!");
+      } else if (isReview) {
+        await addPostAnalysis(form.id, { postTradeAnalysis: form.postTradeAnalysis, postTradeFiles: form.postTradeFiles });
+        notification.success("Post trade analysis saved successfully!");
+      }
+      if (onSubmit) onSubmit();
+    } catch (err) {
+      console.error('Operation failed:', err);
+      let errorMessage = "Operation failed. Please try again.";
+      
+      if (err.type === 'NETWORK_ERROR') {
+        errorMessage = "Unable to connect to server. Please check your internet connection.";
+      } else if (err.type === 'SERVER_ERROR') {
+        errorMessage = "Server error. Please try again later.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      notification.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
-    if (onSubmit) onSubmit();
   };
 
+  const handleRetry = () => {
+    setError(null);
+    // Retry loading the initial data
+    window.location.reload();
+  };
+
+  // Show error page if there's a network error during initial load
+  if (error && error.type === 'NETWORK_ERROR') {
+    return (
+      <ErrorPage
+        title="Unable to Connect"
+        message={error.message}
+        onRetry={handleRetry}
+      />
+    );
+  }
+
   return (
-    <div className={styles.dashboardContainer}>
-      {/* Only show header if not being used as a nested component */}
+    <div className={styles.container}>
       {!onSubmit && (
         <PageHeader 
           title={isAdd ? "Add New Trade" : isUpdate ? "Update Trade Exit" : "Review Trade"}
@@ -119,511 +202,218 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
         />
       )}
 
-      <form onSubmit={handleSubmit} style={{ maxWidth: 1000, margin: "0 auto" }}>
-        {/* Entry Section */}
-        <div style={{
-          backgroundColor: "#1A2332",
-          borderRadius: 12,
-          padding: 24,
-          marginBottom: 24,
-          border: "1px solid #2A3441"
-        }}>
-          <h3 style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#fff",
-            margin: "0 0 20px 0"
-          }}>
-            Entry Details
-          </h3>
-          
-          <div style={{ marginBottom: 20 }}>
-            <label style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              display: "block",
-              marginBottom: 8
-            }}>
-              Ticker Symbol
-            </label>
-            <input
-              type="text"
-              name="ticker"
-              value={form.ticker}
-              onChange={handleChange}
-              style={{
-                width: "200px",
-                padding: "12px 16px",
-                fontSize: "16px",
-                border: "1px solid #2A3441",
-                borderRadius: "8px",
-                backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
-                color: "#E5E7EB",
-                outline: "none"
-              }}
-              placeholder="e.g. AAPL"
-              required
-              disabled={entryDisabled}
-            />
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <label style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              display: "block",
-              marginBottom: 8
-            }}>
-              Reason for Entry
-            </label>
-            <textarea
-              name="reasonForEntry"
-              value={form.reasonForEntry}
-              onChange={handleChange}
-              rows={4}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                fontSize: "15px",
-                border: "1px solid #2A3441",
-                borderRadius: "8px",
-                backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
-                color: "#E5E7EB",
-                outline: "none",
-                resize: "vertical",
-                lineHeight: "1.5",
-                boxSizing: "border-box"
-              }}
-              placeholder="Describe your reason for entry..."
-              disabled={entryDisabled}
-            />
-          </div>
-
-          <div>
-            <label style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              display: "block",
-              marginBottom: 8
-            }}>
-              Entry Chart(s)
-            </label>
-            <input
-              type="file"
-              name="entryCharts"
-              accept="image/*"
-              multiple
-              onChange={handleFileChange}
-              disabled={entryDisabled}
-              style={{
-                padding: "8px",
-                border: "1px solid #2A3441",
-                borderRadius: "8px",
-                backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
-                color: "#E5E7EB"
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Entry Details Grid */}
-        <div style={{
-          backgroundColor: "#1A2332",
-          borderRadius: 12,
-          padding: 24,
-          marginBottom: 24,
-          border: "1px solid #2A3441"
-        }}>
-          <h3 style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#4F46E5",
-            margin: "0 0 20px 0"
-          }}>
-            Entry Information
-          </h3>
-          
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: 20,
-            marginBottom: 20
-          }}>
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 8
-              }}>
-                Entry Date
-              </label>
-              <input
-                type="date"
-                name="entryDate"
-                value={form.entryDate}
-                onChange={handleChange}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  fontSize: "16px",
-                  border: "1px solid #2A3441",
-                  borderRadius: "8px",
-                  backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
-                  color: "#E5E7EB",
-                  outline: "none",
-                  boxSizing: "border-box"
-                }}
-                disabled={entryDisabled}
-              />
-            </div>                <div>
-                  <label style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#9CA3AF",
-                    display: "block",
-                    marginBottom: 8
-                  }}>
-                    Average Price ($)
-                  </label>
-                  <input
-                    type="text"
-                    name="entryOrderPrice"
-                    value={form.entryOrderPrice || ""}
-                    onChange={handleChange}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "16px",
-                      border: "1px solid #2A3441",
-                      borderRadius: "8px",
-                      backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
-                      color: "#E5E7EB",
-                      outline: "none",
-                      boxSizing: "border-box"
-                    }}
-                    placeholder="0.00"
-                    disabled={entryDisabled}
-                  />
-                </div>
-          </div>
-          
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: 20
-          }}>
+      <div className={styles.formContainer}>
+        <form onSubmit={handleSubmit}>
+          {/* Entry Section */}
+          <div className={styles.card}>
+            <h3 className={`${styles.cardTitle} ${styles.entryTitle}`}>
+              Entry Details
+            </h3>
             
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 8
-              }}>
-                Quantity
-              </label>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Ticker Symbol</label>
               <input
                 type="text"
-                name="entryFilledShares"
-                value={form.entryFilledShares || ""}
+                name="ticker"
+                value={form.ticker}
                 onChange={handleChange}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  fontSize: "16px",
-                  border: "1px solid #2A3441",
-                  borderRadius: "8px",
-                  backgroundColor: entryDisabled ? "#0F1419" : "#1A2332",
-                  color: "#E5E7EB",
-                  outline: "none",
-                  boxSizing: "border-box"
-                }}
-                placeholder="0"
+                className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                placeholder="e.g. AAPL"
+                required
                 disabled={entryDisabled}
               />
             </div>
-            
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 8
-              }}>
-                Setup Type
-              </label>
-              {isReview ? (
-                <div style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  fontSize: "16px",
-                  border: "1px solid #2A3441",
-                  borderRadius: "8px",
-                  backgroundColor: "#0F1419",
-                  color: "#E5E7EB",
-                  boxSizing: "border-box"
-                }}>
-                  {setups.find(setup => (setup.id || setup.trade_setup_id) == form.setupType)?.name || "N/A"}
-                </div>
-              ) : (
-                <select
-                  name="setupType"
-                  value={form.setupType}
-                  onChange={handleChange}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "16px",
-                    border: "1px solid #2A3441",
-                    borderRadius: "8px",
-                    backgroundColor: "#1A2332",
-                    color: "#E5E7EB",
-                    outline: "none",
-                    boxSizing: "border-box"
-                  }}
-                  required
-                >
-                  <option value="">Select setup...</option>
-                  {setups.map((setup) => (
-                    <option key={setup.id || setup.trade_setup_id} value={setup.id || setup.trade_setup_id}>
-                      {setup.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Reason for Entry</label>
+              <textarea
+                name="reasonForEntry"
+                value={form.reasonForEntry}
+                onChange={handleChange}
+                rows={4}
+                className={`${styles.textarea} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                placeholder="Describe your reason for entry..."
+                disabled={entryDisabled}
+              />
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Entry Chart(s)</label>
+              <input
+                type="file"
+                name="entryCharts"
+                accept="image/*"
+                multiple
+                onChange={handleFileChange}
+                disabled={entryDisabled}
+                className={`${styles.fileInput} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+              />
             </div>
           </div>
-        </div>
 
-        {/* Exit Section */}
-        {!isAdd && (
-          <>
-            {/* Exit Details Grid */}
-            <div style={{
-              backgroundColor: "#1A2332",
-              borderRadius: 12,
-              padding: 24,
-              marginBottom: 24,
-              border: "1px solid #2A3441"
-            }}>
-              <h3 style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#F59E0B",
-                margin: "0 0 20px 0"
-              }}>
+          {/* Entry Information */}
+          <div className={styles.card}>
+            <h3 className={`${styles.cardTitle} ${styles.entryInfoTitle}`}>
+              Entry Information
+            </h3>
+            
+            <div className={styles.gridTwoCol}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Entry Date</label>
+                <input
+                  type="date"
+                  name="entryDate"
+                  value={form.entryDate}
+                  onChange={handleChange}
+                  max={today}
+                  className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                  disabled={entryDisabled}
+                />
+              </div>
+              
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Average Price ($)</label>
+                <input
+                  type="text"
+                  name="entryOrderPrice"
+                  value={form.entryOrderPrice || ""}
+                  onChange={handleChange}
+                  className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                  placeholder="0.00"
+                  disabled={entryDisabled}
+                />
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Quantity</label>
+                <input
+                  type="text"
+                  name="entryFilledShares"
+                  value={form.entryFilledShares || ""}
+                  onChange={handleChange}
+                  className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                  placeholder="100"
+                  disabled={entryDisabled}
+                />
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Setup Type</label>
+                {entryDisabled ? (
+                  <div className={styles.readOnlyField}>
+                    {!setupsLoaded 
+                      ? "Loading..." 
+                      : (setups.find(s => String(s.trade_setup_id) === String(form.setupType))?.name || "N/A")
+                    }
+                  </div>
+                ) : (
+                  <select
+                    name="setupType"
+                    value={form.setupType}
+                    onChange={handleChange}
+                    className={`${styles.select} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                    disabled={entryDisabled}
+                  >
+                    <option value="">Select setup...</option>
+                    {setups.map((setup) => (
+                      <option key={setup.trade_setup_id} value={setup.trade_setup_id}>
+                        {setup.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Exit Section */}
+          {!isAdd && (
+            <div className={styles.card}>
+              <h3 className={`${styles.cardTitle} ${styles.exitTitle}`}>
                 Exit Information
               </h3>
               
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-                gap: 20,
-                marginBottom: 20
-              }}>
-                <div>
-                  <label style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#9CA3AF",
-                    display: "block",
-                    marginBottom: 8
-                  }}>
-                    Exit Date
-                  </label>
+              <div className={styles.gridTwoCol}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Exit Date</label>
                   <input
                     type="date"
                     name="exitDate"
                     value={form.exitDate}
                     onChange={handleChange}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "16px",
-                      border: "1px solid #2A3441",
-                      borderRadius: "8px",
-                      backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
-                      color: "#E5E7EB",
-                      outline: "none",
-                      boxSizing: "border-box"
-                    }}
+                    min={form.entryDate || undefined}
+                    max={today}
+                    className={`${styles.input} ${exitDisabled ? styles.inputDisabled : styles.inputEnabled}`}
                     disabled={exitDisabled}
                   />
                 </div>
                 
-                <div>
-                  <label style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#9CA3AF",
-                    display: "block",
-                    marginBottom: 8
-                  }}>
-                    Average Price ($)
-                  </label>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Average Price ($)</label>
                   <input
                     type="text"
                     name="exitOrderPrice"
                     value={form.exitOrderPrice || ""}
                     onChange={handleChange}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "16px",
-                      border: "1px solid #2A3441",
-                      borderRadius: "8px",
-                      backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
-                      color: "#E5E7EB",
-                      outline: "none",
-                      boxSizing: "border-box"
-                    }}
+                    className={`${styles.input} ${exitDisabled ? styles.inputDisabled : styles.inputEnabled}`}
                     placeholder="0.00"
                     disabled={exitDisabled}
                   />
                 </div>
-              </div>
-              
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-                gap: 20
-              }}>
-                <div>
-                  <label style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#9CA3AF",
-                    display: "block",
-                    marginBottom: 8
-                  }}>
-                    Quantity
-                  </label>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Quantity</label>
                   <input
                     type="text"
                     name="exitFilledShares"
                     value={form.exitFilledShares || ""}
                     onChange={handleChange}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "16px",
-                      border: "1px solid #2A3441",
-                      borderRadius: "8px",
-                      backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
-                      color: "#E5E7EB",
-                      outline: "none",
-                      boxSizing: "border-box"
-                    }}
-                    placeholder="0"
+                    className={`${styles.input} ${exitDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                    placeholder="100"
                     disabled={exitDisabled}
                   />
                 </div>
-                
-                <div>
-                  <label style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#9CA3AF",
-                    display: "block",
-                    marginBottom: 8
-                  }}>
-                    Exit Tactic
-                  </label>
-                  <select
-                    name="exitTactic"
-                    value={form.exitTactic}
-                    onChange={handleChange}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      fontSize: "16px",
-                      border: "1px solid #2A3441",
-                      borderRadius: "8px",
-                      backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
-                      color: "#E5E7EB",
-                      outline: "none",
-                      boxSizing: "border-box"
-                    }}
-                    disabled={exitDisabled}
-                  >
-                    <option value="">Select tactic...</option>
-                    {exitTactics.map((t) => (
-                      <option key={t.tactic_id || t.id} value={t.tactic_id || t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Exit Tactic</label>
+                  {exitDisabled ? (
+                    <div className={styles.readOnlyField}>
+                      {exitTactics.find(t => t.id === form.exitTactic)?.name || "N/A"}
+                    </div>
+                  ) : (
+                    <select
+                      name="exitTactic"
+                      value={form.exitTactic}
+                      onChange={handleChange}
+                      className={`${styles.select} ${exitDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                      disabled={exitDisabled}
+                    >
+                      <option value="">Select tactic...</option>
+                      {exitTactics.map((tactic) => (
+                        <option key={tactic.id} value={tactic.id}>
+                          {tactic.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Exit Analysis */}
-            <div style={{
-              backgroundColor: "#1A2332",
-              borderRadius: 12,
-              padding: 24,
-              marginBottom: 24,
-              border: "1px solid #2A3441"
-            }}>
-              <h3 style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#F59E0B",
-                margin: "0 0 20px 0"
-              }}>
-                Exit Analysis
-              </h3>
-              
-              <div style={{ marginBottom: 20 }}>
-                <label style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#9CA3AF",
-                  display: "block",
-                  marginBottom: 8
-                }}>
-                  Reason for Exit
-                </label>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Reason for Exit</label>
                 <textarea
                   name="reasonForExit"
                   value={form.reasonForExit}
                   onChange={handleChange}
                   rows={4}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    fontSize: "15px",
-                    border: "1px solid #2A3441",
-                    borderRadius: "8px",
-                    backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
-                    color: "#E5E7EB",
-                    outline: "none",
-                    resize: "vertical",
-                    lineHeight: "1.5",
-                    boxSizing: "border-box"
-                  }}
+                  className={`${styles.textarea} ${exitDisabled ? styles.inputDisabled : styles.inputEnabled}`}
                   placeholder="Describe your reason for exit..."
                   disabled={exitDisabled}
                 />
               </div>
 
-              <div>
-                <label style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#9CA3AF",
-                  display: "block",
-                  marginBottom: 8
-                }}>
-                  Exit Chart(s)
-                </label>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Exit Chart(s)</label>
                 <input
                   type="file"
                   name="exitCharts"
@@ -631,125 +421,54 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
                   multiple
                   onChange={handleFileChange}
                   disabled={exitDisabled}
-                  style={{
-                    padding: "8px",
-                    border: "1px solid #2A3441",
-                    borderRadius: "8px",
-                    backgroundColor: exitDisabled ? "#0F1419" : "#1A2332",
-                    color: "#E5E7EB"
-                  }}
+                  className={`${styles.fileInput} ${exitDisabled ? styles.inputDisabled : styles.inputEnabled}`}
                 />
               </div>
             </div>
-          </>
-        )}
+          )}
 
-        {/* Post Trade Analysis */}
-        {isReview && (
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            marginBottom: 24,
-            border: "1px solid #2A3441"
-          }}>
-            <h3 style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              color: "#8B5CF6",
-              margin: "0 0 20px 0"
-            }}>
-              Post Trade Analysis
-            </h3>
-            
-            <div style={{ marginBottom: 20 }}>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 8
-              }}>
-                Analysis Notes
-              </label>
-              <textarea
-                name="postTradeAnalysis"
-                value={form.postTradeAnalysis}
-                onChange={handleChange}
-                rows={4}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  fontSize: "15px",
-                  border: "1px solid #2A3441",
-                  borderRadius: "8px",
-                  backgroundColor: postDisabled ? "#0F1419" : "#1A2332",
-                  color: "#E5E7EB",
-                  outline: "none",
-                  resize: "vertical",
-                  lineHeight: "1.5",
-                  boxSizing: "border-box"
-                }}
-                placeholder="Your notes or analysis..."
-                disabled={postDisabled}
-              />
+          {/* Post Trade Analysis */}
+          {isReview && (
+            <div className={styles.card}>
+              <h3 className={`${styles.cardTitle} ${styles.postAnalysisTitle}`}>
+                Post Trade Analysis
+              </h3>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Analysis Notes</label>
+                <textarea
+                  name="postTradeAnalysis"
+                  value={form.postTradeAnalysis}
+                  onChange={handleChange}
+                  rows={6}
+                  className={`${styles.textarea} ${postDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                  placeholder="Your notes or analysis..."
+                  disabled={postDisabled}
+                />
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Post Trade Files</label>
+                <input
+                  type="file"
+                  name="postTradeFiles"
+                  multiple
+                  onChange={handleFileChange}
+                  disabled={postDisabled}
+                  className={`${styles.fileInput} ${postDisabled ? styles.inputDisabled : styles.inputEnabled}`}
+                />
+              </div>
             </div>
+          )}
 
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 8
-              }}>
-                Post Trade Files
-              </label>
-              <input
-                type="file"
-                name="postTradeFiles"
-                multiple
-                onChange={handleFileChange}
-                disabled={postDisabled}
-                style={{
-                  padding: "8px",
-                  border: "1px solid #2A3441",
-                  borderRadius: "8px",
-                  backgroundColor: postDisabled ? "#0F1419" : "#1A2332",
-                  color: "#E5E7EB"
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          style={{
-            padding: "16px 32px",
-            fontSize: "16px",
-            fontWeight: "600",
-            borderRadius: "8px",
-            background: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)",
-            color: "#fff",
-            border: "none",
-            marginTop: 32,
-            cursor: "pointer",
-            transition: "transform 0.2s ease, box-shadow 0.2s ease",
-            boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)"
-          }}
-          onMouseOver={(e) => {
-            e.target.style.transform = "translateY(-2px)";
-            e.target.style.boxShadow = "0 6px 20px rgba(79, 70, 229, 0.4)";
-          }}
-          onMouseOut={(e) => {
-            e.target.style.transform = "translateY(0)";
-            e.target.style.boxShadow = "0 4px 12px rgba(79, 70, 229, 0.3)";
-          }}
-        >
-          {isAdd ? "Add Trade" : isUpdate ? "Update Trade" : "Save Analysis"}
-        </button>
-      </form>
+          <button type="submit" className={styles.submitButton} disabled={loading}>
+            {loading 
+              ? "Processing..." 
+              : (isAdd ? "Add Trade" : isUpdate ? "Update Trade" : "Save Analysis")
+            }
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

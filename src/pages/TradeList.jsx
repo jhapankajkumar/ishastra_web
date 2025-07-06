@@ -3,7 +3,9 @@ import { getAllTrades, getTradeById } from "../api/tradeApi";
 import TradeLog from "./TradeLog";
 import TradeDetailsPopup from "../components/TradeDetailsPopup";
 import PageHeader from "../components/PageHeader";
-import styles from "./Dashboard.module.css";
+import ErrorPage from "../components/ErrorPage";
+import { useNotification } from "../components/NotificationProvider";
+import styles from "./TradeList.module.css";
 
 export default function TradeList() {
   const [trades, setTrades] = useState([]);
@@ -11,17 +13,24 @@ export default function TradeList() {
   const [mode, setMode] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupTrade, setPopupTrade] = useState(null);
-  const [error, setError] = useState(false); // Add error state
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const notification = useNotification();
 
   useEffect(() => {
+    setLoading(true);
     getAllTrades()
       .then(res => {
         const sorted = [...res.data].sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date));
         setTrades(sorted);
-        setError(false);
+        setError(null);
       })
       .catch(err => {
-        setError(true);
+        console.error('Failed to fetch trades:', err);
+        setError(err);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, []);
 
@@ -31,7 +40,16 @@ export default function TradeList() {
       setSelectedTrade(res.data);
       setMode("update");
     } catch (err) {
-      setError(true);
+      console.error('Failed to fetch trade:', err);
+      let errorMessage = "Failed to load trade details.";
+      
+      if (err.type === 'NETWORK_ERROR') {
+        errorMessage = "Unable to connect to server. Please check your internet connection.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      notification.error(errorMessage);
     }
   };
 
@@ -41,7 +59,16 @@ export default function TradeList() {
       setSelectedTrade(res.data);
       setMode("review");
     } catch (err) {
-      setError(true);
+      console.error('Failed to fetch trade:', err);
+      let errorMessage = "Failed to load trade details.";
+      
+      if (err.type === 'NETWORK_ERROR') {
+        errorMessage = "Unable to connect to server. Please check your internet connection.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      notification.error(errorMessage);
     }
   };
 
@@ -51,7 +78,16 @@ export default function TradeList() {
       setPopupTrade(res.data);
       setShowPopup(true);
     } catch (err) {
-      setError(true);
+      console.error('Failed to fetch trade details:', err);
+      let errorMessage = "Failed to load trade details.";
+      
+      if (err.type === 'NETWORK_ERROR') {
+        errorMessage = "Unable to connect to server. Please check your internet connection.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      notification.error(errorMessage);
     }
   };
 
@@ -63,6 +99,24 @@ export default function TradeList() {
   const handleBack = () => {
     setSelectedTrade(null);
     setMode(null);
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    getAllTrades()
+      .then(res => {
+        const sorted = [...res.data].sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date));
+        setTrades(sorted);
+        setError(null);
+      })
+      .catch(err => {
+        console.error('Failed to fetch trades:', err);
+        setError(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const formatDate = (dateStr) => {
@@ -111,7 +165,7 @@ export default function TradeList() {
     };
 
     return (
-      <div className={styles.dashboardContainer}>
+      <div className={styles.container}>
         <PageHeader 
           title={getTitle()}
           subtitle={getSubtitle()}
@@ -123,214 +177,85 @@ export default function TradeList() {
     );
   }
 
-  if (error) {
-    // Show blank page (or you can return a custom message)
-    return null;
-    // Or for a custom message:
-    // return <div style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>Failed to load trades.</div>;
+  if (error && error.type === 'NETWORK_ERROR') {
+    return (
+      <ErrorPage
+        title="Unable to Connect"
+        message={error.message}
+        onRetry={handleRetry}
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <PageHeader 
+          title="Trade List"
+          subtitle="View and manage all your trades"
+        />
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '200px',
+          color: '#9CA3AF'
+        }}>
+          Loading trades...
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className={styles.dashboardContainer}>
+    <div className={styles.container}>
       <PageHeader 
         title="Trade List"
         subtitle="View and manage all your trades"
       />
 
       {/* Modern Table */}
-      <div style={{
-        backgroundColor: "#1A2332",
-        borderRadius: 12,
-        padding: 24,
-        border: "1px solid #2A3441",
-        overflowX: "auto"
-      }}>
-        <table style={{
-          width: "100%",
-          borderCollapse: "collapse"
-        }}>
-          <thead>
-            <tr style={{
-              borderBottom: "1px solid #2A3441"
-            }}>
-              <th style={{
-                padding: "16px 12px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#9CA3AF",
-                backgroundColor: "transparent"
-              }}>Ticker</th>
-              <th style={{
-                padding: "16px 12px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#9CA3AF",
-                backgroundColor: "transparent"
-              }}>Entry Date</th>
-              <th style={{
-                padding: "16px 12px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#9CA3AF",
-                backgroundColor: "transparent"
-              }}>Exit Date</th>
-              <th style={{
-                padding: "16px 12px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#9CA3AF",
-                backgroundColor: "transparent"
-              }}>Entry Price</th>
-              <th style={{
-                padding: "16px 12px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#9CA3AF",
-                backgroundColor: "transparent"
-              }}>Quantity</th>
-              <th style={{
-                padding: "16px 12px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#9CA3AF",
-                backgroundColor: "transparent"
-              }}>Exit Price</th>
-              <th style={{
-                padding: "16px 12px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#9CA3AF",
-                backgroundColor: "transparent"
-              }}>Invested</th>
-              <th style={{
-                padding: "16px 12px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#9CA3AF",
-                backgroundColor: "transparent"
-              }}>P&L</th>
-              <th style={{
-                padding: "16px 12px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#9CA3AF",
-                backgroundColor: "transparent"
-              }}>Action</th>
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead className={styles.tableHeader}>
+            <tr>
+              <th className={styles.tableHeaderCell}>Ticker</th>
+              <th className={styles.tableHeaderCell}>Entry Date</th>
+              <th className={styles.tableHeaderCell}>Exit Date</th>
+              <th className={styles.tableHeaderCell}>Entry Price</th>
+              <th className={styles.tableHeaderCell}>Quantity</th>
+              <th className={styles.tableHeaderCell}>Exit Price</th>
+              <th className={styles.tableHeaderCell}>Invested</th>
+              <th className={styles.tableHeaderCell}>P&L</th>
+              <th className={styles.tableHeaderCell}>Action</th>
             </tr>
           </thead>
           <tbody>
             {trades.map(trade => (
               <tr
                 key={trade.id}
-                style={{ 
-                  cursor: "pointer",
-                  borderBottom: "1px solid #2A3441",
-                  transition: "background-color 0.2s ease"
-                }}
+                className={styles.tableRow}
                 onClick={() => handleShowDetails(trade.id)}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "#0F1419";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
               >
-                <td style={{
-                  padding: "16px 12px",
-                  fontSize: "15px",
-                  color: "#E5E7EB",
-                  fontWeight: "500"
-                }}>{trade.ticker}</td>
-                <td style={{
-                  padding: "16px 12px",
-                  fontSize: "15px",
-                  color: "#E5E7EB"
-                }}>{trade.entry_date ? formatDate(trade.entry_date) : "-"}</td>
-                <td style={{
-                  padding: "16px 12px",
-                  fontSize: "15px",
-                  color: "#E5E7EB"
-                }}>{trade.exit_date ? formatDate(trade.exit_date) : "-"}</td>
-                <td style={{
-                  padding: "16px 12px",
-                  fontSize: "15px",
-                  color: "#E5E7EB"
-                }}>{trade.entry_price !== undefined && trade.entry_price !== null ? Number(trade.entry_price).toFixed(2) : "-"}</td>
-                <td style={{
-                  padding: "16px 12px",
-                  fontSize: "15px",
-                  color: "#E5E7EB"
-                }}>{trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity).toLocaleString() : "-"}</td>
-                <td style={{
-                  padding: "16px 12px",
-                  fontSize: "15px",
-                  color: "#E5E7EB"
-                }}>{trade.exit_price !== undefined && trade.exit_price !== null ? Number(trade.exit_price).toFixed(2) : "-"}</td>
-                <td style={{
-                  padding: "16px 12px",
-                  fontSize: "15px",
-                  color: "#E5E7EB"
-                }}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
-                <td style={{
-                  padding: "16px 12px",
-                  fontSize: "15px",
-                  fontWeight: "600",
-                  color: getPL(trade) === "-" ? "#9CA3AF" : getPL(trade) > 0 ? "#10B981" : "#EF4444"
-                }}>
+                <td className={`${styles.tableCell} ${styles.tickerCell}`}>{trade.ticker}</td>
+                <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.entry_date ? formatDate(trade.entry_date) : "-"}</td>
+                <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.exit_date ? formatDate(trade.exit_date) : "-"}</td>
+                <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.entry_price !== undefined && trade.entry_price !== null ? Number(trade.entry_price).toFixed(2) : "-"}</td>
+                <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity).toLocaleString() : "-"}</td>
+                <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.exit_price !== undefined && trade.exit_price !== null ? Number(trade.exit_price).toFixed(2) : "-"}</td>
+                <td className={`${styles.tableCell} ${styles.priceCell}`}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
+                <td className={`${styles.tableCell} ${styles.profitCell} ${getPL(trade) === "-" ? "" : getPL(trade) > 0 ? styles.profitPositive : styles.profitNegative}`}>
                   {getPL(trade) !== "-" ? `$${getPL(trade)}` : "-"}
                 </td>
-                <td style={{
-                  padding: "16px 12px"
-                }}>
+                <td className={styles.tableCell}>
                   {trade.exit_price
                     ? <button 
                         onClick={e => { e.stopPropagation(); handleReview(trade.id); }}
-                        style={{
-                          padding: "8px 16px",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          borderRadius: "6px",
-                          background: "#8B5CF6",
-                          color: "#fff",
-                          border: "none",
-                          cursor: "pointer",
-                          transition: "background-color 0.2s ease"
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.backgroundColor = "#7C3AED";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.backgroundColor = "#8B5CF6";
-                        }}
+                        className={`${styles.actionButton} ${styles.reviewButton}`}
                       >Review</button>
                     : <button 
                         onClick={e => { e.stopPropagation(); handleEdit(trade.id); }}
-                        style={{
-                          padding: "8px 16px",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          borderRadius: "6px",
-                          background: "#F59E0B",
-                          color: "#fff",
-                          border: "none",
-                          cursor: "pointer",
-                          transition: "background-color 0.2s ease"
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.backgroundColor = "#D97706";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.backgroundColor = "#F59E0B";
-                        }}
+                        className={`${styles.actionButton} ${styles.editButton}`}
                       >Update</button>
                   }
                 </td>

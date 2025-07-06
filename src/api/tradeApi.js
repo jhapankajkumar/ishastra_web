@@ -50,8 +50,12 @@ export async function createTrade(form) {
   formData.append('entryFilledShares', form.entryFilledShares);
   formData.append('entryTotalCost', form.entryTotalCost);
   formData.append('entryGrade', form.entryGrade);
-  // ...add other fields as needed
-
+  
+  // Add setup type
+  if (form.setupType) {
+    formData.append('tradeSetup', form.setupType);
+  }
+  
   // Only append entryCharts
   (form.entryCharts || []).forEach(file => formData.append('entryCharts', file));
 
