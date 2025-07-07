@@ -152,20 +152,74 @@
   padding: 8px;
 }
 
-.fileInput {
+/* Custom File Input Styling */
+.fileInputWrapper {
+  position: relative;
+  display: inline-block;
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #2A3441;
-  border-radius: 8px;
-  background-color: #1A2332;
-  color: #E5E7EB;
-  box-sizing: border-box;
 }
 
-.fileInput:disabled {
-  background-color: #0F1419;
+.customFileInput {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+}
+
+.fileInputLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px dashed #2A3441;
+  border-radius: 8px;
+  background-color: #1A2332;
   color: #9CA3AF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.fileInputLabel:hover {
+  border-color: #4F46E5;
+  background-color: #1e293b;
+  color: #E5E7EB;
+}
+
+.fileInputLabel.hasFile {
+  border-color: #10B981;
+  background-color: #064e3b;
+  color: #6EE7B7;
+}
+
+.fileInputLabel.disabled {
+  background-color: #0F1419;
+  color: #6B7280;
   cursor: not-allowed;
+  border-color: #1F2937;
+}
+
+.fileInputLabel.disabled:hover {
+  border-color: #1F2937;
+  background-color: #0F1419;
+  color: #6B7280;
+}
+
+.fileInputIcon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+.fileName {
+  font-size: 13px;
+  color: #6B7280;
+  margin-top: 4px;
+  word-break: break-all;
 }
 
 /* Checkbox styles */
