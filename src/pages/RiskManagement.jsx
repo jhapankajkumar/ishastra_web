@@ -300,8 +300,17 @@ function RiskManagement() {
               <div className={styles.resultValue}>{formatCurrency(calculations.riskAmount)}</div>
             </div>
             <div className={styles.resultCard}>
+              <div className={styles.resultLabel}>Entry Price</div>
+              <div className={styles.resultValue}>{formatCurrency(parseFloat(formData.stockPrice) || 0)}</div>
+            </div>
+            <div className={styles.resultCard}>
               <div className={styles.resultLabel}>Stop Loss Price</div>
               <div className={styles.resultValue}>{formatCurrency(calculations.stopLossPrice)}</div>
+            </div>
+            <div className={styles.resultCard}>
+              <div className={styles.resultLabel}>Trailing Stop</div>
+              <div className={styles.resultValue}>{formatCurrency(calculations.trailingStopPrice)}</div>
+              <div className={styles.resultNote}>Initial trailing stop level</div>
             </div>
             <div className={styles.resultCard}>
               <div className={styles.resultLabel}>Target 1</div>
@@ -338,11 +347,6 @@ function RiskManagement() {
                   return `Profit: ${formatCurrency(profit)} (${percent.toFixed(2)}%)`;
                 })()}
               </div>
-            </div>
-            <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Trailing Stop</div>
-              <div className={styles.resultValue}>{formatCurrency(calculations.trailingStopPrice)}</div>
-              <div className={styles.resultNote}>Initial trailing stop level</div>
             </div>
             {/* Trailing Stop 1 (ATR) and Trailing Stop 2 (ATR) removed as per user request */}
           </div>
