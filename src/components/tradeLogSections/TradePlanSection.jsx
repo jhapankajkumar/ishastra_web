@@ -1,5 +1,6 @@
 import React from "react";
 import { getCurrentPrice, getATR } from '../../api/tickerApi';
+import RiskManagementSection from './RiskManagementSection';
 
 export default function TradePlanSection({ form, handleChange, entryDisabled, today, styles, openTrades }) {
   // --- ATR fetch state ---
@@ -134,115 +135,58 @@ export default function TradePlanSection({ form, handleChange, entryDisabled, to
   const entryDate = form.entryDate || today;
 
   return (
-    <div className={styles.cardSection}>
-      <h2 className={styles.sectionTitle}>Trade Plan & Risk Management</h2>
-      {/* ...existing code... */}
-      <div className={styles.gridTwoCol}>
-        {/* ...existing code... */}
-        {/* Trading Account Balance (disabled) */}
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Trading Account Balance ({market === "India" ? "₹" : "$"})</label>
-          <input type="text" value={accountBalance.toLocaleString(undefined, {maximumFractionDigits: 2})} className={styles.input} disabled />
-        </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Entry Commission ({market === "India" ? "₹" : "$"})</label>
-          <input type="number" name="entryCommission" value={form.entryCommission || 0} onChange={handleChange} className={styles.input} placeholder="0" min="0" disabled={entryDisabled} />
-        </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Entry Date</label>
-          <input type="date" name="entryDate" value={entryDate} onChange={handleChange} max={today} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} disabled={entryDisabled} />
-        </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Average Price ({market === "India" ? "₹" : "$"})</label>
-          <input type="text" name="entryOrderPrice" value={form.entryOrderPrice || ""} onChange={handleChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} placeholder="0.00" disabled={entryDisabled} />
-          {/* Show current price below input if available */}
-          {loadingPrice && <div style={{ color: '#7ecfff', fontSize: '0.95em', marginTop: 2 }}>Fetching current price…</div>}
-          {currentPrice && !loadingPrice && (
-            <div style={{ color: '#b0b8c9', fontSize: '0.95em', marginTop: 2 }}>
-              Current Price: <b style={{ color: '#7ecfff' }}>{currentPrice}</b>
-            </div>
-          )}
-        </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Quantity</label>
-          <input
-            type="text"
-            name="entryFilledShares"
-            value={qtyValue}
-            onChange={handleChange}
-            className={`${styles.input} ${qtyWarning ? styles.inputWarning : entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
-            placeholder={maxAllowedQty > 0 ? maxAllowedQty : "100"}
-            disabled={entryDisabled}
-            style={qtyWarning ? { backgroundColor: "orange" } : {}}
-          />
-          {/* Show calculated quantity below the input */}
-          <div style={{ color: '#aaa', fontSize: '0.95em', marginTop: 2 }}>
-            Calculated Quantity: <b>{autoQty || 0}</b>
+    <>
+      <div className={styles.cardSection}>
+        <h2 className={styles.sectionTitle}>Trade Plan</h2>
+        <div className={styles.gridTwoCol}>
+          {/* Trading Account Balance (disabled) */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Trading Account Balance ({market === "India" ? "₹" : "$"})</label>
+            <input type="text" value={accountBalance.toLocaleString(undefined, {maximumFractionDigits: 2})} className={styles.input} disabled />
           </div>
-          {qtyWarning && (
-            <div style={{ color: "orange", fontSize: "0.9em" }}>
-              QTY exceeds allowed by risk per trade!
-            </div>
-          )}
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Entry Commission ({market === "India" ? "₹" : "$"})</label>
+            <input type="number" name="entryCommission" value={form.entryCommission || 0} onChange={handleChange} className={styles.input} placeholder="0" min="0" disabled={entryDisabled} />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Entry Date</label>
+            <input type="date" name="entryDate" value={entryDate} onChange={handleChange} max={today} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} disabled={entryDisabled} />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Average Price ({market === "India" ? "₹" : "$"})</label>
+            <input type="text" name="entryOrderPrice" value={form.entryOrderPrice || ""} onChange={handleChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} placeholder="0.00" disabled={entryDisabled} />
+            {/* Show current price below input if available */}
+            {loadingPrice && <div style={{ color: '#7ecfff', fontSize: '0.95em', marginTop: 2 }}>Fetching current price…</div>}
+            {currentPrice && !loadingPrice && (
+              <div style={{ color: '#b0b8c9', fontSize: '0.95em', marginTop: 2 }}>
+                Current Price: <b style={{ color: '#7ecfff' }}>{currentPrice}</b>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      {/* Risk Management Section */}
-      <div className={styles.gridTwoCol} style={{ marginTop: 32 }}>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Risk per Trade ({market === "India" ? "₹" : "$"} or %)</label>
-          <input type="text" name="riskPerTrade" value={riskPerTrade} onChange={handleChange} className={styles.input} placeholder={market === "India" ? "e.g. 2% or ₹1000" : "e.g. 2% or $1000"} disabled={entryDisabled} />
-          {/* Show calculated risk per trade amount below the input */}
-          <div style={{ color: '#aaa', fontSize: '0.95em', marginTop: 2 }}>
-            Risk per Trade Amount: <b>{riskValue.toLocaleString(undefined, {maximumFractionDigits: 2})} {market === "India" ? "₹" : "$"}</b>
-          </div>
-        </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Stop Loss Method</label>
-          <select name="stopLossMethod" value={stopLossMethod} onChange={handleChange} className={styles.input} disabled={entryDisabled}>
-            <option value="ATR">ATR</option>
-            <option value="Fixed Value">Fixed Value</option>
-            <option value="Fixed %">Fixed %</option>
-          </select>
-        </div>
-        {/* ATR Value field (show only if ATR selected) */}
-        {stopLossMethod === "ATR" && (
-          <>
-          <div className={styles.fieldGroup}>
-            <label className={styles.label}>ATR Value</label>
-            <input type="number" name="atrValue" value={atrValue} onChange={handleChange} className={styles.input} placeholder="e.g. 10" disabled={entryDisabled} />
-          </div>
-          <div className={styles.fieldGroup}>
-            <label className={styles.label}>ATR Multiplier</label>
-            <input type="number" name="atrMultiplier" value={atrMultiplier} onChange={handleChange} className={styles.input} placeholder="e.g. 1.5" min="0.1" step="0.1" disabled={entryDisabled} />
-          </div>
-          </>
-        )}
-        {/* Fixed % field (show only if Fixed % selected) */}
-        {stopLossMethod === "Fixed %" && (
-          <div className={styles.fieldGroup}>
-            <label className={styles.label}>Fixed % Value</label>
-            <input type="number" name="fixedPercent" value={fixedPercent} onChange={handleChange} className={styles.input} placeholder="e.g. 3" min="0" max="100" disabled={entryDisabled} />
-          </div>
-        )}
-        {/* Stop Loss Price (auto-calculated, always shown) */}
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Stop Loss Price (auto)</label>
-          <input type="text" name="stopLossPrice" value={stopLossPrice} readOnly className={styles.input} />
-        </div>
-        {/* Targets (auto-calculated) */}
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Target 1 (1:2)</label>
-          <input type="text" name="target1" value={targets[0]} readOnly className={styles.input} />
-        </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Target 2 (1:3)</label>
-          <input type="text" name="target2" value={targets[1]} readOnly className={styles.input} />
-        </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Target 3 (1:4)</label>
-          <input type="text" name="target3" value={targets[2]} readOnly className={styles.input} />
-        </div>
-      </div>
-    </div>
+      <RiskManagementSection
+        form={form}
+        handleChange={handleChange}
+        entryDisabled={entryDisabled}
+        today={today}
+        styles={styles}
+        currentPrice={currentPrice}
+        loadingPrice={loadingPrice}
+        atrValue={atrValue}
+        atrMultiplier={atrMultiplier}
+        stopLossMethod={stopLossMethod}
+        fixedPercent={fixedPercent}
+        stopLossPrice={stopLossPrice}
+        targets={targets}
+        riskPerTrade={riskPerTrade}
+        riskValue={riskValue}
+        market={market}
+        qtyValue={qtyValue}
+        autoQty={autoQty}
+        maxAllowedQty={maxAllowedQty}
+        qtyWarning={qtyWarning}
+      />
+    </>
   );
 }
