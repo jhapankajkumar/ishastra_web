@@ -89,9 +89,9 @@ function RiskManagement() {
       price - (riskPerShare * target3RR);
 
     // Calculate trailing stop (original trailing stop)
-    const trailingStop = isLong ?
-      price * (1 - trailingPct) :
-      price * (1 + trailingPct);
+    // For long: price * (1 - pct), for short: price * (1 - pct)
+    // So trailing stop is always below entry for both
+    const trailingStop = price * (1 - trailingPct);
 
     // Trailing Stop 1 and 2 based on ATR * atrMultiplier from stopPrice
     let trailingStop1 = 0;
@@ -306,6 +306,16 @@ function RiskManagement() {
             <div className={styles.resultCard}>
               <div className={styles.resultLabel}>Stop Loss Price</div>
               <div className={styles.resultValue}>{formatCurrency(calculations.stopLossPrice)}</div>
+              <div className={styles.resultProfit} style={{ color: '#e53935' }}>
+                {(() => {
+                  const entry = parseFloat(formData.stockPrice || 0);
+                  const stop = calculations.stopLossPrice;
+                  const shares = calculations.shares;
+                  const loss = (stop - entry) * shares * (formData.positionType === "Long" ? 1 : -1);
+                  const percent = entry > 0 ? ((stop - entry) / entry) * 100 * (formData.positionType === "Long" ? 1 : -1) : 0;
+                  return `Loss: ${formatCurrency(loss)} (${percent.toFixed(2)}%)`;
+                })()}
+              </div>
             </div>
             <div className={styles.resultCard}>
               <div className={styles.resultLabel}>Trailing Stop</div>
