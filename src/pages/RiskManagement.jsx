@@ -117,7 +117,7 @@ function RiskManagement() {
       trailingStopPrice: trailingStop,
       trailingStop1: trailingStop1,
       trailingStop2: trailingStop2,
-      riskAmount: numberOfShares * riskPerShare
+      riskAmount: maxRiskAmount
     });
   };
 

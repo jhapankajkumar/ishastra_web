@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { searchTickers } from '../data/tickerData';
+import { searchTickers } from '../api/tickerApi';
 import styles from './TickerSearch.module.css';
 
 const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker..." }) => {
@@ -15,15 +15,27 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
   }, [value]);
 
   useEffect(() => {
+    let active = true;
     if (searchTerm.length >= 1) {
-      const results = searchTickers(searchTerm);
-      setSuggestions(results.slice(0, 10)); // Limit to 10 suggestions
-      setShowSuggestions(true);
-      setActiveSuggestion(-1);
+      searchTickers(searchTerm)
+        .then(res => {
+          if (!active) return;
+          // Support both axios and fetch style responses
+          const data = res.data || res || [];
+          setSuggestions(Array.isArray(data) ? data.slice(0, 10) : []);
+          setShowSuggestions(true);
+          setActiveSuggestion(-1);
+        })
+        .catch(() => {
+          if (!active) return;
+          setSuggestions([]);
+          setShowSuggestions(false);
+        });
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
     }
+    return () => { active = false; };
   }, [searchTerm]);
 
   const handleInputChange = (e) => {
@@ -37,7 +49,9 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
     setShowSuggestions(false);
     onChange(ticker.symbol);
     if (onSelect) {
-      onSelect(ticker);
+      // If backend returns {symbol, shortname, longname, name}, prefer name fields for companyName
+      const companyName = ticker.name || ticker.shortname || ticker.longname || '';
+      onSelect({ symbol: ticker.symbol, name: companyName });
     }
     inputRef.current?.blur();
   };
@@ -117,8 +131,8 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
                 onClick={() => handleSuggestionClick(ticker)}
               >
                 <div className={styles.symbol}>{ticker.symbol}</div>
-                <div className={styles.name}>{ticker.name}</div>
-                <div className={styles.exchange}>{ticker.exchange}</div>
+                <div className={styles.name}>{ticker.name || ticker.shortname || ticker.longname || ''}</div>
+                {ticker.exchange && <div className={styles.exchange}>{ticker.exchange}</div>}
               </div>
             ))
           ) : (
