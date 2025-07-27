@@ -6,7 +6,7 @@ import ExitSection from "../components/tradeLogSections/ExitSection";
 import PostTradeAnalysisSection from "../components/tradeLogSections/PostTradeAnalysisSection";
 import TechnicalIndicators from "../components/TechnicalIndicators";
 import { useNavigate } from "react-router-dom";
-import styles from "./TradeLog.module.css";
+import styles from "./TradeAdd.module.css";
 import PageHeader from "../components/PageHeader";
 import { createTrade, updateTrade, addPostAnalysis, fetchExitTactics, fetchSetups } from '../api/tradeApi';
 import { getCurrentPrice, getATR, getTechnicalIndicators } from '../api/tickerApi';
@@ -108,7 +108,7 @@ function mapTradeDataToForm(tradeData) {
   };
 }
 
-export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
+export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
 
   const [form, setForm] = useState(tradeData ? mapTradeDataToForm(tradeData) : initialState);
   const [loading, setLoading] = useState(false);
@@ -208,6 +208,11 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Validate setup selection
+    if (!form.setupType || form.setupType === "") {
+      notification.error("Please select a trade setup before submitting.");
+      return;
+    }
     try {
       if (isAdd) {
         await createTrade(formDataForBackend);

@@ -1,0 +1,629 @@
+/* TradeReview - Dark Theme */
+.container {
+  max-width: none;
+  margin: 0;
+  padding: 24px 5%;
+  background: #101828;
+  min-height: 100vh;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+  box-sizing: border-box;
+}
+
+.formContainer {
+  max-width: 1000px;
+  width: 100%;
+  margin: 24px auto 0;
+  background: #1A2332;
+  border-radius: 16px;
+  padding: 32px 40px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid #2A3441;
+}
+
+.performanceCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.perfCard {
+  background: #253649;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  border: 1px solid #374151;
+  transition: all 0.3s ease;
+}
+
+.profitCard {
+  border-color: #10B981;
+  background: linear-gradient(135deg, #064E3B 0%, #253649 100%);
+}
+
+.lossCard {
+  border-color: #EF4444;
+  background: linear-gradient(135deg, #7F1D1D 0%, #253649 100%);
+}
+
+.perfIcon {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.perfValue {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: #F9FAFB;
+}
+
+.profitCard .perfValue {
+  color: #10B981;
+}
+
+.lossCard .perfValue {
+  color: #EF4444;
+}
+
+.perfLabel {
+  font-size: 14px;
+  color: #9CA3AF;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tradeSummary {
+  background: #253649;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  border: 1px solid #374151;
+}
+
+.tradeSummary h3 {
+  margin: 0 0 16px 0;
+  color: #F9FAFB;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  font-size: 16px;
+  color: #D1D5DB;
+  border-top: 1px solid #374151;
+}
+
+.reviewForm {
+  background: #253649;
+  border-radius: 12px;
+  border: 1px solid #374151;
+}
+
+.formSection {
+  padding: 32px;
+}
+
+.formSection h3 {
+  margin: 0 0 24px 0;
+  color: #F9FAFB;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.fieldGroup {
+  margin-bottom: 24px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: #D1D5DB;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.select,
+.textarea {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid #374151;
+  border-radius: 12px;
+  font-size: 16px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  background: #1A2332;
+  color: #F9FAFB;
+  box-sizing: border-box;
+}
+
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 2px solid #374151;
+}
+
+.skipButton {
+  padding: 16px 32px;
+  background: transparent;
+  color: #9CA3AF;
+  border: 2px solid #374151;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submitButton {
+  padding: 16px 40px;
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: #9CA3AF;
+  font-size: 18px;
+}
+
+/* Enhanced Detail Cards */
+.detailCard {
+  background: #1A2332;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.detailCard:hover {
+  border-color: #4F46E5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.15);
+}
+
+.cardHeader {
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardIcon {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.cardTitle {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.cardContent {
+  padding: 20px;
+}
+
+.detailRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.detailRow:last-child {
+  margin-bottom: 0;
+}
+
+.detailCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailLabel {
+  color: #9CA3AF;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detailValue {
+  color: #F1F5F9;
+  font-size: 16px;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+/* Enhanced Badges */
+.directionBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.longBadge {
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.shortBadge {
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.setupBadge {
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.strategyBadge {
+  background: linear-gradient(135deg, #06B6D4, #0891B2);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+}
+
+.gradeBadge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gradeA {
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.gradeB {
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.gradeC {
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.gradeD {
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.gradeF {
+  background: linear-gradient(135deg, #7F1D1D, #991B1B);
+  color: white;
+  box-shadow: 0 2px 8px rgba(127, 29, 29, 0.3);
+}
+
+/* No Exit Data Styling */
+.noExitData {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.noExitIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.noExitText {
+  color: #9CA3AF;
+  font-size: 16px;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .detailRow {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .cardHeader {
+    padding: 14px 16px;
+  }
+  
+  .cardContent {
+    padding: 16px;
+  }
+  
+  .cardTitle {
+    font-size: 16px;
+  }
+  
+  .detailValue {
+    font-size: 15px;
+  }
+}
+
+/* Enhanced Performance Card */
+.performanceCard {
+  background: #1A2332;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  overflow: hidden;
+  margin-bottom: 24px;
+  transition: all 0.3s ease;
+}
+
+.performanceCard:hover {
+  border-color: #4F46E5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.15);
+}
+
+.performanceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.performanceMetric {
+  background: #253649;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid #374151;
+  transition: all 0.3s ease;
+}
+
+.performanceMetric:hover {
+  background: #2D4456;
+  border-color: #4F46E5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+}
+
+.metricIcon {
+  font-size: 32px;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #374151, #4B5563);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.profitIcon {
+  background: linear-gradient(135deg, #10B981, #059669) !important;
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+.lossIcon {
+  background: linear-gradient(135deg, #EF4444, #DC2626) !important;
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+}
+
+.metricInfo {
+  flex: 1;
+}
+
+.metricLabel {
+  color: #9CA3AF;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.metricValue {
+  color: #F1F5F9;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.profitText {
+  color: #10B981 !important;
+}
+
+.lossText {
+  color: #EF4444 !important;
+}
+
+/* Performance Summary Bar */
+.performanceSummaryBar {
+  background: linear-gradient(135deg, #1E293B, #334155);
+  border-radius: 10px;
+  border: 1px solid #475569;
+  overflow: hidden;
+}
+
+.summaryBarHeader {
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summaryTitle {
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.summaryOutcome {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.profitOutcome {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #10B981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.lossOutcome {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #EF4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.summaryBarContent {
+  padding: 20px;
+}
+
+.summaryStats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.summaryStatItem {
+  color: #D1D5DB;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summaryStatItem strong {
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+/* Responsive Design for Performance Section */
+@media (max-width: 1024px) {
+  .performanceGrid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .performanceGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .performanceMetric {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .metricIcon {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+  
+  .metricValue {
+    font-size: 18px;
+  }
+  
+  .summaryBarHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .summaryStats {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .summaryStatItem {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .performanceMetric {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .metricInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}

@@ -31,18 +31,6 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     }
   }, [trade?.id]);
 
-  useEffect(() => {
-    fetchExitTactics()
-      .then(res => setExitTactics(res.data))
-      .catch(() => setExitTactics([]));
-  }, []);
-
-  useEffect(() => {
-    fetchSetups()
-      .then(res => setSetups(res.data))
-      .catch(() => setSetups([]));
-  }, []);
-
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
     const d = new Date(dateStr);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from "../api/tradeApi";
-import TradeLog from "./TradeLog";
+import TradeAdd from "./TradeAdd";
 import TradeDetailsPopup from "../components/TradeDetailsPopup";
 import PageHeader from "../components/PageHeader";
 import ErrorPage from "../components/ErrorPage";
@@ -56,22 +56,8 @@ export default function TradeList() {
   };
 
   const handleReview = async (id) => {
-    try {
-      const res = await getTradeById(id);
-      setSelectedTrade(res.data);
-      setMode("review");
-    } catch (err) {
-      console.error('Failed to fetch trade:', err);
-      let errorMessage = "Failed to load trade details.";
-      
-      if (err.type === 'NETWORK_ERROR') {
-        errorMessage = "Unable to connect to server. Please check your internet connection.";
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      notification.error(errorMessage);
-    }
+    // Navigate to the new TradeReview page
+    navigate(`/trades/review/${id}`);
   };
 
   const handleDeleteClick = (trade) => {
@@ -228,7 +214,7 @@ export default function TradeList() {
           showBackButton={true}
           onBack={handleBack}
         />
-        <TradeLog mode={mode} tradeData={selectedTrade} onSubmit={handleBack} />
+        <TradeAdd mode={mode} tradeData={selectedTrade} onSubmit={handleBack} />
       </div>
     );
   }

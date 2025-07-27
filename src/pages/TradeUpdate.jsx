@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import styles from "./UpdateTrade.module.css";
+import styles from "./TradeUpdate.module.css";
 import PageHeader from "../components/PageHeader";
 import { getTradeById, updateTrade, partialExitTrade, addPostAnalysis, fetchExitTactics } from '../api/tradeApi';
 import { getCurrentPrice } from '../api/tickerApi';
 import { useNotification } from '../components/NotificationProvider';
 import ErrorPage from '../components/ErrorPage';
 
-const UpdateTrade = () => {
+const TradeUpdate = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const showNotification = useNotification();
@@ -430,20 +430,7 @@ const UpdateTrade = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className={styles.tabNavigation}>
-          <button 
-            className={`${styles.tabButton} ${activeTab === 'exit' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('exit')}
-          >
-            Exit Details
-          </button>
-          <button 
-            className={`${styles.tabButton} ${activeTab === 'analysis' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('analysis')}
-          >
-            Post-Analysis
-          </button>
-        </div>
+        {/* Removed Exit Details tab button as requested */}
 
         {/* Exit Details Tab */}
         {activeTab === 'exit' && (
@@ -451,7 +438,6 @@ const UpdateTrade = () => {
             <form onSubmit={handleExitSubmit}>
               <div className={styles.cardSection}>
                 <h2 className={styles.sectionTitle}>Exit Information</h2>
-                
                 <div className={styles.gridTwoCol}>
                   <div className={styles.fieldGroup}>
                     <label className={styles.label}>Trade Status *</label>
@@ -685,110 +671,9 @@ const UpdateTrade = () => {
             </form>
           </div>
         )}
-
-        {/* Post-Trade Analysis Tab */}
-        {activeTab === 'analysis' && (
-          <div className={styles.tabContent}>
-            <form onSubmit={handlePostAnalysisSubmit}>
-              <div className={styles.cardSection}>
-                <h2 className={styles.sectionTitle}>Post-Trade Analysis</h2>
-                
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Emotional State During Trade</label>
-                  <select 
-                    name="emotionalState" 
-                    value={postAnalysisForm.emotionalState} 
-                    onChange={handlePostAnalysisFormChange} 
-                    className={styles.select}
-                  >
-                    <option value="">Select emotional state...</option>
-                    <option value="Calm">😌 Calm & Composed</option>
-                    <option value="Confident">😎 Confident</option>
-                    <option value="Anxious">😰 Anxious</option>
-                    <option value="Fearful">😨 Fearful</option>
-                    <option value="Greedy">🤑 Greedy</option>
-                    <option value="Impatient">😤 Impatient</option>
-                    <option value="Euphoric">🤩 Euphoric</option>
-                    <option value="Frustrated">😠 Frustrated</option>
-                  </select>
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Key Lessons Learned *</label>
-                  <textarea
-                    name="lessonsLearned"
-                    value={postAnalysisForm.lessonsLearned}
-                    onChange={handlePostAnalysisFormChange}
-                    className={styles.textarea}
-                    rows="4"
-                    placeholder="What specific lessons did you learn from this trade? What would you do differently?"
-                    required
-                  />
-                </div>
-                
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Detailed Analysis (Optional)</label>
-                  <textarea
-                    name="postTradeAnalysis"
-                    value={postAnalysisForm.postTradeAnalysis}
-                    onChange={handlePostAnalysisFormChange}
-                    className={styles.textarea}
-                    rows="6"
-                    placeholder="Deep dive analysis: market conditions, setup quality, execution details, what worked, what didn't..."
-                  />
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Analysis Files (Optional)</label>
-                  <input
-                    type="file"
-                    name="postTradeFiles"
-                    onChange={handlePostAnalysisFormChange}
-                    className={styles.fileInput}
-                    multiple
-                    accept="image/*,.pdf,.doc,.docx"
-                  />
-                  {postAnalysisForm.postTradeFiles.length > 0 && (
-                    <div className={styles.fileList}>
-                      {postAnalysisForm.postTradeFiles.map((file, index) => (
-                        <div key={index} className={styles.fileItem}>
-                          <span>{file.name}</span>
-                          <button 
-                            type="button" 
-                            onClick={() => removePostFile(index)}
-                            className={styles.removeFileButton}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className={styles.buttonGroup}>
-                  <button 
-                    type="button" 
-                    onClick={() => navigate('/dashboard')}
-                    className={styles.cancelButton}
-                  >
-                    Skip Analysis
-                  </button>
-                  <button 
-                    type="submit" 
-                    className={styles.submitButton}
-                    disabled={submitting}
-                  >
-                    {submitting ? 'Saving...' : 'Save Analysis'}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
-export default UpdateTrade;
+export default TradeUpdate;
