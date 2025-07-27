@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
 import TradeContextSection from "../components/tradeLogSections/TradeContextSection";
-import EntryDetailsSection from "../components/tradeLogSections/EntryDetailsSection";
 import TradePlanSection from "../components/tradeLogSections/TradePlanSection";
 import NotesSection from "../components/tradeLogSections/NotesSection";
 import ExitSection from "../components/tradeLogSections/ExitSection";
 import PostTradeAnalysisSection from "../components/tradeLogSections/PostTradeAnalysisSection";
+import TechnicalIndicators from "../components/TechnicalIndicators";
 import { useNavigate } from "react-router-dom";
 import styles from "./TradeLog.module.css";
 import PageHeader from "../components/PageHeader";
-import TickerSearch from "../components/TickerSearch";
 import { createTrade, updateTrade, addPostAnalysis, fetchExitTactics, fetchSetups } from '../api/tradeApi';
-import { getCurrentPrice, getATR } from '../api/tickerApi';
+import { getCurrentPrice, getATR, getTechnicalIndicators } from '../api/tickerApi';
 import { useNotification } from '../components/NotificationProvider';
 import ErrorPage from '../components/ErrorPage';
 import { getTickerBySymbol } from '../data/tickerData';
@@ -25,6 +24,7 @@ const initialState = {
   positionType: "Swing",
   direction: "Long", // Default to Long (capitalized to match backend)
   reasonForEntry: "",
+  entryDate: new Date().toISOString().split('T')[0], // Default to today's date in YYYY-MM-DD format
   entryCharts: [],
   entryOrderPrice: "",
   entryFilledShares: "",
@@ -37,9 +37,10 @@ const initialState = {
   postTradeFiles: [],
   setupType: "",
   timeframesUsed: [],
-  riskPerTrade: "",
+  riskPerTrade: "1.5%",
   stopLossPrice: "",
-  stopLossMethod: "",
+  stopLossMethod: "ATR",
+  atrMultiplier: 1.5,
   target1: "",
   target2: "",
   target3: "",
@@ -115,6 +116,7 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
   const [setups, setSetups] = useState([]);
   const [setupsLoaded, setSetupsLoaded] = useState(false);
   const [exitTactics, setExitTactics] = useState([]);
+  const [openTrades, setOpenTrades] = useState([]);
   const [today] = useState(() => new Date().toISOString().split('T')[0]);
   const [entryDisabled, setEntryDisabled] = useState(false);
   const [exitDisabled, setExitDisabled] = useState(false);
@@ -151,7 +153,7 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
       symbol = tickerObj.symbol;
       companyName = tickerObj.name || '';
     }
-    setForm((prev) => ({ ...prev, ticker: symbol, companyName }));
+    setForm((prev) => ({ ...prev, ticker: symbol, companyName, entryFilledShares: "" }));
 
     // Calculate period for ATR: last 30 days from today
     const today = new Date();
@@ -159,18 +161,22 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
     const period1Date = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
     const period1 = period1Date.toISOString().split('T')[0];
 
-    // Fetch and set current price and ATR
+    // Fetch and set current price and technical indicators
     try {
-      const [priceRes, atrRes] = await Promise.all([
+      const [priceRes, indicatorsRes] = await Promise.all([
         getCurrentPrice(symbol),
-        getATR(symbol, period1, period2)
+        getATR(symbol) // Now returns all technical indicators
       ]);
       const price = priceRes.data && priceRes.data.price ? String(priceRes.data.price) : '';
-      const atr = atrRes.data && atrRes.data.atr ? atrRes.data.atr : '';
+      const indicators = indicatorsRes.data || {};
+      const atr = indicators.atr14 || '';
+      
       setForm((prev) => ({
         ...prev,
         entryOrderPrice: price,
-        atrValue: atr
+        atrValue: atr,
+        // Store all technical indicators for potential future use
+        technicalIndicators: indicators
       }));
     } catch (err) {
       // Optionally handle error
@@ -181,14 +187,21 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
   useEffect(() => {
     let mounted = true;
     setSetupsLoaded(false);
-    fetchSetups().then((data) => {
+    fetchSetups().then((response) => {
+      console.log('Fetched setups response:', response);
+      const data = response.data;
+      console.log('Fetched setups data:', data);
       if (mounted) {
         setSetups(data || []);
         setSetupsLoaded(true);
+        console.log('Setups loaded:', data || []);
       }
-    }).catch(() => setSetupsLoaded(true));
-    fetchExitTactics().then((data) => {
-      if (mounted) setExitTactics(data || []);
+    }).catch((error) => {
+      console.error('Error fetching setups:', error);
+      setSetupsLoaded(true);
+    });
+    fetchExitTactics().then((response) => {
+      if (mounted) setExitTactics(response.data || []);
     });
     return () => { mounted = false; };
   }, []);
@@ -257,10 +270,19 @@ export default function TradeLog({ mode = "add", tradeData = null, onSubmit }) {
         <form onSubmit={handleSubmit}>
           <TradeContextSection {...{form, handleChange, isReview, isUpdate, setups, setupsLoaded, entryDisabled, styles}} />
           <div className={styles.sectionDivider} />
-          <EntryDetailsSection {...{form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, styles}} />
+          <TradePlanSection {...{form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades}} />
           <div className={styles.sectionDivider} />
-          <TradePlanSection {...{form, handleChange, entryDisabled, today, styles}} />
-          <div className={styles.sectionDivider} />
+          {form.ticker && (
+            <>
+              <TechnicalIndicators 
+                symbol={form.ticker} 
+                onATRChange={(atr) => {
+                  handleChange({ target: { name: 'atrValue', value: atr } });
+                }}
+              />
+              <div className={styles.sectionDivider} />
+            </>
+          )}
           <NotesSection {...{form, handleChange, entryDisabled, styles}} />
           <div className={styles.sectionDivider} />
           {!isAdd && <ExitSection {...{form, handleChange, exitDisabled, exitTactics, today, styles}} />}

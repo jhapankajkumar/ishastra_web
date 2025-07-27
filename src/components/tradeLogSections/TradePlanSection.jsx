@@ -1,8 +1,10 @@
+
 import React from "react";
-import { getCurrentPrice, getATR } from '../../api/tickerApi';
+import TickerSearch from "../TickerSearch";
+import { getCurrentPrice, getATR, getTechnicalIndicators } from '../../api/tickerApi';
 import RiskManagementSection from './RiskManagementSection';
 
-export default function TradePlanSection({ form, handleChange, entryDisabled, today, styles, openTrades }) {
+export default function TradePlanSection({ form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades }) {
   // --- ATR fetch state ---
   const [loadingATR, setLoadingATR] = React.useState(false);
   const [currentPrice, setCurrentPrice] = React.useState(null);
@@ -26,7 +28,7 @@ export default function TradePlanSection({ form, handleChange, entryDisabled, to
   // Set initial trading account value
   const initialAccountValue = market === "India" ? 1000000 : 120000;
   // Calculate open trades invested amount
-  const openInvested = openTrades ? openTrades.reduce((sum, t) => {
+  const openInvested = openTrades && Array.isArray(openTrades) ? openTrades.reduce((sum, t) => {
     const qty = parseFloat(t.entryFilledShares) || 0;
     const price = parseFloat(t.entryOrderPrice) || 0;
     return sum + qty * price;
@@ -81,11 +83,10 @@ export default function TradePlanSection({ form, handleChange, entryDisabled, to
 
   // If the calculated autoQty changes and user hasn't entered a value, update the form value
   React.useEffect(() => {
-    if ((form.entryFilledShares === undefined || form.entryFilledShares === null || form.entryFilledShares === "") && autoQty !== "" && String(qtyValue) !== String(autoQty)) {
-      handleChange({ target: { name: "entryFilledShares", value: autoQty } });
+    if ((form.entryFilledShares === undefined || form.entryFilledShares === null || form.entryFilledShares === "") && autoQty !== "") {
+      handleChange({ target: { name: "entryFilledShares", value: String(autoQty) } });
     }
-    // eslint-disable-next-line
-  }, [autoQty]);
+  }, [autoQty, maxAllowedQty, entryPrice, stopLossValue, riskValue, form.entryFilledShares, handleChange]);
 
   // Track last calculated autoQty to detect if user has overridden
   const [lastAutoQty, setLastAutoQty] = React.useState("");
@@ -137,16 +138,42 @@ export default function TradePlanSection({ form, handleChange, entryDisabled, to
   return (
     <>
       <div className={styles.cardSection}>
-        <h2 className={styles.sectionTitle}>Trade Plan</h2>
+        <h2 className={styles.sectionTitle}>Entry & Technical Details</h2>
         <div className={styles.gridTwoCol}>
-          {/* Trading Account Balance (disabled) */}
+          {/* Ticker Symbol */}
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>Trading Account Balance ({market === "India" ? "₹" : "$"})</label>
-            <input type="text" value={accountBalance.toLocaleString(undefined, {maximumFractionDigits: 2})} className={styles.input} disabled />
+            <label className={styles.label}>Ticker Symbol</label>
+            {entryDisabled ? (
+              <input type="text" value={form.ticker} className={`${styles.input} ${styles.inputDisabled}`} disabled readOnly />
+            ) : (
+              <TickerSearch
+                value={form.ticker}
+                onChange={handleTickerChange}
+                onSelect={tickerObj => {
+                  if (handleTickerSelect) handleTickerSelect(tickerObj);
+                  if (tickerObj && tickerObj.currency && handleChange) {
+                    let newMarket = tickerObj.currency === 'INR' ? 'India' : 'US';
+                    if (form.market !== newMarket) {
+                      handleChange({ target: { name: 'market', value: newMarket } });
+                    }
+                  }
+                }}
+                placeholder="Search ticker (e.g. AAPL, RELIANCE)"
+                instrumentType={form.instrumentType}
+              />
+            )}
           </div>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>Entry Commission ({market === "India" ? "₹" : "$"})</label>
-            <input type="number" name="entryCommission" value={form.entryCommission || 0} onChange={handleChange} className={styles.input} placeholder="0" min="0" disabled={entryDisabled} />
+            <label className={styles.label}>Ticker Name</label>
+            <input
+              type="text"
+              name="companyName"
+              value={form.companyName}
+              className={`${styles.input} ${styles.inputDisabled}`}
+              placeholder="Auto-populated when ticker is selected"
+              disabled
+              readOnly
+            />
           </div>
           <div className={styles.fieldGroup}>
             <label className={styles.label}>Entry Date</label>
@@ -162,6 +189,22 @@ export default function TradePlanSection({ form, handleChange, entryDisabled, to
                 Current Price: <b style={{ color: '#7ecfff' }}>{currentPrice}</b>
               </div>
             )}
+          </div>
+          {/* Quantity */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Quantity</label>
+            <input type="text" name="entryFilledShares" value={form.entryFilledShares || ""} onChange={handleChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} placeholder="100" disabled={entryDisabled} />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Position</label>
+            <select name="direction" value={form.direction} onChange={handleChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} disabled={entryDisabled}>
+              <option value="Long">Long (Buy)</option>
+              <option value="Short">Short (Sell)</option>
+            </select>
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Entry Commission ({market === "India" ? "₹" : "$"})</label>
+            <input type="number" name="entryCommission" value={form.entryCommission || 0} onChange={handleChange} className={styles.input} placeholder="0" min="0" disabled={entryDisabled} />
           </div>
         </div>
       </div>

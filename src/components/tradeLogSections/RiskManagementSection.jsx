@@ -22,23 +22,10 @@ export default function RiskManagementSection({
   maxAllowedQty,
   qtyWarning
 }) {
-  const [collapsed, setCollapsed] = React.useState(false);
-
   return (
     <div className={styles.cardSection} style={{ marginTop: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Risk Management</h2>
-        <button
-          type="button"
-          onClick={() => setCollapsed(c => !c)}
-          style={{ background: 'none', border: 'none', color: '#7ecfff', fontSize: 18, cursor: 'pointer' }}
-        >
-          {collapsed ? '▼ Expand' : '▲ Collapse'}
-        </button>
-      </div>
-      {!collapsed && (
-        <>
-          <div className={styles.gridTwoCol}>
+      <h2 className={styles.sectionTitle}>Risk Management</h2>
+      <div className={styles.gridTwoCol}>
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Risk per Trade ({market === "India" ? "₹" : "$"} or %)</label>
               <input type="text" name="riskPerTrade" value={riskPerTrade} onChange={handleChange} className={styles.input} placeholder={market === "India" ? "e.g. 2% or ₹1000" : "e.g. 2% or $1000"} disabled={entryDisabled} />
@@ -89,29 +76,6 @@ export default function RiskManagementSection({
               <input type="text" name="target3" value={targets[2]} readOnly className={styles.input} />
             </div>
           </div>
-          <div className={styles.fieldGroup}>
-            <label className={styles.label}>Quantity</label>
-            <input
-              type="text"
-              name="entryFilledShares"
-              value={qtyValue}
-              onChange={handleChange}
-              className={`${styles.input} ${qtyWarning ? styles.inputWarning : entryDisabled ? styles.inputDisabled : styles.inputEnabled}`}
-              placeholder={maxAllowedQty > 0 ? maxAllowedQty : "100"}
-              disabled={entryDisabled}
-              style={qtyWarning ? { backgroundColor: "orange" } : {}}
-            />
-            <div style={{ color: '#aaa', fontSize: '0.95em', marginTop: 2 }}>
-              Calculated Quantity: <b>{autoQty || 0}</b>
-            </div>
-            {qtyWarning && (
-              <div style={{ color: "orange", fontSize: "0.9em" }}>
-                QTY exceeds allowed by risk per trade!
-              </div>
-            )}
-          </div>
-        </>
-      )}
     </div>
   );
 }

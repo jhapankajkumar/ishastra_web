@@ -1,10 +1,35 @@
 import React, { useEffect, useState } from "react";
 // import styles from "../pages/Dashboard.module.css"; // Reserved for future styling
-import { fetchExitTactics, fetchSetups } from '../api/tradeApi';
+import { fetchExitTactics, fetchSetups, getTradeTransactions } from '../api/tradeApi';
 
 export default function TradeDetailsPopup({ trade, onClose }) {
   const [exitTactics, setExitTactics] = useState([]);
   const [setups, setSetups] = useState([]);
+  const [exitTransactions, setExitTransactions] = useState([]);
+
+  useEffect(() => {
+    fetchExitTactics()
+      .then(res => setExitTactics(res.data))
+      .catch(() => setExitTactics([]));
+  }, []);
+
+  useEffect(() => {
+    fetchSetups()
+      .then(res => setSetups(res.data))
+      .catch(() => setSetups([]));
+  }, []);
+
+  useEffect(() => {
+    // Fetch exit transactions for this trade
+    if (trade?.id) {
+      getTradeTransactions(trade.id)
+        .then(res => {
+          const exitTx = (res.data || []).filter(tx => tx.transaction_type === 'Exit');
+          setExitTransactions(exitTx);
+        })
+        .catch(() => setExitTransactions([]));
+    }
+  }, [trade?.id]);
 
   useEffect(() => {
     fetchExitTactics()
@@ -38,6 +63,62 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     return tactic ? tactic.name : "-";
   };
 
+  // Helper functions for partial exit calculations
+  const getExitTransactionsSummary = () => {
+    if (!exitTransactions.length) return null;
+
+    let totalExitedQty = 0;
+    let totalValue = 0;
+    let lastExitDate = null;
+
+    exitTransactions.forEach(tx => {
+      if (tx.quantity && tx.price) {
+        totalExitedQty += Number(tx.quantity);
+        totalValue += Number(tx.price) * Number(tx.quantity);
+        
+        const txDate = new Date(tx.transaction_date);
+        if (!lastExitDate || txDate > lastExitDate) {
+          lastExitDate = txDate;
+        }
+      }
+    });
+
+    const avgExitPrice = totalExitedQty > 0 ? totalValue / totalExitedQty : 0;
+    
+    return {
+      totalExitedQty,
+      avgExitPrice,
+      lastExitDate,
+      exitCount: exitTransactions.length
+    };
+  };
+
+  const getPartialPL = () => {
+    if (!exitTransactions.length || !trade.entry_price || !trade.direction) return "-";
+    
+    let totalPL = 0;
+    exitTransactions.forEach(tx => {
+      if (tx.price !== undefined && tx.quantity !== undefined) {
+        const priceDiff = trade.direction.toLowerCase() === 'long'
+          ? Number(tx.price) - Number(trade.entry_price)
+          : Number(trade.entry_price) - Number(tx.price);
+        totalPL += priceDiff * Number(tx.quantity);
+      }
+    });
+    
+    return totalPL.toFixed(2);
+  };
+
+  const getRemainingQuantity = () => {
+    return trade.remaining_quantity !== undefined && trade.remaining_quantity !== null 
+      ? Number(trade.remaining_quantity) 
+      : Number(trade.quantity || 0);
+  };
+
+  const getOriginalQuantity = () => {
+    return Number(trade.quantity || 0);
+  };
+
   const getInvested = () => {
     if (trade.entry_price && trade.quantity) {
       return `$${(Number(trade.entry_price) * Number(trade.quantity)).toFixed(2)}`;
@@ -46,15 +127,26 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   };
 
   const getPL = () => {
+    // If we have partial exits, use partial P&L calculation
+    if (exitTransactions.length > 0) {
+      const partialPL = getPartialPL();
+      return partialPL !== "-" ? `$${partialPL}` : "-";
+    }
+    
+    // Fallback to original calculation for legacy trades
     if (
       trade.exit_price !== undefined &&
       trade.exit_price !== null &&
       trade.entry_price !== undefined &&
       trade.entry_price !== null &&
       trade.quantity !== undefined &&
-      trade.quantity !== null
+      trade.quantity !== null &&
+      trade.direction
     ) {
-      const pl = (Number(trade.exit_price) - Number(trade.entry_price)) * Number(trade.quantity);
+      const priceDiff = trade.direction.toLowerCase() === 'long'
+        ? Number(trade.exit_price) - Number(trade.entry_price)
+        : Number(trade.entry_price) - Number(trade.exit_price);
+      const pl = priceDiff * Number(trade.quantity);
       return `$${pl.toFixed(2)}`;
     }
     return "-";
@@ -286,14 +378,33 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                 display: "block",
                 marginBottom: 6
               }}>
-                Quantity
+                Original Quantity
               </label>
               <span style={{
                 fontSize: "16px",
                 color: "#E5E7EB",
                 fontWeight: "500"
               }}>
-                {trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity).toLocaleString() : "-"}
+                {getOriginalQuantity().toLocaleString()}
+              </span>
+            </div>
+            
+            <div>
+              <label style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#9CA3AF",
+                display: "block",
+                marginBottom: 6
+              }}>
+                Remaining Quantity
+              </label>
+              <span style={{
+                fontSize: "16px",
+                color: getRemainingQuantity() === 0 ? "#10B981" : "#F59E0B",
+                fontWeight: "500"
+              }}>
+                {getRemainingQuantity().toLocaleString()} {getRemainingQuantity() === 0 ? "(Fully Exited)" : "(Partial)"}
               </span>
             </div>
             
@@ -400,8 +511,8 @@ export default function TradeDetailsPopup({ trade, onClose }) {
           </div>
         )}
 
-        {/* Exit Section */}
-        {(trade.exit_date || trade.exit_price) && (
+        {/* Exit Section - Enhanced for Partial Exits */}
+        {(exitTransactions.length > 0 || trade.exit_date || trade.exit_price) && (
           <div style={{
             backgroundColor: "#1A2332",
             borderRadius: 12,
@@ -415,72 +526,188 @@ export default function TradeDetailsPopup({ trade, onClose }) {
               color: "#F59E0B",
               margin: "0 0 20px 0"
             }}>
-              Exit Details
+              Exit Details {exitTransactions.length > 1 && `(${exitTransactions.length} Partial Exits)`}
             </h3>
             
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 20,
-              marginBottom: 20
-            }}>
-              <div>
-                <label style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#9CA3AF",
-                  display: "block",
-                  marginBottom: 6
-                }}>
-                  Date
-                </label>
-                <span style={{
+            {/* Exit Summary */}
+            {(() => {
+              const summary = getExitTransactionsSummary();
+              if (summary) {
+                return (
+                  <div style={{
+                    backgroundColor: "#0F1419",
+                    borderRadius: 8,
+                    padding: 16,
+                    marginBottom: 20,
+                    border: "1px solid #2A3441"
+                  }}>
+                    <h4 style={{
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: "#F59E0B",
+                      margin: "0 0 12px 0"
+                    }}>
+                      Exit Summary
+                    </h4>
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                      gap: 16
+                    }}>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Total Exited</span>
+                        <span style={{ fontSize: "16px", color: "#E5E7EB", fontWeight: "500" }}>
+                          {summary.totalExitedQty.toLocaleString()} shares
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Avg Exit Price</span>
+                        <span style={{ fontSize: "16px", color: "#E5E7EB", fontWeight: "500" }}>
+                          ${summary.avgExitPrice.toFixed(2)}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Last Exit Date</span>
+                        <span style={{ fontSize: "16px", color: "#E5E7EB", fontWeight: "500" }}>
+                          {formatDate(summary.lastExitDate)}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Exit Count</span>
+                        <span style={{ fontSize: "16px", color: "#E5E7EB", fontWeight: "500" }}>
+                          {summary.exitCount} transaction{summary.exitCount !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
+            {/* Individual Exit Transactions */}
+            {exitTransactions.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <h4 style={{
                   fontSize: "16px",
-                  color: "#E5E7EB",
-                  fontWeight: "500"
-                }}>
-                  {formatDate(trade.exit_date)}
-                </span>
-              </div>
-              
-              <div>
-                <label style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
+                  fontWeight: "600",
                   color: "#9CA3AF",
-                  display: "block",
-                  marginBottom: 6
+                  margin: "0 0 16px 0"
                 }}>
-                  Average Price
-                </label>
-                <span style={{
-                  fontSize: "16px",
-                  color: "#E5E7EB",
-                  fontWeight: "500"
+                  Exit Transactions
+                </h4>
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12
                 }}>
-                  {trade.exit_price !== undefined && trade.exit_price !== null ? `$${Number(trade.exit_price).toFixed(2)}` : "-"}
-                </span>
+                  {exitTransactions.map((tx, idx) => (
+                    <div key={idx} style={{
+                      backgroundColor: "#0F1419",
+                      borderRadius: 8,
+                      padding: 16,
+                      border: "1px solid #2A3441",
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                      gap: 12,
+                      alignItems: "center"
+                    }}>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Date</span>
+                        <span style={{ fontSize: "14px", color: "#E5E7EB", fontWeight: "500" }}>
+                          {formatDate(tx.transaction_date)}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Price</span>
+                        <span style={{ fontSize: "14px", color: "#E5E7EB", fontWeight: "500" }}>
+                          ${Number(tx.price).toFixed(2)}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Quantity</span>
+                        <span style={{ fontSize: "14px", color: "#E5E7EB", fontWeight: "500" }}>
+                          {Number(tx.quantity).toLocaleString()}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Tactic</span>
+                        <span style={{ fontSize: "14px", color: "#E5E7EB", fontWeight: "500" }}>
+                          {getExitTacticName(tx.exit_tactic_id)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              
-              <div>
-                <label style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#9CA3AF",
-                  display: "block",
-                  marginBottom: 6
-                }}>
-                  Exit Tactic
-                </label>
-                <span style={{
-                  fontSize: "16px",
-                  color: "#E5E7EB",
-                  fontWeight: "500"
-                }}>
-                  {getExitTacticName(trade.exit_tactic_id)}
-                </span>
+            )}
+
+            {/* Legacy Exit Data (for backward compatibility) */}
+            {!exitTransactions.length && (trade.exit_date || trade.exit_price) && (
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: 20,
+                marginBottom: 20
+              }}>
+                <div>
+                  <label style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#9CA3AF",
+                    display: "block",
+                    marginBottom: 6
+                  }}>
+                    Date
+                  </label>
+                  <span style={{
+                    fontSize: "16px",
+                    color: "#E5E7EB",
+                    fontWeight: "500"
+                  }}>
+                    {formatDate(trade.exit_date)}
+                  </span>
+                </div>
+                
+                <div>
+                  <label style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#9CA3AF",
+                    display: "block",
+                    marginBottom: 6
+                  }}>
+                    Average Price
+                  </label>
+                  <span style={{
+                    fontSize: "16px",
+                    color: "#E5E7EB",
+                    fontWeight: "500"
+                  }}>
+                    {trade.exit_price !== undefined && trade.exit_price !== null ? `$${Number(trade.exit_price).toFixed(2)}` : "-"}
+                  </span>
+                </div>
+                
+                <div>
+                  <label style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#9CA3AF",
+                    display: "block",
+                    marginBottom: 6
+                  }}>
+                    Exit Tactic
+                  </label>
+                  <span style={{
+                    fontSize: "16px",
+                    color: "#E5E7EB",
+                    fontWeight: "500"
+                  }}>
+                    {getExitTacticName(trade.exit_tactic_id)}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
             
             {trade.reason_for_exit && (
               <div style={{ marginTop: 20 }}>

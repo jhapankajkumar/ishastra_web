@@ -2,7 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { searchTickers } from '../api/tickerApi';
 import styles from './TickerSearch.module.css';
 
-const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker..." }) => {
+const quoteTypeMap = {
+  Stocks: 'EQUITY',
+  ETF: 'ETF',
+  Forex: 'CURRENCY',
+  Indices: 'INDEX',
+};
+
+const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker...", instrumentType }) => {
   const [searchTerm, setSearchTerm] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -20,9 +27,14 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
       searchTickers(searchTerm)
         .then(res => {
           if (!active) return;
-          // Support both axios and fetch style responses
           const data = res.data || res || [];
-          setSuggestions(Array.isArray(data) ? data.slice(0, 10) : []);
+          let filtered = Array.isArray(data) ? data : [];
+          if (instrumentType && quoteTypeMap[instrumentType]) {
+            filtered = filtered.filter(
+              t => (t.quoteType || '').toUpperCase() === quoteTypeMap[instrumentType]
+            );
+          }
+          setSuggestions(filtered.slice(0, 10));
           setShowSuggestions(true);
           setActiveSuggestion(-1);
         })
@@ -36,7 +48,7 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
       setShowSuggestions(false);
     }
     return () => { active = false; };
-  }, [searchTerm]);
+  }, [searchTerm, instrumentType]);
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -49,9 +61,16 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
     setShowSuggestions(false);
     onChange(ticker.symbol);
     if (onSelect) {
-      // If backend returns {symbol, shortname, longname, name}, prefer name fields for companyName
       const companyName = ticker.name || ticker.shortname || ticker.longname || '';
-      onSelect({ symbol: ticker.symbol, name: companyName });
+      // Detect currency by exchDisp
+      let currency = 'USD';
+      if (ticker.exchDisp) {
+        const exch = ticker.exchDisp.toLowerCase();
+        if (exch.includes('nse') || exch.includes('bse') || exch.includes('bombay')) {
+          currency = 'INR';
+        }
+      }
+      onSelect({ symbol: ticker.symbol, name: companyName, currency });
     }
     inputRef.current?.blur();
   };
@@ -132,7 +151,11 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
               >
                 <div className={styles.symbol}>{ticker.symbol}</div>
                 <div className={styles.name}>{ticker.name || ticker.shortname || ticker.longname || ''}</div>
-                {ticker.exchange && <div className={styles.exchange}>{ticker.exchange}</div>}
+                {ticker.exchDisp && (
+                  <div className={styles.exchDisp}>
+                    {ticker.exchDisp.toLowerCase().includes('bombay') ? 'BSE' : ticker.exchDisp}
+                  </div>
+                )}
               </div>
             ))
           ) : (

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/dashboard';
 import TradeList from './pages/TradeList';
 import TradeLog from './pages/TradeLog'; // Import your new TradeLog page
+import UpdateTrade from './pages/UpdateTrade'; // Import UpdateTrade page
 import JournalList from './pages/JournalList';
 import JournalLog from './pages/JournalLog';
 import RiskManagement from './pages/RiskManagement';
@@ -19,6 +20,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/trades" element={<TradeList />} />
             <Route path="/trades/new" element={<TradeLog />} />
+            <Route path="/trades/update/:id" element={<UpdateTrade />} />
             <Route path="/journal" element={<JournalList />} />
             <Route path="/journal/new" element={<JournalLog />} />
             <Route path="/journal/edit/:id" element={<JournalLog />} />

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getAllTrades } from '../api/tradeApi';
 import { getDashboardSummary } from '../api/dashboardApi';
 import EquityCurve from '../components/EquityCurve';
@@ -11,6 +12,7 @@ import styles from './Dashboard.module.css';
 import { getAllTags } from "../api/tagApi";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [trades, setTrades] = useState([]);
   const [stats, setStats] = useState(null);
   const [tags, setTags] = useState([]);
@@ -586,11 +588,37 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div style={{
-                  fontWeight: "700",
-                  fontSize: "16px",
-                  color: pnl >= 0 ? "#10B981" : "#EF4444"
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12
                 }}>
-                  {pnl >= 0 ? '+' : ''}${pnl.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  <div style={{
+                    fontWeight: "700",
+                    fontSize: "16px",
+                    color: pnl >= 0 ? "#10B981" : "#EF4444"
+                  }}>
+                    {pnl >= 0 ? '+' : ''}${pnl.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                  {!trade.exit_date && (
+                    <button
+                      onClick={() => navigate(`/trades/update/${trade.id}`)}
+                      style={{
+                        background: "#3B82F6",
+                        border: "none",
+                        borderRadius: "6px",
+                        color: "white",
+                        padding: "4px 8px",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        cursor: "pointer",
+                        transition: "background 0.2s ease"
+                      }}
+                      onMouseOver={(e) => e.target.style.background = "#2563EB"}
+                      onMouseOut={(e) => e.target.style.background = "#3B82F6"}
+                    >
+                      Update
+                    </button>
+                  )}
                 </div>
               </div>
             );

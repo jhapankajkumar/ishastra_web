@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { getAllTrades, getTradeById, deleteTrade } from "../api/tradeApi";
+import { useNavigate } from "react-router-dom";
+import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from "../api/tradeApi";
 import TradeLog from "./TradeLog";
 import TradeDetailsPopup from "../components/TradeDetailsPopup";
 import PageHeader from "../components/PageHeader";
@@ -9,6 +10,7 @@ import { getTickerBySymbol } from '../data/tickerData';
 import styles from "./TradeList.module.css";
 
 export default function TradeList() {
+  const navigate = useNavigate();
   const [trades, setTrades] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [mode, setMode] = useState(null);
@@ -23,8 +25,19 @@ export default function TradeList() {
   useEffect(() => {
     setLoading(true);
     getAllTrades()
-      .then(res => {
-        const sorted = [...res.data].sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date));
+      .then(async res => {
+        // For each trade, fetch its exit transactions and attach as exit_transactions
+        const tradesWithExits = await Promise.all(res.data.map(async trade => {
+          try {
+            const txRes = await getTradeTransactions(trade.id);
+            // Only keep exit transactions
+            const exitTx = (txRes.data || []).filter(tx => tx.transaction_type === 'Exit');
+            return { ...trade, exit_transactions: exitTx };
+          } catch (e) {
+            return { ...trade, exit_transactions: [] };
+          }
+        }));
+        const sorted = [...tradesWithExits].sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date));
         setTrades(sorted);
         setError(null);
       })
@@ -37,23 +50,9 @@ export default function TradeList() {
       });
   }, []);
 
-  const handleEdit = async (id) => {
-    try {
-      const res = await getTradeById(id);
-      setSelectedTrade(res.data);
-      setMode("update");
-    } catch (err) {
-      console.error('Failed to fetch trade:', err);
-      let errorMessage = "Failed to load trade details.";
-      
-      if (err.type === 'NETWORK_ERROR') {
-        errorMessage = "Unable to connect to server. Please check your internet connection.";
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      notification.error(errorMessage);
-    }
+  const handleEdit = (id) => {
+    // Navigate to the new UpdateTrade page
+    navigate(`/trades/update/${id}`);
   };
 
   const handleReview = async (id) => {
@@ -145,8 +144,17 @@ export default function TradeList() {
     setError(null);
     setLoading(true);
     getAllTrades()
-      .then(res => {
-        const sorted = [...res.data].sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date));
+      .then(async res => {
+        const tradesWithExits = await Promise.all(res.data.map(async trade => {
+          try {
+            const txRes = await getTradeTransactions(trade.id);
+            const exitTx = (txRes.data || []).filter(tx => tx.transaction_type === 'Exit');
+            return { ...trade, exit_transactions: exitTx };
+          } catch (e) {
+            return { ...trade, exit_transactions: [] };
+          }
+        }));
+        const sorted = [...tradesWithExits].sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date));
         setTrades(sorted);
         setError(null);
       })
@@ -255,6 +263,74 @@ export default function TradeList() {
     );
   }
 
+  // --- Helper functions for partial exits ---
+  // Get all exit transactions for a trade (array of {transaction_date, price, quantity})
+  const getExitTransactions = (trade) => {
+    let txs = trade.exit_transactions || trade.exitTransactions || [];
+    // If no array but trade has exit_price and exit_date, treat as single exit
+    if ((!txs || !Array.isArray(txs) || txs.length === 0) && trade.exit_price && trade.exit_date && trade.quantity) {
+      txs = [{
+        transaction_date: trade.exit_date,
+        price: trade.exit_price,
+        quantity: trade.quantity - (trade.remaining_quantity ?? 0)
+      }];
+    }
+    return txs || [];
+  };
+
+  // Get last exit date (latest transaction_date among all exit transactions)
+  const getLastExitDate = (trade) => {
+    const exits = getExitTransactions(trade);
+    if (!exits.length) return "-";
+    // Find the latest exit by comparing dates (handle both string and numeric)
+    const last = exits.reduce((latest, tx) => {
+      if (!tx.transaction_date) return latest;
+      const txDate = typeof tx.transaction_date === 'number' ? new Date(tx.transaction_date) : new Date(tx.transaction_date);
+      if (!latest) return tx;
+      const latestDate = typeof latest.transaction_date === 'number' ? new Date(latest.transaction_date) : new Date(latest.transaction_date);
+      return txDate > latestDate ? tx : latest;
+    }, null);
+    if (last && last.transaction_date) {
+      // Support both numeric and string date
+      const dateVal = typeof last.transaction_date === 'number' ? last.transaction_date : Date.parse(last.transaction_date);
+      if (!isNaN(dateVal)) {
+        return formatDate(dateVal);
+      }
+    }
+    return "-";
+  };
+
+  // Get average exit price (weighted by quantity)
+  const getAverageExitPrice = (trade) => {
+    const exits = getExitTransactions(trade);
+    if (!exits.length) return "-";
+    let totalQty = 0, totalValue = 0;
+    exits.forEach(tx => {
+      if (tx.price !== undefined && tx.quantity !== undefined) {
+        totalQty += Number(tx.quantity);
+        totalValue += Number(tx.price) * Number(tx.quantity);
+      }
+    });
+    if (totalQty === 0) return "-";
+    return (totalValue / totalQty).toFixed(2);
+  };
+
+  // Calculate P&L based on all partial exits
+  const getPartialPL = (trade) => {
+    const exits = getExitTransactions(trade);
+    if (!exits.length || !trade.entry_price || !trade.direction) return "-";
+    let pl = 0;
+    exits.forEach(tx => {
+      if (tx.price !== undefined && tx.quantity !== undefined) {
+        const priceDiff = trade.direction.toLowerCase() === 'long'
+          ? Number(tx.price) - Number(trade.entry_price)
+          : Number(trade.entry_price) - Number(tx.price);
+        pl += priceDiff * Number(tx.quantity);
+      }
+    });
+    return pl.toFixed(2);
+  };
+
   return (
     <div className={styles.container}>
       <PageHeader 
@@ -262,74 +338,95 @@ export default function TradeList() {
         subtitle="View and manage all your trades"
       />
 
-      {/* Modern Table */}
+      {/* Modern Table with Partial Exit Columns */}
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead className={styles.tableHeader}>
             <tr>
               <th className={styles.tableHeaderCell}>Ticker</th>
               <th className={styles.tableHeaderCell}>Entry Date</th>
-              <th className={styles.tableHeaderCell}>Exit Date</th>
+              <th className={styles.tableHeaderCell}>Last Exit Date</th>
               <th className={styles.tableHeaderCell}>Entry Price</th>
-              <th className={styles.tableHeaderCell}>Quantity</th>
-              <th className={styles.tableHeaderCell}>Exit Price</th>
+              <th className={styles.tableHeaderCell}>Original Qty</th>
+              <th className={styles.tableHeaderCell}>Sold Qty</th>
+              <th className={styles.tableHeaderCell}>Remaining Qty</th>
+              <th className={styles.tableHeaderCell}>Avg Exit Price</th>
               <th className={styles.tableHeaderCell}>Invested</th>
               <th className={styles.tableHeaderCell}>P&L</th>
               <th className={styles.tableHeaderCell}>Action</th>
             </tr>
           </thead>
           <tbody>
-            {trades.map(trade => (
-              <tr
-                key={trade.id}
-                className={styles.tableRow}
-                onClick={() => handleShowDetails(trade.id)}
-              >
-                <td className={`${styles.tableCell} ${styles.tickerCell}`}>
-                  <div className={styles.tickerContainer}>
-                    <span className={styles.tickerSymbol}>{trade.ticker}</span>
-                    {getTickerBySymbol(trade.ticker)?.name && (
-                      <span className={styles.companyName}>{getTickerBySymbol(trade.ticker).name}</span>
-                    )}
-                  </div>
-                </td>
-                <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.entry_date ? formatDate(trade.entry_date) : "-"}</td>
-                <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.exit_date ? formatDate(trade.exit_date) : "-"}</td>
-                <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.entry_price !== undefined && trade.entry_price !== null ? Number(trade.entry_price).toFixed(2) : "-"}</td>
-                <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity).toLocaleString() : "-"}</td>
-                <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.exit_price !== undefined && trade.exit_price !== null ? Number(trade.exit_price).toFixed(2) : "-"}</td>
-                <td className={`${styles.tableCell} ${styles.priceCell}`}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
-                <td className={`${styles.tableCell} ${styles.profitCell} ${getPL(trade) === "-" ? "" : getPL(trade) > 0 ? styles.profitPositive : styles.profitNegative}`}>
-                  {getPL(trade) !== "-" ? `$${getPL(trade)}` : "-"}
-                </td>
-                <td className={styles.tableCell}>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button 
-                      onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
-                      className={`${styles.actionButton} ${styles.viewButton}`}
-                    >
-                      View
-                    </button>
-                    {trade.exit_price
-                      ? <button 
-                          onClick={e => { e.stopPropagation(); handleReview(trade.id); }}
-                          className={`${styles.actionButton} ${styles.reviewButton}`}
-                        >Review</button>
-                      : <button 
-                          onClick={e => { e.stopPropagation(); handleEdit(trade.id); }}
-                          className={`${styles.actionButton} ${styles.editButton}`}
-                        >Update</button>
-                    }
-                    <button 
-                      onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}
-                      className={`${styles.actionButton} ${styles.deleteButton}`}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {trades.map(trade => {
+              const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
+              const remainingQty = trade.remaining_quantity !== undefined && trade.remaining_quantity !== null ? Number(trade.remaining_quantity) : originalQty;
+              const soldQty = originalQty - remainingQty;
+              // Debug logs for exit/PL/avg price
+              console.log('[TradeList] Ticker:', trade.ticker, {
+                exitTransactions: getExitTransactions(trade),
+                lastExitDate: getLastExitDate(trade),
+                avgExitPrice: getAverageExitPrice(trade),
+                partialPL: getPartialPL(trade),
+                soldQty,
+                exit_price: trade.exit_price,
+                exit_date: trade.exit_date,
+                originalQty,
+                remainingQty
+              });
+              return (
+                <tr
+                  key={trade.trade_id}
+                  className={styles.tableRow}
+                  onClick={() => handleShowDetails(trade.id)}
+                >
+                  <td className={`${styles.tableCell} ${styles.tickerCell}`}>
+                    <div className={styles.tickerContainer}>
+                      <span className={styles.tickerSymbol}>{trade.ticker}</span>
+                      {getTickerBySymbol(trade.ticker)?.name && (
+                        <span className={styles.companyName}>{getTickerBySymbol(trade.ticker).name}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.entry_date ? formatDate(trade.entry_date) : "-"}</td>
+                  <td className={`${styles.tableCell} ${styles.dateCell}`}>{getExitTransactions(trade).length > 0 ? getLastExitDate(trade) : '-'}</td>
+                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.entry_price !== undefined && trade.entry_price !== null ? Number(trade.entry_price).toFixed(2) : "-"}</td>
+                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{originalQty.toLocaleString()}</td>
+                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{soldQty > 0 ? soldQty.toLocaleString() : 0}</td>
+                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{remainingQty.toLocaleString()}</td>
+                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exit_price !== undefined && trade.exit_price !== null ? Number(trade.exit_price).toFixed(2) : "-")) : '-'}</td>
+                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
+                  <td className={`${styles.tableCell} ${styles.profitCell} ${soldQty > 0 && getPartialPL(trade) !== "-" ? (getPartialPL(trade) > 0 ? styles.profitPositive : styles.profitNegative) : ''}`}> 
+                    {soldQty > 0 && getPartialPL(trade) !== "-" ? `$${getPartialPL(trade)}` : "-"}
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button 
+                        onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
+                        className={`${styles.actionButton} ${styles.viewButton}`}
+                      >
+                        View
+                      </button>
+                      {getExitTransactions(trade).length > 0 && remainingQty === 0
+                        ? <button 
+                            onClick={e => { e.stopPropagation(); handleReview(trade.id); }}
+                            className={`${styles.actionButton} ${styles.reviewButton}`}
+                          >Review</button>
+                        : <button 
+                            onClick={e => { e.stopPropagation(); handleEdit(trade.id); }}
+                            className={`${styles.actionButton} ${styles.editButton}`}
+                          >Update</button>
+                      }
+                      <button 
+                        onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}
+                        className={`${styles.actionButton} ${styles.deleteButton}`}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

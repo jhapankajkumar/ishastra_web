@@ -38,8 +38,8 @@
   background: #232b3e;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  padding: 24px 28px;
-  margin-bottom: 32px;
+  padding: 20px 24px;
+  margin-bottom: 18px;
 }
 
 .sectionTitle {
@@ -54,7 +54,7 @@
   height: 2px;
   background: #2c3446;
   border-radius: 2px;
-  margin: 24px 0;
+  margin: 14px 0;
 }
 
 
@@ -70,14 +70,14 @@
 .gridTwoCol {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 18px;
+  gap: 16px 24px;
+  margin-bottom: 8px;
 }
 
 .fieldGroup {
   display: flex;
   flex-direction: column;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
 }
 
 .label {

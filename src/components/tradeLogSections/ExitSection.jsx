@@ -1,10 +1,56 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { getTradeTransactions } from '../../api/tradeApi';
 
 export default function ExitSection(props) {
   const { form, handleChange, exitDisabled, exitTactics, today, styles } = props;
+  const [partialExits, setPartialExits] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!form.id) return;
+    setLoading(true);
+    getTradeTransactions(form.id)
+      .then(res => setPartialExits(res.data || []))
+      .catch(() => setPartialExits([]))
+      .finally(() => setLoading(false));
+  }, [form.id]);
+
   return (
     <div className={styles.cardSection}>
       <h2 className={styles.sectionTitle}>Exit Information</h2>
+
+      {/* Partial Exits Table */}
+      {partialExits.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, color: '#F59E0B', margin: '0 0 12px 0' }}>Partial Exits</h3>
+          <table style={{ width: '100%', background: '#181F2A', borderRadius: 8, borderCollapse: 'collapse', marginBottom: 8 }}>
+            <thead>
+              <tr style={{ color: '#9CA3AF', fontWeight: 600, fontSize: 14 }}>
+                <th style={{ padding: 8, borderBottom: '1px solid #2A3441' }}>Date</th>
+                <th style={{ padding: 8, borderBottom: '1px solid #2A3441' }}>Quantity</th>
+                <th style={{ padding: 8, borderBottom: '1px solid #2A3441' }}>Price</th>
+                <th style={{ padding: 8, borderBottom: '1px solid #2A3441' }}>P&L</th>
+              </tr>
+            </thead>
+            <tbody>
+              {partialExits.map((exit, idx) => {
+                const price = exit.exit_price || exit.price || exit.exitOrderPrice || '-';
+                const qty = exit.exit_quantity || exit.quantity || '-';
+                const entry = form.entryOrderPrice || form.entry_price || 0;
+                const pl = (price && qty && entry) ? ((Number(price) - Number(entry)) * Number(qty)).toFixed(2) : '-';
+                return (
+                  <tr key={idx} style={{ color: '#E5E7EB', fontSize: 15 }}>
+                    <td style={{ padding: 8 }}>{exit.exit_date ? new Date(exit.exit_date).toLocaleDateString() : '-'}</td>
+                    <td style={{ padding: 8 }}>{qty}</td>
+                    <td style={{ padding: 8 }}>{price !== '-' ? `$${Number(price).toFixed(2)}` : '-'}</td>
+                    <td style={{ padding: 8 }}>{pl !== '-' ? `$${pl}` : '-'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
       <div className={styles.gridTwoCol}>
         <div className={styles.fieldGroup}>
           <label className={styles.label}>Exit Date</label>

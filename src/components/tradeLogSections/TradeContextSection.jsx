@@ -3,36 +3,21 @@ import React from "react";
 export default function TradeContextSection(props) {
   const { form, handleChange, isReview, isUpdate, setups, setupsLoaded, entryDisabled, styles } = props;
   const safeSetups = Array.isArray(setups) ? setups : [];
+  
+  console.log('TradeContextSection - setups:', setups, 'setupsLoaded:', setupsLoaded, 'safeSetups:', safeSetups);
+  
   return (
     <div className={styles.cardSection}>
       <h2 className={styles.sectionTitle}>Trade Context & Setup 🔍</h2>
       <div className={styles.gridTwoCol}>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Trade Status</label>
-          <select name="tradeStatus" value={form.tradeStatus} onChange={handleChange} className={styles.select} disabled={isReview}>
-            <option value="Planned">Planned</option>
-            <option value="Executed">Executed</option>
-          </select>
-        </div>
+        {/* Trade Status removed as per new workflow */}
         <div className={styles.fieldGroup}>
           <label className={styles.label}>Instrument Type</label>
           <select name="instrumentType" value={form.instrumentType} onChange={handleChange} className={styles.select} disabled={isReview}>
             <option value="Stocks">Stocks</option>
-            <option value="Crypto">Crypto</option>
+            <option value="ETF">ETF</option>
             <option value="Forex">Forex</option>
-            <option value="Options">Options</option>
             <option value="Indices">Indices</option>
-          </select>
-        </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Market</label>
-          <select name="market" value={form.market} onChange={handleChange} className={styles.select} disabled={isReview}>
-            <option value="India">India</option>
-            <option value="US">US</option>
-            <option value="Japan">Japan</option>
-            <option value="Germany">Germany</option>
-            <option value="Canada">Canada</option>
-            <option value="Singapore">Singapore</option>
           </select>
         </div>
         <div className={styles.fieldGroup}>
@@ -55,9 +40,12 @@ export default function TradeContextSection(props) {
           ) : (
             <select name="setupType" value={form.setupType} onChange={handleChange} className={styles.select} disabled={entryDisabled}>
               <option value="">Select setup...</option>
-          {safeSetups.map((setup) => (
-            <option key={setup.trade_setup_id} value={setup.trade_setup_id}>{setup.name}</option>
-          ))}
+          {safeSetups.map((setup, index) => {
+            console.log(`Setup ${index}:`, setup, 'trade_setup_id:', setup.trade_setup_id, 'name:', setup.name);
+            return (
+              <option key={setup.trade_setup_id} value={setup.trade_setup_id}>{setup.name}</option>
+            );
+          })}
             </select>
           )}
         </div>
@@ -70,10 +58,7 @@ export default function TradeContextSection(props) {
             <option value="High">High</option>
           </select>
         </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Tags (optional)</label>
-          <input type="text" name="tags" className={styles.input} placeholder="Add tags..." disabled={entryDisabled} />
-        </div>
+        {/* Tags removed as per new workflow */}
       </div>
     </div>
   );
