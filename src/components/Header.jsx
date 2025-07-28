@@ -8,6 +8,8 @@ const navLinks = [
   { to: "/trades/new", label: "Add Trade" },
   { to: "/journal", label: "Journal" },
   { to: "/journal/new", label: "Add Journal" },
+  { to: "/recommendations", label: "Recommendations" },
+  { to: "/investments", label: "Investments" },
   { to: "/risk-management", label: "Risk Management" }
   // Add more links if you add more routes
 ];

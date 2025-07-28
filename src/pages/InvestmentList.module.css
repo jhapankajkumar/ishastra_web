@@ -1,0 +1,427 @@
+/* InvestmentList specific styles */
+.container {
+  max-width: none;
+  margin: 0;
+  padding: 24px 5%;
+  box-sizing: border-box;
+  background: #101828;
+  min-height: 100vh;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #9CA3AF;
+  font-size: 16px;
+}
+
+.actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px 0;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filters {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterGroup label {
+  font-size: 14px;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+.filterSelect {
+  padding: 8px 12px;
+  border: 1px solid #2A3441;
+  background: #1A2332;
+  color: #E5E7EB;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.addButton {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.addButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.investmentGroup {
+  margin-bottom: 32px;
+}
+
+.groupHeader {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #4F46E5;
+}
+
+/* Table Styles */
+.tableContainer {
+  background: #1A2332;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #2A3441;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tableHeader {
+  background: #232B3D;
+}
+
+.tableHeaderCell {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #E5E7EB;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #2A3441;
+}
+
+.tableRow {
+  border-bottom: 1px solid #2A3441;
+  transition: background-color 0.2s ease;
+}
+
+.tableRow:hover {
+  background: #1E293B;
+}
+
+.tableCell {
+  padding: 16px 12px;
+  color: #E5E7EB;
+  vertical-align: middle;
+  font-size: 13px;
+}
+
+.tickerCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ticker {
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+}
+
+.linkedBadge {
+  background: #4F46E5;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  width: fit-content;
+  cursor: help;
+}
+
+.currentPrice {
+  color: #10B981;
+  font-weight: 600;
+}
+
+.noPrice {
+  color: #6B7280;
+}
+
+.pnlCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profit {
+  color: #10B981;
+  font-weight: 600;
+}
+
+.loss {
+  color: #EF4444;
+  font-weight: 600;
+}
+
+.pnlPercent {
+  font-size: 11px;
+}
+
+.statusBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.statusBadge.open {
+  background: #10B981;
+  color: #fff;
+}
+
+.statusBadge.closed {
+  background: #6B7280;
+  color: #fff;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.editButton {
+  background: #4F46E5;
+  color: #fff;
+}
+
+.editButton:hover {
+  background: #4338CA;
+  transform: translateY(-1px);
+}
+
+.closeButton {
+  background: #F59E0B;
+  color: #fff;
+}
+
+.closeButton:hover {
+  background: #D97706;
+  transform: translateY(-1px);
+}
+
+.deleteButton {
+  background: #EF4444;
+  color: #fff;
+}
+
+.deleteButton:hover {
+  background: #DC2626;
+  transform: translateY(-1px);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  background: #1A2332;
+  border-radius: 12px;
+  border: 1px solid #2A3441;
+}
+
+.emptyState h3 {
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.emptyState p {
+  color: #9CA3AF;
+  font-size: 16px;
+  margin-bottom: 24px;
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: #1A2332;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  border: 1px solid #2A3441;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.modalContent h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 16px 0;
+}
+
+.modalContent p {
+  font-size: 16px;
+  color: #9CA3AF;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #E5E7EB;
+  margin-bottom: 6px;
+}
+
+.modalInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #2A3441;
+  background: #232B3D;
+  color: #E5E7EB;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.modalInput:focus {
+  outline: none;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.modalActions {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.cancelButton {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid #2A3441;
+  background: transparent;
+  color: #9CA3AF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: #2A3441;
+  color: #fff;
+}
+
+.closeInvestmentButton {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  background: #F59E0B;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeInvestmentButton:hover {
+  background: #D97706;
+  transform: translateY(-1px);
+}
+
+.confirmDeleteButton {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  background: #EF4444;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirmDeleteButton:hover {
+  background: #DC2626;
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px 3%;
+  }
+
+  .actionBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .tableContainer {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 1000px;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

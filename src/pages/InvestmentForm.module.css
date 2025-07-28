@@ -1,0 +1,429 @@
+/* InvestmentForm specific styles */
+.container {
+  max-width: none;
+  margin: 0;
+  padding: 24px 5%;
+  box-sizing: border-box;
+  background: #181f2a;
+  min-height: 100vh;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #9CA3AF;
+  font-size: 16px;
+}
+
+.header {
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 8px 0;
+}
+
+.header p {
+  font-size: 16px;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+.formContainer {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.card {
+  background: #232b3e;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid #2A3441;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2A3441;
+}
+
+.gridTwoCol {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.fieldGroup {
+  margin-bottom: 20px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #E5E7EB;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 1px solid #2A3441;
+  border-radius: 8px;
+  background-color: #1A2332;
+  color: #E5E7EB;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.input:hover, .select:hover, .textarea:hover {
+  border-color: #4F46E5;
+}
+
+.input::placeholder, .textarea::placeholder {
+  color: #6B7280;
+}
+
+.inputError {
+  border-color: #EF4444 !important;
+}
+
+.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.error {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #EF4444;
+  margin-top: 6px;
+}
+
+/* Ticker Input with Suggestions */
+.tickerInputWrapper {
+  position: relative;
+}
+
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1A2332;
+  border: 1px solid #2A3441;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.suggestionItem {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #E5E7EB;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #2A3441;
+}
+
+.suggestionItem:hover {
+  background: #1E293B;
+}
+
+.suggestionItem:last-child {
+  border-radius: 0 0 8px 8px;
+  border-bottom: none;
+}
+
+.tickerInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.tickerSymbol {
+  font-weight: 600;
+  color: #4F46E5;
+  font-size: 14px;
+}
+
+.tickerName {
+  color: #E5E7EB;
+  font-size: 13px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tickerMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.tickerType {
+  background: #1E293B;
+  color: #9CA3AF;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.tickerExchange {
+  color: #6B7280;
+  font-size: 10px;
+}
+
+.searchLoading {
+  color: #9CA3AF;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Price Information */
+.priceInfo {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.priceLoading {
+  color: #9CA3AF;
+}
+
+.currentPrice {
+  color: #10B981;
+  font-weight: 600;
+}
+
+.noPrice {
+  color: #6B7280;
+}
+
+/* Investment Summary */
+.investmentSummary {
+  margin: 24px 0;
+  padding: 20px;
+  background: #232B3D;
+  border-radius: 12px;
+  border-left: 4px solid #4F46E5;
+}
+
+.investmentSummary h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 16px 0;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.summaryItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #1A2332;
+  border-radius: 8px;
+  border: 1px solid #2A3441;
+}
+
+.summaryLabel {
+  font-size: 14px;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+.summaryValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.summaryValue.profit {
+  color: #10B981;
+}
+
+.summaryValue.loss {
+  color: #EF4444;
+}
+
+/* Price Input with Currency Symbol */
+.priceInputWrapper {
+  position: relative;
+}
+
+.currencySymbol {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9CA3AF;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 1;
+}
+
+.priceInput {
+  padding-left: 32px !important;
+}
+
+/* Investment Summary */
+/* Investment Summary - Simple version for inline display */
+.investmentSummary.inline {
+  margin-top: 8px;
+  padding: 12px 16px;
+  background: #232B3D;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #E5E7EB;
+  border-left: 3px solid #4F46E5;
+}
+
+.investmentSummary.inline strong {
+  color: #10B981;
+  font-weight: 600;
+}
+
+/* Textarea */
+.textarea {
+  resize: vertical;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+/* Form Actions */
+.submitSection {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #2A3441;
+}
+
+.cancelButton {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid #2A3441;
+  background: transparent;
+  color: #9CA3AF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: #2A3441;
+  color: #fff;
+  border-color: #374151;
+}
+
+.cancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.submitButton {
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  min-width: 140px;
+}
+
+.submitButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+}
+
+.submitButton:disabled {
+  background: #6B7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Select styling */
+.select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 40px;
+  appearance: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px 3%;
+  }
+
+  .gridTwoCol {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .submitSection {
+    flex-direction: column-reverse;
+  }
+
+  .cancelButton,
+  .submitButton {
+    width: 100%;
+    text-align: center;
+  }
+
+  .header h1 {
+    font-size: 28px;
+  }
+}
+
+

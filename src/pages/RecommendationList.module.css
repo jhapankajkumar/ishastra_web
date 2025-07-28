@@ -1,0 +1,358 @@
+/* RecommendationList specific styles */
+.container {
+  max-width: none;
+  margin: 0;
+  padding: 24px 5%;
+  box-sizing: border-box;
+  background: #101828;
+  min-height: 100vh;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #9CA3AF;
+  font-size: 16px;
+}
+
+.actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px 0;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+}
+
+.filterButton {
+  padding: 8px 16px;
+  border: 1px solid #2A3441;
+  background: #1A2332;
+  color: #9CA3AF;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.filterButton:hover {
+  background: #232B3D;
+  color: #E5E7EB;
+  border-color: #4F46E5;
+}
+
+.filterButton.active {
+  background: #4F46E5;
+  color: #fff;
+  border-color: #4F46E5;
+}
+
+.addButton {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.addButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* Table Styles */
+.tableContainer {
+  background: #1A2332;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #2A3441;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tableHeader {
+  background: #232B3D;
+}
+
+.tableHeaderCell {
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 600;
+  color: #E5E7EB;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #2A3441;
+}
+
+.tableRow {
+  border-bottom: 1px solid #2A3441;
+  transition: background-color 0.2s ease;
+}
+
+.tableRow:hover {
+  background: #1E293B;
+}
+
+.tableCell {
+  padding: 16px 20px;
+  color: #E5E7EB;
+  vertical-align: middle;
+}
+
+.tickerCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ticker {
+  font-weight: 600;
+  color: #fff;
+  font-size: 15px;
+}
+
+.sector {
+  font-size: 12px;
+  color: #9CA3AF;
+  background: #374151;
+  padding: 2px 8px;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.opportunityPrice {
+  color: #10B981;
+  font-weight: 600;
+}
+
+.regularPrice {
+  color: #E5E7EB;
+}
+
+.noPrice {
+  color: #6B7280;
+}
+
+.opportunityCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.opportunityBadge {
+  background: #10B981;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.noOpportunityBadge {
+  background: #EF4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.priceDiff {
+  font-size: 12px;
+  color: #9CA3AF;
+}
+
+.noData {
+  color: #6B7280;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.editButton {
+  background: #4F46E5;
+  color: #fff;
+}
+
+.editButton:hover {
+  background: #4338CA;
+  transform: translateY(-1px);
+}
+
+.archiveButton {
+  background: #F59E0B;
+  color: #fff;
+}
+
+.archiveButton:hover {
+  background: #D97706;
+  transform: translateY(-1px);
+}
+
+.unarchiveButton {
+  background: #8B5CF6;
+  color: #fff;
+}
+
+.unarchiveButton:hover {
+  background: #7C3AED;
+  transform: translateY(-1px);
+}
+
+.deleteButton {
+  background: #EF4444;
+  color: #fff;
+}
+
+.deleteButton:hover {
+  background: #DC2626;
+  transform: translateY(-1px);
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: #1A2332;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  border: 1px solid #2A3441;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.modalContent h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 16px 0;
+}
+
+.modalContent p {
+  font-size: 16px;
+  color: #9CA3AF;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.modalActions {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+}
+
+.cancelButton {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid #2A3441;
+  background: transparent;
+  color: #9CA3AF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: #2A3441;
+  color: #fff;
+}
+
+.confirmDeleteButton {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  background: #EF4444;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirmDeleteButton:hover {
+  background: #DC2626;
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px 3%;
+  }
+
+  .actionBar {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .filters {
+    justify-content: center;
+  }
+
+  .tableContainer {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 800px;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .actionButton {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
