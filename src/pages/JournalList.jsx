@@ -116,7 +116,7 @@ export default function JournalList() {
   };
 
   const handleEdit = (journal) => {
-    navigate(`/journal/edit/${journal.id}`);
+    navigate(`/journal/update/${journal.id}`);
   };
 
   const formatDate = (dateStr) => {
@@ -240,7 +240,7 @@ export default function JournalList() {
                       onClick={e => { e.stopPropagation(); handleEdit(journal); }}
                       className={`${styles.actionButton} ${styles.editButton}`}
                     >
-                      Edit
+                      Update
                     </button>
                     <button 
                       onClick={e => { e.stopPropagation(); handleDeleteClick(journal); }}

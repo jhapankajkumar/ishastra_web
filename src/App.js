@@ -6,6 +6,7 @@ import TradeUpdate from './pages/TradeUpdate'; // Import TradeUpdate page
 import TradeReview from './pages/TradeReview'; // Import TradeReview page
 import JournalList from './pages/JournalList';
 import JournalLog from './pages/JournalLog';
+import JournalLogUpdate from './pages/JournalLogUpdate';
 import RiskManagement from './pages/RiskManagement';
 import Header from './components/Header'; // Import the Header component
 import ErrorBoundary from './components/ErrorBoundary';
@@ -26,6 +27,7 @@ function App() {
             <Route path="/journal" element={<JournalList />} />
             <Route path="/journal/new" element={<JournalLog />} />
             <Route path="/journal/edit/:id" element={<JournalLog />} />
+            <Route path="/journal/update/:id" element={<JournalLogUpdate />} />
             <Route path="/risk-management" element={<RiskManagement />} />
             {/* Add more routes as needed */}
           </Routes>
