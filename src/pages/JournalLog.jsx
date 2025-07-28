@@ -4,12 +4,15 @@ import styles from "./JournalLog.module.css";
 import PageHeader from "../components/PageHeader";
 import TickerSearch from "../components/TickerSearch";
 import { createJournal, updateJournal, getJournalById } from '../api/journalApi';
+import { fetchSetups } from '../api/firebaseMetaApi';
+import { getTechnicalIndicators } from '../api/tickerApi';
 import { useNotification } from '../components/NotificationProvider';
 import ErrorPage from '../components/ErrorPage';
 import { getTickerBySymbol } from '../data/tickerData';
 
+const todayStr = new Date().toISOString().split('T')[0];
 const initialState = {
-  date: "",
+  date: todayStr,
   stock: "",
   companyName: "",
   trend: "",
@@ -22,17 +25,21 @@ const initialState = {
   volume_spike: false,
   rsi_value: "",
   entry_considered: false,
+  setup_type: "",
+  setup_confidence: "",
   action_plan: "",
   notes: "",
   screenshot: null,
   reviewScreenshot: null,
 };
 
-export default function JournalLog({ onSubmit }) {
+export default function StockAnalysisAdd({ onSubmit }) {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [initialLoading, setInitialLoading] = useState(false);
+  const [setups, setSetups] = useState([]);
+  const [setupsLoaded, setSetupsLoaded] = useState(false);
   
   // Get today's date in YYYY-MM-DD format for max date validation
   const today = new Date().toISOString().split('T')[0];
@@ -66,13 +73,44 @@ export default function JournalLog({ onSubmit }) {
   };
 
   // Handle ticker selection (when user selects from dropdown)
-  const handleTickerSelect = (tickerData) => {
+  const handleTickerSelect = async (tickerData) => {
+    const { symbol, name } = tickerData;
+    let rsi = "";
+    let support = "";
+    let resistance = "";
+    try {
+      const indicatorsRes = await getTechnicalIndicators(symbol);
+      const indicators = indicatorsRes.data || {};
+      rsi = indicators.rsi14 || "";
+      support = indicators.support || "";
+      resistance = indicators.resistance || "";
+    } catch (e) {
+      // fallback to blank
+    }
     setForm((prev) => ({ 
       ...prev, 
-      stock: tickerData.symbol,
-      companyName: tickerData.name // Auto-populate company name
+      stock: symbol,
+      companyName: name,
+      rsi_value: rsi,
+      support_level: support,
+      resistance_level: resistance
     }));
   };
+  // Fetch setups on mount
+  useEffect(() => {
+    let mounted = true;
+    setSetupsLoaded(false);
+    fetchSetups().then((data) => {
+      if (mounted) {
+        setSetups(data || []);
+        setSetupsLoaded(true);
+      }
+    }).catch((error) => {
+      console.error('Error fetching setups:', error);
+      setSetupsLoaded(true);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -229,6 +267,7 @@ export default function JournalLog({ onSubmit }) {
                   onSelect={handleTickerSelect}
                   placeholder="Search ticker (e.g. AAPL, RELIANCE)"
                   disabled={isEditMode}
+                  apiSource="yahoo" // Use the same prop as Add Trade for ticker search API
                 />
               </div>
 
@@ -260,6 +299,38 @@ export default function JournalLog({ onSubmit }) {
                   <option value="Bearish">Bearish</option>
                   <option value="Sideways">Sideways</option>
                   <option value="Uncertain">Uncertain</option>
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Setup Type</label>
+                <select
+                  name="setup_type"
+                  value={form.setup_type}
+                  onChange={handleChange}
+                  className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
+                  disabled={isEditMode}
+                  required
+                >
+                  <option value="">{setupsLoaded ? "Select setup..." : "Loading..."}</option>
+                  {setups.map((setup) => (
+                    <option key={setup.id} value={setup.id}>{setup.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Setup Confidence</label>
+                <select
+                  name="setup_confidence"
+                  value={form.setup_confidence}
+                  onChange={handleChange}
+                  className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
+                  disabled={isEditMode}
+                  required
+                >
+                  <option value="">Select confidence...</option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
                 </select>
               </div>
             </div>
@@ -410,7 +481,7 @@ export default function JournalLog({ onSubmit }) {
                   disabled={isEditMode}
                 />
                 <label htmlFor="entry_considered" className={styles.checkboxLabel}>
-                  Entry Considered
+                  Potential Trade
                 </label>
               </div>
             </div>
