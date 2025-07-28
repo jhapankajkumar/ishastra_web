@@ -1,3 +1,3 @@
-import {API} from './baseApi';
+import { fetchTags } from './firebaseMetaApi';
 
-export const getAllTags = () => API.get('/tags');
+export const getAllTags = fetchTags;

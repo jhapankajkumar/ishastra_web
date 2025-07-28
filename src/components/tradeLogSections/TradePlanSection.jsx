@@ -1,4 +1,7 @@
 
+
+
+
 import React from "react";
 import TickerSearch from "../TickerSearch";
 import { getCurrentPrice, getATR, getTechnicalIndicators } from '../../api/tickerApi';

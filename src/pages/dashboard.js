@@ -51,7 +51,7 @@ const Dashboard = () => {
         }
 
         if (tagsRes.status === 'fulfilled') {
-          setTags(tagsRes.value.data);
+          setTags(tagsRes.value || []);
         } else {
           console.error('Tags error:', tagsRes.reason);
           if (tagsRes.reason?.type === 'NETWORK_ERROR') {

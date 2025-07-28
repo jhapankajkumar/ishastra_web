@@ -1,9 +1,7 @@
 import {API} from './baseApi';
 
 export const getAllTrades = () => API.get('/trades');
-export const fetchExitTactics = () => API.get('/exit-tactics');
 export const getTradeById = (id) => API.get(`/trades/${id}`);
-export const fetchSetups = () => API.get('/setups');
 
 // Update trade (exit) - now supports partial exits
 export async function updateTrade(id, form) {

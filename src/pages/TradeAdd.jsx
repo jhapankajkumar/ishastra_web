@@ -8,7 +8,8 @@ import TechnicalIndicators from "../components/TechnicalIndicators";
 import { useNavigate } from "react-router-dom";
 import styles from "./TradeAdd.module.css";
 import PageHeader from "../components/PageHeader";
-import { createTrade, updateTrade, addPostAnalysis, fetchExitTactics, fetchSetups } from '../api/tradeApi';
+import { createTrade, updateTrade, addPostAnalysis } from '../api/tradeApi';
+import { fetchExitTactics, fetchSetups } from '../api/firebaseMetaApi';
 import { getCurrentPrice, getATR, getTechnicalIndicators } from '../api/tickerApi';
 import { useNotification } from '../components/NotificationProvider';
 import ErrorPage from '../components/ErrorPage';
@@ -187,21 +188,17 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
   useEffect(() => {
     let mounted = true;
     setSetupsLoaded(false);
-    fetchSetups().then((response) => {
-      console.log('Fetched setups response:', response);
-      const data = response.data;
-      console.log('Fetched setups data:', data);
+    fetchSetups().then((data) => {
       if (mounted) {
         setSetups(data || []);
         setSetupsLoaded(true);
-        console.log('Setups loaded:', data || []);
       }
     }).catch((error) => {
       console.error('Error fetching setups:', error);
       setSetupsLoaded(true);
     });
-    fetchExitTactics().then((response) => {
-      if (mounted) setExitTactics(response.data || []);
+    fetchExitTactics().then((data) => {
+      if (mounted) setExitTactics(data || []);
     });
     return () => { mounted = false; };
   }, []);
@@ -265,12 +262,6 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
 
   return (
     <div className={styles.container}>
-      {!onSubmit && (
-        <PageHeader 
-          title={isAdd ? "Add New Trade" : isUpdate ? "Update Trade Exit" : "Review Trade"}
-          subtitle={isAdd ? "Enter the details for your new trade" : isUpdate ? "Update the exit details for this trade" : "Add your post-trade analysis"}
-        />
-      )}
       <div className={styles.formContainer}>
         <form onSubmit={handleSubmit}>
           <TradeContextSection {...{form, handleChange, isReview, isUpdate, setups, setupsLoaded, entryDisabled, styles}} />

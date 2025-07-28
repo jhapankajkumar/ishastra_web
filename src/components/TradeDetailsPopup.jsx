@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 // import styles from "../pages/Dashboard.module.css"; // Reserved for future styling
-import { fetchExitTactics, fetchSetups, getTradeTransactions } from '../api/tradeApi';
+import { getTradeTransactions } from '../api/tradeApi';
+import { fetchExitTactics, fetchSetups } from '../api/firebaseMetaApi';
 
 export default function TradeDetailsPopup({ trade, onClose }) {
   const [exitTactics, setExitTactics] = useState([]);
@@ -9,13 +10,13 @@ export default function TradeDetailsPopup({ trade, onClose }) {
 
   useEffect(() => {
     fetchExitTactics()
-      .then(res => setExitTactics(res.data))
+      .then(data => setExitTactics(data))
       .catch(() => setExitTactics([]));
   }, []);
 
   useEffect(() => {
     fetchSetups()
-      .then(res => setSetups(res.data))
+      .then(data => setSetups(data))
       .catch(() => setSetups([]));
   }, []);
 
