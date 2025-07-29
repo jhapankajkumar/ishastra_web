@@ -204,36 +204,42 @@ export default function InvestmentList() {
               <thead className={styles.tableHeader}>
                 <tr>
                   <th className={styles.tableHeaderCell}>Ticker</th>
+                  <th className={styles.tableHeaderCell}>Buy Below</th>
+                  <th className={styles.tableHeaderCell}>Current Price</th>
+                  <th className={styles.tableHeaderCell}>Diff %</th>
                   <th className={styles.tableHeaderCell}>Qty</th>
                   <th className={styles.tableHeaderCell}>Buy Avg</th>
-                  <th className={styles.tableHeaderCell}>Current Price</th>
                   <th className={styles.tableHeaderCell}>Invested</th>
                   <th className={styles.tableHeaderCell}>Current Value</th>
                   <th className={styles.tableHeaderCell}>P&L</th>
-                  <th className={styles.tableHeaderCell}>Status</th>
                   <th className={styles.tableHeaderCell}>Invested On</th>
+                  <th className={styles.tableHeaderCell}>Remarks</th>
                   <th className={styles.tableHeaderCell}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {groupInvestments.map(investment => {
                   const metrics = calculateMetrics(investment);
-                  const linkedRec = getLinkedRecommendation(investment);
+
                   
+  
                   return (
                     <tr key={investment.id} className={styles.tableRow}>
                       <td className={`${styles.tableCell} ${styles.tickerCell}`}>
                         <div>
                           <span className={styles.ticker}>{investment.ticker}</span>
-                          {linkedRec && (
-                            <span className={styles.linkedBadge} title={`From recommendation: Buy below ₹${linkedRec.buy_below}`}>
+                          {investment.isRecommended && (
+                            <span className={styles.linkedBadge} title={`From recommendation: Buy below ₹${investment.buyBelow}`}>
                               🔗 Rec
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className={styles.tableCell}>{investment.quantity}</td>
-                      <td className={styles.tableCell}>₹{investment.avgBuyPrice?.toFixed(2)}</td>
+                      <td className={styles.tableCell}>
+                        <span className={styles.pnlCell}>
+                            ₹{investment.buyBelow ? investment.buyBelow.toFixed(2) : '-'}
+                          </span>
+                      </td>
                       <td className={styles.tableCell}>
                         {investment.currentPrice ? (
                           <span className={styles.currentPrice}>
@@ -243,6 +249,14 @@ export default function InvestmentList() {
                           <span className={styles.noPrice}>-</span>
                         )}
                       </td>
+                      {/* Diff % */}
+                      <td className={styles.tableCell}>
+                        <span className={investment.differencePercentage >= 0 ? styles.profit : styles.loss}>
+                            {investment.differencePercentage >= 0 ? '+' : ''}{investment.differencePercentage}%
+                          </span>
+                      </td>
+                      <td className={styles.tableCell}>{investment.quantity}</td>
+                      <td className={styles.tableCell}>₹{investment.avgBuyPrice?.toFixed(2)}</td>
                       <td className={styles.tableCell}>₹{metrics.investedAmount.toLocaleString()}</td>
                       <td className={styles.tableCell}>₹{metrics.currentValue.toLocaleString()}</td>
                       <td className={styles.tableCell}>
@@ -255,12 +269,11 @@ export default function InvestmentList() {
                           </span>
                         </div>
                       </td>
-                      <td className={styles.tableCell}>
-                        <span className={`${styles.statusBadge} ${styles[investment.status]}`}>
-                          {investment.status === 'open' ? 'Open' : 'Closed'}
-                        </span>
-                      </td>
+                      
                       <td className={styles.tableCell}>{formatDate(investment.entryDate)}</td>
+                      <td className={styles.tableCell}>
+                        {investment.notes || '-'}
+                      </td>
                       <td className={styles.tableCell}>
                         <div className={styles.actionButtons}>
                           <button 
