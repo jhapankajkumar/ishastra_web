@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
-import TradeContextSection from "../components/tradeLogSections/TradeContextSection";
-import TradePlanSection from "../components/tradeLogSections/TradePlanSection";
-import NotesSection from "../components/tradeLogSections/NotesSection";
-import ExitSection from "../components/tradeLogSections/ExitSection";
-import PostTradeAnalysisSection from "../components/tradeLogSections/PostTradeAnalysisSection";
-import TechnicalIndicators from "../components/TechnicalIndicators";
+import TradeContextSection from "../../components/tradeLogSections/TradeContextSection";
+import TradePlanSection from "../../components/tradeLogSections/TradePlanSection";
+import NotesSection from "../../components/tradeLogSections/NotesSection";
+import ExitSection from "../../components/tradeLogSections/ExitSection";
+import PostTradeAnalysisSection from "../../components/tradeLogSections/PostTradeAnalysisSection";
+import TechnicalIndicators from "../../components/TechnicalIndicators";
 import { useNavigate } from "react-router-dom";
 import styles from "./TradeAdd.module.css";
-import PageHeader from "../components/PageHeader";
-import { createTrade, updateTrade, addPostAnalysis } from '../api/tradeApi';
-import { fetchExitTactics, fetchSetups } from '../api/firebaseMetaApi';
-import { getCurrentPrice, getATR, getTechnicalIndicators } from '../api/tickerApi';
-import { useNotification } from '../components/NotificationProvider';
-import ErrorPage from '../components/ErrorPage';
-import { getTickerBySymbol } from '../data/tickerData';
+import PageHeader from "../../components/PageHeader";
+import { createTrade, updateTrade, addPostAnalysis } from '../../api/tradeApi';
+import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
+import { getCurrentPrice, getATR, getTechnicalIndicators } from '../../api/tickerApi';
+import { useNotification } from '../../components/NotificationProvider';
+import ErrorPage from '../../components/ErrorPage';
+import { getTickerBySymbol } from '../../data/tickerData';
 
 const initialState = {
   tradeId: "",

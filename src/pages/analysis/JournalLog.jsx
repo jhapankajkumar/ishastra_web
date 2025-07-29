@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./JournalLog.module.css";
-import PageHeader from "../components/PageHeader";
-import TickerSearch from "../components/TickerSearch";
-import { createJournal, updateJournal, getJournalById } from '../api/journalApi';
-import { fetchSetups } from '../api/firebaseMetaApi';
-import { getTechnicalIndicators } from '../api/tickerApi';
-import { useNotification } from '../components/NotificationProvider';
-import ErrorPage from '../components/ErrorPage';
-import { getTickerBySymbol } from '../data/tickerData';
+import PageHeader from "../../components/PageHeader";
+import TickerSearch from "../../components/TickerSearch";
+import { createJournal, updateJournal, getJournalById } from '../../api/journalApi';
+import { fetchSetups } from '../../api/firebaseMetaApi';
+import { getTechnicalIndicators } from '../../api/tickerApi';
+import { useNotification } from '../../components/NotificationProvider';
+import ErrorPage from '../../components/ErrorPage';
+import { getTickerBySymbol } from '../../data/tickerData';
 
 const todayStr = new Date().toISOString().split('T')[0];
 const initialState = {
@@ -374,7 +374,6 @@ export default function StockAnalysisAdd({ onSubmit }) {
                   placeholder="0-100"
                   min="0"
                   max="100"
-                  step="0.1"
                   disabled={isEditMode}
                 />
               </div>
@@ -388,7 +387,6 @@ export default function StockAnalysisAdd({ onSubmit }) {
                   onChange={handleChange}
                   className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   placeholder="0.00"
-                  step="0.01"
                   disabled={isEditMode}
                 />
               </div>
@@ -402,7 +400,6 @@ export default function StockAnalysisAdd({ onSubmit }) {
                   onChange={handleChange}
                   className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   placeholder="0.00"
-                  step="0.01"
                   disabled={isEditMode}
                 />
               </div>

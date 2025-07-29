@@ -40,7 +40,7 @@
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -64,7 +64,7 @@
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 12px;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
@@ -86,7 +86,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .tableHeader {
@@ -98,7 +98,7 @@
   text-align: left;
   font-weight: 600;
   color: #E5E7EB;
-  font-size: 13px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid #2A3441;
@@ -120,24 +120,25 @@
 }
 
 .tickerCell {
-  display: flex;
+  display:flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 12px;
 }
 
 .ticker {
   font-weight: 600;
   color: #fff;
-  font-size: 15px;
+  font-size: 12px;
 }
 
 .sector {
-  font-size: 12px;
+  font-size: 8px;
   color: #9CA3AF;
   background: #374151;
   padding: 2px 8px;
   border-radius: 12px;
   width: fit-content;
+  text-align: center;
 }
 
 .opportunityPrice {
@@ -162,7 +163,7 @@
 .opportunityBadge {
   background: #10B981;
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   padding: 4px 8px;
   border-radius: 12px;
@@ -172,7 +173,7 @@
 .noOpportunityBadge {
   background: #EF4444;
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   padding: 4px 8px;
   border-radius: 12px;
@@ -180,7 +181,7 @@
 }
 
 .priceDiff {
-  font-size: 12px;
+  font-size: 10px;
   color: #9CA3AF;
 }
 
@@ -199,7 +200,7 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
   transition: all 0.2s ease;
 }
@@ -276,7 +277,7 @@
 }
 
 .modalContent p {
-  font-size: 16px;
+  font-size: 14px;
   color: #9CA3AF;
   margin: 0 0 24px 0;
   line-height: 1.5;
@@ -290,7 +291,7 @@
 
 .cancelButton {
   padding: 12px 24px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   border-radius: 8px;
   border: 1px solid #2A3441;
@@ -307,7 +308,7 @@
 
 .confirmDeleteButton {
   padding: 12px 24px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   border-radius: 8px;
   border: none;
@@ -339,7 +340,7 @@
 
 .emptyState p {
   color: #9CA3AF;
-  font-size: 16px;
+  font-size: 14px;
   margin-bottom: 24px;
 }
 
@@ -373,7 +374,7 @@
   }
 
   .actionButton {
-    font-size: 11px;
+    font-size: 9px;
     padding: 4px 8px;
   }
 }

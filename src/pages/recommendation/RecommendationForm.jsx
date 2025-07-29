@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { createRecommendation, updateRecommendation, getRecommendationById } from "../api/recommendationApi";
-import PageHeader from "../components/PageHeader";
-import ErrorPage from "../components/ErrorPage";
-import { useNotification } from "../components/NotificationProvider";
-import TickerSearch from "../components/TickerSearch";
+import { createRecommendation, updateRecommendation, getRecommendationById } from "../../api/recommendationApi";
+import PageHeader from "../../components/PageHeader";
+import ErrorPage from "../../components/ErrorPage";
+import { useNotification } from "../../components/NotificationProvider";
+import TickerSearch from "../../components/TickerSearch";
 import styles from "./RecommendationForm.module.css";
-import {getCurrentPrice } from '../api/tickerApi';
+import {getCurrentPrice } from '../../api/tickerApi';
 
 export default function RecommendationForm() {   
   const [form, setForm] = useState({

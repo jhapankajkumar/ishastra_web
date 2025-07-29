@@ -1,45 +1,40 @@
 import React, { useEffect, useState } from "react";
-import { getAllInvestments, deleteInvestment, closeInvestment } from "../api/investmentApi";
-import { getAllRecommendations } from "../api/recommendationApi";
-import PageHeader from "../components/PageHeader";
-import ErrorPage from "../components/ErrorPage";
-import { useNotification } from "../components/NotificationProvider";
+import { getAllInvestments, deleteInvestment, closeInvestment } from "../../api/investmentApi";
+import { getAllRecommendations } from "../../api/recommendationApi";
+import PageHeader from "../../components/PageHeader";
+import ErrorPage from "../../components/ErrorPage";
+import { useNotification } from "../../components/NotificationProvider";
 import { useNavigate } from "react-router-dom";
 import styles from "./InvestmentList.module.css";
 
 export default function InvestmentList() {
   const [investments, setInvestments] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
-  const [prices, setPrices] = useState({});
-  const [filter, setFilter] = useState('all'); // all, open, closed
-  const [groupBy, setGroupBy] = useState('none'); // none, ticker
+  const [filter, setFilter] = useState('all');
+  const [groupBy, setGroupBy] = useState('none');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedInvestment, setSelectedInvestment] = useState(null);
   const [closeForm, setCloseForm] = useState({ close_price: '', close_date: '' });
-  
   const notification = useNotification();
   const navigate = useNavigate();
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line
   }, [filter]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [investmentsRes, recommendationsRes] = await Promise.all([
-        getAllInvestments(),
-        getAllRecommendations(),
+      const [investmentsRes] = await Promise.all([
+        getAllInvestments()
       ]);
-      
       setInvestments(investmentsRes.data);
-      setRecommendations(recommendationsRes.data);
       setError(null);
     } catch (err) {
-      console.error('Failed to fetch data:', err);
       setError(err);
     } finally {
       setLoading(false);
@@ -48,7 +43,6 @@ export default function InvestmentList() {
 
   const handleDelete = async () => {
     if (!selectedInvestment) return;
-    
     try {
       await deleteInvestment(selectedInvestment.id);
       notification.success(`Investment for ${selectedInvestment.ticker} deleted successfully!`);
@@ -56,7 +50,6 @@ export default function InvestmentList() {
       setShowDeleteConfirm(false);
       setSelectedInvestment(null);
     } catch (err) {
-      console.error('Failed to delete investment:', err);
       notification.error(err.message || 'Failed to delete investment');
     }
   };
@@ -64,16 +57,14 @@ export default function InvestmentList() {
   const handleCloseInvestment = async (e) => {
     e.preventDefault();
     if (!selectedInvestment) return;
-    
     try {
       await closeInvestment(selectedInvestment.id, closeForm);
       notification.success(`Investment closed successfully!`);
-      loadData(); // Reload to get updated data
+      loadData();
       setShowCloseModal(false);
       setSelectedInvestment(null);
       setCloseForm({ close_price: '', close_date: '' });
     } catch (err) {
-      console.error('Failed to close investment:', err);
       notification.error(err.message || 'Failed to close investment');
     }
   };
@@ -94,7 +85,6 @@ export default function InvestmentList() {
     const currentValue = investment.quantity * currentPrice;
     const gainLoss = currentValue - investedAmount;
     const gainLossPercent = (gainLoss / investedAmount * 100).toFixed(2);
-    
     return {
       investedAmount,
       currentValue,
@@ -111,9 +101,7 @@ export default function InvestmentList() {
   const groupInvestments = () => {
     if (groupBy === 'ticker') {
       const grouped = investments.reduce((acc, inv) => {
-        if (!acc[inv.ticker]) {
-          acc[inv.ticker] = [];
-        }
+        if (!acc[inv.ticker]) acc[inv.ticker] = [];
         acc[inv.ticker].push(inv);
         return acc;
       }, {});
@@ -168,7 +156,6 @@ export default function InvestmentList() {
               <option value="closed">Closed</option>
             </select>
           </div>
-          
           <div className={styles.filterGroup}>
             <label>Group By:</label>
             <select 
@@ -181,7 +168,6 @@ export default function InvestmentList() {
             </select>
           </div>
         </div>
-        
         <button 
           className={styles.addButton}
           onClick={() => navigate('/investments/new')}
@@ -198,7 +184,6 @@ export default function InvestmentList() {
               {groupKey} ({groupInvestments.length} position{groupInvestments.length !== 1 ? 's' : ''})
             </h3>
           )}
-          
           <div className={styles.tableContainer}>
             <table className={styles.table}>
               <thead className={styles.tableHeader}>
@@ -213,25 +198,24 @@ export default function InvestmentList() {
                   <th className={styles.tableHeaderCell}>Current Value</th>
                   <th className={styles.tableHeaderCell}>P&L</th>
                   <th className={styles.tableHeaderCell}>Invested On</th>
-                  <th className={styles.tableHeaderCell}>Remarks</th>
                   <th className={styles.tableHeaderCell}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {groupInvestments.map(investment => {
                   const metrics = calculateMetrics(investment);
-
-                  
-  
                   return (
                     <tr key={investment.id} className={styles.tableRow}>
-                      <td className={`${styles.tableCell} ${styles.tickerCell}`}>
-                        <div>
-                          <span className={styles.ticker}>{investment.ticker}</span>
-                          {investment.isRecommended && (
-                            <span className={styles.linkedBadge} title={`From recommendation: Buy below ₹${investment.buyBelow}`}>
-                              🔗 Rec
-                            </span>
+                      <td className={`${styles.tableCell} ${styles.tickerCell}`} colSpan={2} style={{ minWidth: 180 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.2rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span className={styles.ticker}>{investment.ticker}</span>
+                            {investment.buyBelow > 0 && (
+                              <span className={styles.linkedBadge} title={`From recommendation: Buy below ₹${investment.buyBelow }`}>Rec</span>
+                            )}
+                          </div>
+                          {investment.notes && (
+                            <span className={styles.remarks}>{investment.notes}</span>
                           )}
                         </div>
                       </td>
@@ -240,7 +224,7 @@ export default function InvestmentList() {
                             ₹{investment.buyBelow ? investment.buyBelow.toFixed(2) : '-'}
                           </span>
                       </td>
-                      <td className={styles.tableCell}>
+                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>
                         {investment.currentPrice ? (
                           <span className={styles.currentPrice}>
                             ₹{metrics.currentPrice.toFixed(2)}
@@ -255,11 +239,11 @@ export default function InvestmentList() {
                             {investment.differencePercentage >= 0 ? '+' : ''}{investment.differencePercentage}%
                           </span>
                       </td>
-                      <td className={styles.tableCell}>{investment.quantity}</td>
-                      <td className={styles.tableCell}>₹{investment.avgBuyPrice?.toFixed(2)}</td>
-                      <td className={styles.tableCell}>₹{metrics.investedAmount.toLocaleString()}</td>
-                      <td className={styles.tableCell}>₹{metrics.currentValue.toLocaleString()}</td>
-                      <td className={styles.tableCell}>
+                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>{investment.quantity}</td>
+                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>₹{investment.avgBuyPrice?.toFixed(2)}</td>
+                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>₹{metrics.investedAmount.toLocaleString()}</td>
+                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>₹{metrics.currentValue.toLocaleString()}</td>
+                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>
                         <div className={styles.pnlCell}>
                           <span className={metrics.gainLoss >= 0 ? styles.profit : styles.loss}>
                             {metrics.gainLoss >= 0 ? '+' : ''}₹{metrics.gainLoss.toLocaleString()}
@@ -269,19 +253,10 @@ export default function InvestmentList() {
                           </span>
                         </div>
                       </td>
+                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>{formatDate(investment.entryDate)}</td>
                       
-                      <td className={styles.tableCell}>{formatDate(investment.entryDate)}</td>
-                      <td className={styles.tableCell}>
-                        {investment.notes || '-'}
-                      </td>
                       <td className={styles.tableCell}>
                         <div className={styles.actionButtons}>
-                          <button 
-                            onClick={() => navigate(`/investments/edit/${investment.id}`)}
-                            className={`${styles.actionButton} ${styles.editButton}`}
-                          >
-                            Edit
-                          </button>
                           {investment.status === 'open' && (
                             <button 
                               onClick={() => {
@@ -406,3 +381,4 @@ export default function InvestmentList() {
     </div>
   );
 }
+

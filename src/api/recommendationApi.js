@@ -10,7 +10,7 @@ const api = axios.create({
 });
 
 // Get all recommendations
-export const getAllRecommendations = async (status = null) => {
+export const getAllRecommendations = async () => {
   try {
     const response = await api.get('/');
     return response.data;

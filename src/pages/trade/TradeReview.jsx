@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import ImageGallery from "../components/ImageGallery";
+import ImageGallery from "../../components/ImageGallery";
 import { useParams, useNavigate } from "react-router-dom";
 import styles from "./TradeReview.module.css";
-import PageHeader from "../components/PageHeader";
-import { getTradeById, addPostAnalysis, getTradeTransactions } from '../api/tradeApi';
-import { useNotification } from '../components/NotificationProvider';
-import ErrorPage from '../components/ErrorPage';
+import PageHeader from "../../components/PageHeader";
+import { getTradeById, addPostAnalysis, getTradeTransactions } from '../../api/tradeApi';
+import { useNotification } from '../../components/NotificationProvider';
+import ErrorPage from '../../components/ErrorPage';
 
 const TradeReview = () => {
   const { id } = useParams();

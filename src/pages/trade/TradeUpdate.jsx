@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styles from "./TradeUpdate.module.css";
-import PageHeader from "../components/PageHeader";
-import { getTradeById, updateTrade, partialExitTrade, addPostAnalysis } from '../api/tradeApi';
-import { fetchExitTactics } from '../api/firebaseMetaApi';
-import { getCurrentPrice } from '../api/tickerApi';
-import { useNotification } from '../components/NotificationProvider';
-import ErrorPage from '../components/ErrorPage';
+import PageHeader from "../../components/PageHeader";
+import { getTradeById, updateTrade, partialExitTrade, addPostAnalysis } from '../../api/tradeApi';
+import { fetchExitTactics } from '../../api/firebaseMetaApi';
+import { getCurrentPrice } from '../../api/tickerApi';
+import { useNotification } from '../../components/NotificationProvider';
+import ErrorPage from '../../components/ErrorPage';
 
 const TradeUpdate = () => {
   const { id } = useParams();

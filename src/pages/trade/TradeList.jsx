@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from "../api/tradeApi";
+import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from "../../api/tradeApi";
 import TradeAdd from "./TradeAdd";
-import TradeDetailsPopup from "../components/TradeDetailsPopup";
-import PageHeader from "../components/PageHeader";
-import ErrorPage from "../components/ErrorPage";
-import { useNotification } from "../components/NotificationProvider";
-import { getTickerBySymbol } from '../data/tickerData';
+import TradeDetailsPopup from "../../components/TradeDetailsPopup";
+import PageHeader from "../../components/PageHeader";
+import ErrorPage from "../../components/ErrorPage";
+import { useNotification } from "../../components/NotificationProvider";
+import { getTickerBySymbol } from '../../data/tickerData';
 import styles from "./TradeList.module.css";
 
 export default function TradeList() {

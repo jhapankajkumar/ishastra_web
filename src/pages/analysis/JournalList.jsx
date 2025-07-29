@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { getAllJournals, getJournalById, deleteJournal } from "../api/journalApi";
-import JournalDetailsPopup from "../components/JournalDetailsPopup";
-import PageHeader from "../components/PageHeader";
-import ErrorPage from "../components/ErrorPage";
-import { useNotification } from "../components/NotificationProvider";
-import { getTickerBySymbol } from '../data/tickerData';
+import { getAllJournals, getJournalById, deleteJournal } from "../../api/journalApi";
+import JournalDetailsPopup from "../../components/JournalDetailsPopup";
+import PageHeader from "../../components/PageHeader";
+import ErrorPage from "../../components/ErrorPage";
+import { useNotification } from "../../components/NotificationProvider";
+import { getTickerBySymbol } from '../../data/tickerData';
 import { useNavigate } from "react-router-dom";
 import styles from "./JournalList.module.css";
 

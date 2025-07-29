@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./JournalLog.module.css";
-import PageHeader from "../components/PageHeader";
-import TickerSearch from "../components/TickerSearch";
-import { updateJournal, getJournalById } from '../api/journalApi';
-import { fetchSetups } from '../api/firebaseMetaApi';
-import { useNotification } from '../components/NotificationProvider';
-import ErrorPage from '../components/ErrorPage';
-import { getTickerBySymbol } from '../data/tickerData';
+import PageHeader from "../../components/PageHeader";
+import TickerSearch from "../../components/TickerSearch";
+import { updateJournal, getJournalById } from '../../api/journalApi';
+import { fetchSetups } from '../../api/firebaseMetaApi';
+import { useNotification } from '../../components/NotificationProvider';
+import ErrorPage from '../../components/ErrorPage';
+import { getTickerBySymbol } from '../../data/tickerData';
 
 const todayStr = new Date().toISOString().split('T')[0];
 

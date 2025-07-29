@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { createInvestment, updateInvestment, getInvestmentById } from '../api/investmentApi';
-import { getAllRecommendations } from '../api/recommendationApi';
-import { searchTickers, getCurrentPrice } from '../api/tickerApi';
-import { useNotification } from '../components/NotificationProvider';
+import { createInvestment, updateInvestment, getInvestmentById } from '../../api/investmentApi';
+import { getAllRecommendations } from '../../api/recommendationApi';
+import { searchTickers, getCurrentPrice } from '../../api/tickerApi';
+import { useNotification } from '../../components/NotificationProvider';
 import styles from './InvestmentForm.module.css';
-import TickerSearch from "../components/TickerSearch";
+import TickerSearch from "../../components/TickerSearch";
 
 const InvestmentForm = () => {
     const { id } = useParams();

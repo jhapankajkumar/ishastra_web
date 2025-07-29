@@ -1,17 +1,17 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/dashboard';
-import TradeList from './pages/TradeList';
-import TradeAdd from './pages/TradeAdd'; // Import your new TradeAdd page
-import TradeUpdate from './pages/TradeUpdate'; // Import TradeUpdate page
-import TradeReview from './pages/TradeReview'; // Import TradeReview page
-import JournalList from './pages/JournalList';
-import JournalLog from './pages/JournalLog';
-import JournalLogUpdate from './pages/JournalLogUpdate';
+import TradeList from './pages/trade/TradeList';
+import TradeAdd from './pages/trade/TradeAdd'; // Import your new TradeAdd page
+import TradeUpdate from './pages/trade/TradeUpdate'; // Import TradeUpdate page
+import TradeReview from './pages/trade/TradeReview'; // Import TradeReview page
+import JournalList from './pages/analysis/JournalList';
+import JournalLog from './pages/analysis/JournalLog';
+import JournalLogUpdate from './pages/analysis/JournalLogUpdate';
 import RiskManagement from './pages/RiskManagement';
-import RecommendationList from './pages/RecommendationList';
-import RecommendationForm from './pages/RecommendationForm';
-import InvestmentList from './pages/InvestmentList';
-import InvestmentForm from './pages/InvestmentForm';
+import RecommendationList from './pages/recommendation/RecommendationList';
+import RecommendationForm from './pages/recommendation/RecommendationForm';
+import InvestmentList from './pages/investment/InvestmentList';
+import InvestmentForm from './pages/investment/InvestmentForm';
 import Header from './components/Header'; // Import the Header component
 import ErrorBoundary from './components/ErrorBoundary';
 import { NotificationProvider } from './components/NotificationProvider';

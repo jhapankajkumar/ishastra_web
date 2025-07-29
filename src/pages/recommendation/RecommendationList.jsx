@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { getAllRecommendations, deleteRecommendation, archiveRecommendation } from "../api/recommendationApi";
-import PageHeader from "../components/PageHeader";
-import ErrorPage from "../components/ErrorPage";
-import { useNotification } from "../components/NotificationProvider";
+import { getAllRecommendations, deleteRecommendation, archiveRecommendation } from "../../api/recommendationApi";
+import PageHeader from "../../components/PageHeader";
+import ErrorPage from "../../components/ErrorPage";
+import { useNotification } from "../../components/NotificationProvider";
 import { useNavigate } from "react-router-dom";
 import styles from "./RecommendationList.module.css";
 
@@ -155,20 +155,20 @@ export default function RecommendationList() {
                                     <td className={styles.tableCell}>
                                         {rec.priceDifference !== null ? (
                                             <td
-                                                className={`${styles.tableCell} ${rec.differencePercentage > 0
+                                                className={`${styles.tableCell} ${rec.differencePercentage > 7.0
                                                         ? styles.bgGreen
-                                                        : rec.differencePercentage < 0
+                                                        : rec.differencePercentage < 7.0 && rec.differencePercentage > 0
                                                             ? styles.bgRed
                                                             : ''
                                                     }`}
                                             >
                                                 <div className={styles.opportunityCell}>
-                                                    <span className={rec.priceDifference > 0 ? styles.opportunityBadge : styles.noOpportunityBadge}>
-                                                        {rec.priceDifference > 0 ? '🎯 BUY' : '❌ HIGH'}
+                                                    <span className={rec.differencePercentage > 7 ? styles.opportunityBadge : styles.noOpportunityBadge}>
+                                                        {rec.differencePercentage > 7 ? `+ ${rec.differencePercentage}%` : `${rec.differencePercentage}%`}
                                                     </span>
                                                     <span className={styles.priceDiff}>
                                                         {rec.differencePercentage > 0 ? '+' : ''}
-                                                        {rec.differencePercentage}%
+                                                        {rec.priceDifference.toFixed(2)}
                                                     </span>
                                                 </div>
                                             </td>
