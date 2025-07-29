@@ -29,20 +29,32 @@
 
 .filters {
   display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-.filterButton {
-  padding: 8px 16px;
-  border: 1px solid #2A3441;
-  background: #1A2332;
+.filterGroup label {
+  font-size: 14px;
   color: #9CA3AF;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 12px;
   font-weight: 500;
 }
+
+.filterSelect {
+  padding: 8px 12px;
+  border: 1px solid #2A3441;
+  background: #1A2332;
+  color: #E5E7EB;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
 
 .filterButton:hover {
   background: #232B3D;

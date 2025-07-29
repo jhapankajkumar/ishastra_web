@@ -13,6 +13,8 @@ export default function RecommendationList() {
     const [loading, setLoading] = useState(true);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [recToDelete, setRecToDelete] = useState(null);
+    const [sortBy, setSortBy] = useState('ticker');
+    const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc'
     const notification = useNotification();
     const navigate = useNavigate();
 
@@ -24,11 +26,9 @@ export default function RecommendationList() {
         try {
             setLoading(true);
             const response = await getAllRecommendations();
-            console.log('Fetched recommendations:', response.success);
             setRecommendations(response.data);
             setError(null);
         } catch (err) {
-            console.error('Failed to fetch recommendations:', err);
             setError(err);
         } finally {
             setLoading(false);
@@ -103,6 +103,30 @@ export default function RecommendationList() {
         );
     }
 
+
+    // Sorting logic
+    const sortedRecommendations = [...recommendations].sort((a, b) => {
+        let valA, valB;
+        switch (sortBy) {
+            case 'ticker':
+                valA = a.ticker?.toUpperCase() || '';
+                valB = b.ticker?.toUpperCase() || '';
+                if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+                if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+                return 0;
+            case 'currentPrice':
+                valA = a.currentPrice ?? 0;
+                valB = b.currentPrice ?? 0;
+                return sortOrder === 'asc' ? valA - valB : valB - valA;
+            case 'differencePercentage':
+                valA = a.differencePercentage ?? 0;
+                valB = b.differencePercentage ?? 0;
+                return sortOrder === 'asc' ? valA - valB : valB - valA;
+            default:
+                return 0;
+        }
+    });
+
     return (
         <div className={styles.container}>
             <PageHeader
@@ -110,8 +134,53 @@ export default function RecommendationList() {
                 subtitle="Track and monitor stock recommendations"
             />
 
+{/* <div className={styles.filters}>
+          <div className={styles.filterGroup}>
+            <label>Status:</label>
+            <select 
+              value={filter} 
+              onChange={(e) => setFilter(e.target.value)}
+              className={styles.filterSelect}
+            >
+              <option value="all">All</option>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+          <div className={styles.filterGroup}>
+            <label>Group By:</label>
+            <select 
+              value={groupBy} 
+              onChange={(e) => setGroupBy(e.target.value)}
+              className={styles.filterSelect}
+            >
+              <option value="none">None</option>
+              <option value="ticker">Ticker</option>
+            </select>
+          </div>
+        </div> */}
+
             {/* Action Bar */}
             <div className={styles.actionBar}>
+                <div className={styles.filters}>
+                    <label>Sort By:</label>
+                    <select
+                        value={sortBy}
+                        onChange={e => setSortBy(e.target.value)}
+                        className={styles.filterSelect}
+                    >
+                        <option value="ticker">Ticker</option>
+                        <option value="currentPrice">Price</option>
+                        <option value="differencePercentage">Opportunity</option>
+                    </select>
+                    <button
+                        className={styles.filterSelect}
+                        onClick={() => setSortOrder(order => order === 'asc' ? 'desc' : 'asc')}
+                        title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                    >
+                        {sortOrder === 'asc' ? '▲' : '▼'}
+                    </button>
+                </div>
                 <button
                     className={styles.addButton}
                     onClick={() => navigate('/recommendations/new')}
@@ -129,13 +198,13 @@ export default function RecommendationList() {
                             <th className={styles.tableHeaderCell}>Buy Below</th>
                             <th className={styles.tableHeaderCell}>Current Price</th>
                             <th className={styles.tableHeaderCell}>Opportunity</th>
-                            <th className={styles.tableHeaderCell}>Source</th>
+                            <th className={styles.tableHeaderCell}>Investment</th>
                             <th className={styles.tableHeaderCell}>Added On</th>
                             <th className={styles.tableHeaderCell}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {recommendations.map(rec => {
+                        {sortedRecommendations.map(rec => {
                             return (
                                 <tr key={rec.id} className={styles.tableRow}>
                                     <td className={`${styles.tableCell} ${styles.tickerCell}`}>
@@ -176,7 +245,7 @@ export default function RecommendationList() {
                                             <span className={styles.noData}>-</span>
                                         )}
                                     </td>
-                                    <td className={styles.tableCell}>{rec.source || '-'}</td>
+                                    <td className={styles.tableCell}>{rec.totalInvested ? `₹${rec.totalInvested.toFixed(2)}` : '-'}</td>
                                     <td className={styles.tableCell}>{formatDate(rec.createdAt)}</td>
                                     <td className={styles.tableCell}>
                                         <div className={styles.actionButtons}>
