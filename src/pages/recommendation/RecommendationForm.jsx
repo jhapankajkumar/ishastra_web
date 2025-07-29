@@ -6,21 +6,22 @@ import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
 import TickerSearch from "../../components/TickerSearch";
 import styles from "./RecommendationForm.module.css";
-import {getCurrentPrice } from '../../api/tickerApi';
+import { getCurrentPrice } from '../../api/tickerApi';
 
-export default function RecommendationForm() {   
+export default function RecommendationForm() {
   const [form, setForm] = useState({
     ticker: '',
     buyBelow: '',
     currentPrice: '',
     source: 'Finology',
-    sector: ''
+    sector: '',
+    marketCap: 'Large Cap'
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const navigate = useNavigate();
   const notification = useNotification();
   const { id } = useParams();
@@ -41,7 +42,8 @@ export default function RecommendationForm() {
         ticker: rec.ticker || '',
         buyBelow: rec.buy_below?.toString() || '',
         source: rec.source || '',
-        sector: rec.sector.toUpperCase() || '',
+        sector: rec.sector?.toUpperCase() || '',
+        marketCap: rec.marketCap || 'Large Cap'
       });
       setError(null);
     } catch (err) {
@@ -68,36 +70,42 @@ export default function RecommendationForm() {
   };
 
   const fetchCurrentPrice = async (ticker) => {
-      if (!ticker) return;
-      try {
-        const response = await getCurrentPrice(ticker);
-        if (response.data && response.data.price) {
-          setForm(prev => ({ ...prev, currentPrice: response.data.price }));
-        } else {
-            setForm(prev => ({ ...prev, currentPrice: 0 }));
-        }
-      } catch (error) {
-        console.error('Error fetching current price:', error);
+    if (!ticker) return;
+    try {
+      const response = await getCurrentPrice(ticker);
+      if (response.data && response.data.price) {
+        setForm(prev => ({ ...prev, currentPrice: response.data.price }));
+      } else {
         setForm(prev => ({ ...prev, currentPrice: 0 }));
-      } finally {
       }
-    };
+    } catch (error) {
+      console.error('Error fetching current price:', error);
+      setForm(prev => ({ ...prev, currentPrice: 0 }));
+    } finally {
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+
     if (!form.ticker || !form.buyBelow) {
       notification.error('Ticker and Buy Below price are required');
       return;
     }
+    if (!form.marketCap) {
+      notification.error('Please select a Market Cap');
+      return;
+    }
 
     setLoading(true);
-    
+
     try {
       const formData = {
         ...form,
         sector: form.sector.toUpperCase(),
-        buyBelow: parseFloat(form.buyBelow)
+        buyBelow: parseFloat(form.buyBelow),
+        marketCap: form.marketCap
       };
 
       if (isEdit) {
@@ -107,7 +115,7 @@ export default function RecommendationForm() {
         await createRecommendation(formData);
         notification.success('Recommendation created successfully!');
       }
-      
+
       navigate('/recommendations');
     } catch (err) {
       console.error('Failed to save recommendation:', err);
@@ -127,7 +135,7 @@ export default function RecommendationForm() {
   if (initialLoading) {
     return (
       <div className={styles.container}>
-        <PageHeader 
+        <PageHeader
           title={isEdit ? "Edit Recommendation" : "Add Recommendation"}
           subtitle="Loading..."
           showBackButton={true}
@@ -150,7 +158,7 @@ export default function RecommendationForm() {
 
   return (
     <div className={styles.container}>
-      <PageHeader 
+      <PageHeader
         title={isEdit ? "Edit Recommendation" : "Add New Recommendation"}
         subtitle={isEdit ? "Update stock recommendation details" : "Add a new stock recommendation to track"}
         showBackButton={true}
@@ -162,17 +170,17 @@ export default function RecommendationForm() {
           {/* Basic Information */}
           <div className={styles.card}>
             <h3 className={styles.cardTitle}>Basic Information</h3>
-            
+
             <div className={styles.gridTwoCol}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Stock Ticker *</label>
-                <TickerSearch 
+                <TickerSearch
                   value={form.ticker}
                   onChange={handleTickerChange}
                   onSelect={handleTickerSelect}
                   placeholder="e.g., TCS, RELIANCE"
                   apiSource="yahoo"
-                  instrumentType={"Stocks"}  // Assuming Stocks as default, can be dynamic based on user selection
+                  instrumentType={"Stocks"}
                 />
               </div>
 
@@ -189,17 +197,7 @@ export default function RecommendationForm() {
                 />
               </div>
 
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Source</label>
-                <input
-                  type="text"
-                  name="source"
-                  value={form.source}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="e.g., Motilal Oswal, XYZ Newsletter"
-                />
-              </div>
+
 
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Sector</label>
@@ -212,24 +210,49 @@ export default function RecommendationForm() {
                   placeholder="e.g., IT, Banking, Pharma"
                 />
               </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Market Cap *</label>
+                <select
+                  name="marketCap"
+                  value={form.marketCap}
+                  onChange={handleChange}
+                  className={styles.input}
+                  required
+                >
+                  <option value="Large Cap">Large Cap</option>
+                  <option value="Mid Cap">Mid Cap</option>
+                  <option value="Small Cap">Small Cap</option>
+                </select>
+              </div>
+              {/* <div className={styles.fieldGroup}>
+                <label className={styles.label}>Source</label>
+                <input
+                  type="text"
+                  name="source"
+                  value={form.source}
+                  onChange={handleChange}
+                  className={styles.input}
+                  placeholder="e.g., Motilal Oswal, XYZ Newsletter"
+                />
+              </div> */}
             </div>
           </div>
 
           {/* Submit Button */}
           <div className={styles.submitSection}>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className={styles.cancelButton}
               onClick={() => navigate('/recommendations')}
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className={styles.submitButton}
               disabled={loading}
             >
-              {loading ? 'Saving...' : (isEdit ? 'Update Recommendation' : 'Create Recommendation')}
+              {loading ? 'Saving...' : (isEdit ? 'Update' : 'Create')}
             </button>
           </div>
         </form>

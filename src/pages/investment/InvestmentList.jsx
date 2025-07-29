@@ -211,12 +211,15 @@ export default function InvestmentList() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <span className={styles.ticker}>{investment.ticker}</span>
                             {investment.buyBelow > 0 && (
-                              <span className={styles.linkedBadge} title={`From recommendation: Buy below ₹${investment.buyBelow }`}>Rec</span>
+                              <span className={styles.linkedBadge} title={`From recommendation: Buy below ₹${investment.buyBelow}`}>Rec</span>
                             )}
                           </div>
-                          {investment.notes && (
-                            <span className={styles.remarks}>{investment.notes}</span>
-                          )}
+                          <div style={{ fontSize: '0.50rem', color: '#bbb' }}>
+                            {investment.sector || '—'} · {investment.marketCap || '—'}
+                          </div>
+                          <div style={{ fontSize: '0.50rem', color: '#bbb' }}>
+                            {investment.notes || '—'}
+                          </div>
                         </div>
                       </td>
                       <td className={styles.tableCell}>

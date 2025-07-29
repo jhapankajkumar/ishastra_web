@@ -133,33 +133,6 @@ export default function RecommendationList() {
                 title="Stock Recommendations"
                 subtitle="Track and monitor stock recommendations"
             />
-
-{/* <div className={styles.filters}>
-          <div className={styles.filterGroup}>
-            <label>Status:</label>
-            <select 
-              value={filter} 
-              onChange={(e) => setFilter(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="all">All</option>
-              <option value="open">Open</option>
-              <option value="closed">Closed</option>
-            </select>
-          </div>
-          <div className={styles.filterGroup}>
-            <label>Group By:</label>
-            <select 
-              value={groupBy} 
-              onChange={(e) => setGroupBy(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="none">None</option>
-              <option value="ticker">Ticker</option>
-            </select>
-          </div>
-        </div> */}
-
             {/* Action Bar */}
             <div className={styles.actionBar}>
                 <div className={styles.filters}>
@@ -195,6 +168,7 @@ export default function RecommendationList() {
                     <thead className={styles.tableHeader}>
                         <tr>
                             <th className={styles.tableHeaderCell}>Ticker</th>
+                            <th className={styles.tableHeaderCell}>Market Cap</th>
                             <th className={styles.tableHeaderCell}>Buy Below</th>
                             <th className={styles.tableHeaderCell}>Current Price</th>
                             <th className={styles.tableHeaderCell}>Opportunity</th>
@@ -211,6 +185,7 @@ export default function RecommendationList() {
                                         <span className={styles.ticker}>{rec.ticker}</span>
                                         {rec.sector && <span className={styles.sector}>{rec.sector}</span>}
                                     </td>
+                                    <td className={styles.tableCell}>{rec.marketCap ? rec.marketCap : '-'}</td>
                                     <td className={styles.tableCell}>₹{rec.buyBelow?.toLocaleString()}</td>
                                     <td className={styles.tableCell}>
                                         {rec.currentPrice ? (

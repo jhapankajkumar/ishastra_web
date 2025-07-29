@@ -31,6 +31,8 @@ const InvestmentForm = () => {
         notes: '',
         isRecommended: false,
         buyBelow: '',
+        sector: '',
+        marketCap: 'Large Cap',
     });
 
     const [isRecommended, setIsRecommended] = useState(false);
@@ -55,7 +57,11 @@ const InvestmentForm = () => {
                 avgBuyPrice: investment.avgBuyPrice?.toString() || '',
                 entryDate: investment.entryDate ? investment.entryDate.split('T')[0] : '',
                 notes: investment.notes || '',
-                status: investment.status || 'open'
+                status: investment.status || 'open',
+                sector: investment.sector || '',
+                marketCap: investment.marketCap || 'Large Cap',
+                buyBelow: investment.buyBelow || '',
+                isRecommended: false
             });
         } catch (error) {
             console.error('Error loading investment:', error);
@@ -70,13 +76,12 @@ const InvestmentForm = () => {
     };
 
     const fetchCurrentPrice = async (ticker) => {
-        if (!ticker) return;
-
         try {
             setPriceLoading(true);
             const response = await getCurrentPrice(ticker);
             if (response.data && response.data.price) {
                 setCurrentPrice(response.data.price);
+                setFormData(prev => ({ ...prev, currentPrice: response.data.price }));
             } else {
                 setCurrentPrice(null);
             }
@@ -180,16 +185,17 @@ const InvestmentForm = () => {
     const handleTickerChange = (ticker) => { }
     const handleTickerSelect = async (ticker) => {
         const symbol = typeof ticker === 'string' ? ticker : ticker.symbol;
-        setFormData(prev => ({ ...prev, ticker: symbol }));
+        let sector = '';
+        let marketCap = 'Large Cap';
+        if (typeof ticker === 'object') {
+            sector = ticker.sector || '';
+        }
+        setFormData(prev => ({ ...prev, ticker: symbol, sector }));
         setTickerSuggestions([]);
         fetchCurrentPrice(symbol);
-        console.log('Selected ticker:', ticker);
-        console.log('Selected Symbol:', symbol);
-        // Call recommendation API and match ticker
         try {
             const recs = await getAllRecommendations();
             const match = (recs.data || []).find(r => r.ticker && r.ticker.toUpperCase() === symbol.toUpperCase());
-            console.log('Recommendation match:', match);
             if (match) {
                 setIsRecommended(true);
                 setFormData(prev => ({ ...prev, isRecommended: true, buyBelow: match.buyBelow?.toString() || '' }));
@@ -197,7 +203,6 @@ const InvestmentForm = () => {
                 setIsRecommended(false);
                 setFormData(prev => ({ ...prev, isRecommended: false, buyBelow: '' }));
             }
-
         } catch (err) {
             setFormData(prev => ({ ...prev, isRecommended: false }));
         }
@@ -227,7 +232,10 @@ const InvestmentForm = () => {
                 buyBelow: formData.buyBelow ? parseFloat(formData.buyBelow) : undefined,
                 entryDate: formData.entryDate,
                 notes: formData.notes,
-                status: formData.status
+                status: formData.status,
+                sector: formData.sector,
+                marketCap: formData.marketCap,
+                currentPrice: formData.currentPrice
             };
 
             if (isEditing) {
@@ -275,12 +283,10 @@ const InvestmentForm = () => {
                 <h1>{isEditing ? 'Edit Investment' : 'Add New Investment'}</h1>
                 <p>Track your long-term investment positions</p>
             </div>
-
             <div className={styles.formContainer}>
                 <form onSubmit={handleSubmit}>
                     <div className={styles.card}>
-                        <h2 className={styles.cardTitle}>Basic Information</h2>
-
+                        <h2 className={styles.cardTitle}>Stock Information</h2>
                         <div className={styles.gridTwoCol}>
                             <div className={styles.fieldGroup}>
                                 <label className={styles.label}>Stock Ticker *</label>
@@ -290,26 +296,60 @@ const InvestmentForm = () => {
                                     onSelect={handleTickerSelect}
                                     placeholder="e.g., TCS, RELIANCE"
                                     apiSource="yahoo"
-                                    instrumentType={"Stocks"}  // Assuming Stocks as default, can be dynamic based on user selection
+                                    instrumentType={"Stocks"}
                                 />
                             </div>
-                            {errors.ticker && <span className={styles.error}>{errors.ticker}</span>}
-
-                            {formData.ticker && (
-                                <div className={styles.priceInfo}>
-                                    {priceLoading ? (
-                                        <span className={styles.priceLoading}>Fetching current price...</span>
-                                    ) : currentPrice ? (
-                                        <span className={styles.currentPrice}>
-                                            Current Price: ${currentPrice.toFixed(2)}
-                                        </span>
-                                    ) : (
-                                        <span className={styles.noPrice}>Price not available</span>
-                                    )}
-                                </div>
-                            )}
+                            <div className={styles.fieldGroup}>
+                                <label className={styles.label}>Current Price</label>
+                                <input
+                                    type="text"
+                                    id="currentPrice"
+                                    name="currentPrice"
+                                    value={currentPrice !== null && currentPrice !== undefined ? `$${currentPrice.toFixed(2)}` : ''}
+                                    className={styles.input}
+                                    placeholder="Auto-filled after ticker selection"
+                                    readOnly
+                                    disabled
+                                />
+                            </div>
                         </div>
-                        <div className={styles.fieldGroup}>
+                        <div className={styles.gridTwoCol}>
+                            <div className={styles.fieldGroup}>
+                                <label className={styles.label}>Sector</label>
+                                <input
+                                    type="text"
+                                    id="sector"
+                                    name="sector"
+                                    value={formData.sector}
+                                    onChange={handleInputChange}
+                                    className={styles.input}
+                                    placeholder="e.g., IT, Banking, Pharma"
+                                    disabled={saving}
+                                />
+                            </div>
+                            <div className={styles.fieldGroup}>
+                                <label className={styles.label}>Market Cap *</label>
+                                <select
+                                    id="marketCap"
+                                    name="marketCap"
+                                    value={formData.marketCap}
+                                    onChange={handleInputChange}
+                                    className={styles.input}
+                                    disabled={saving}
+                                    required
+                                >
+                                    <option value="Large Cap">Large Cap</option>
+                                    <option value="Mid Cap">Mid Cap</option>
+                                    <option value="Small Cap">Small Cap</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.card}>
+                        <h2 className={styles.cardTitle}>Investment Details</h2>
+                        
+                        <div className={styles.gridTwoCol}>
+                            <div className={styles.fieldGroup}>
                             <label htmlFor="invested_on" className={styles.label}>Investment Date *</label>
                             <input
                                 type="date"
@@ -322,8 +362,6 @@ const InvestmentForm = () => {
                             />
                             {errors.entryDate && <span className={styles.error}>{errors.entryDate}</span>}
                         </div>
-
-                        <div className={styles.gridTwoCol}>
                             <div className={styles.fieldGroup}>
                                 <label htmlFor="quantity" className={styles.label}>Quantity *</label>
                                 <input
@@ -339,7 +377,9 @@ const InvestmentForm = () => {
                                 />
                                 {errors.quantity && <span className={styles.error}>{errors.quantity}</span>}
                             </div>
-
+                            
+                        </div>
+                        <div className={styles.gridTwoCol}>
                             <div className={styles.fieldGroup}>
                                 <label htmlFor="avgBuyPrice" className={styles.label}>Buy Price ($) *</label>
                                 <div className={styles.priceInputWrapper}>
@@ -357,10 +397,6 @@ const InvestmentForm = () => {
                                 </div>
                                 {errors.avgBuyPrice && <span className={styles.error}>{errors.avgBuyPrice}</span>}
                             </div>
-                        </div>
-
-                        <div className={styles.gridTwoCol}>
-
                             <div className={styles.fieldGroup}>
                                 <label htmlFor="buyBelow" className={styles.label}>Buy Below</label>
                                 <input
@@ -373,16 +409,14 @@ const InvestmentForm = () => {
                                     placeholder="Buy below price from recommendation"
                                     disabled={saving}
                                 />
-                                {isRecommended && (
-                                    <span className={styles.info} style={{ color: '#4caf50' }}>Recommended</span>
-                                )}
+                                {/* {isRecommended && (
+                                    <span className={styles.info} style={{ color: '#4caf50' }}> Recommended</span>
+                                )} */}
                             </div>
                         </div>
                     </div>
-
                     <div className={styles.card}>
                         <h2 className={styles.cardTitle}>Investment Notes</h2>
-
                         <div className={styles.fieldGroup}>
                             <label htmlFor="notes" className={styles.label}>Notes & Analysis</label>
                             <textarea
@@ -397,7 +431,6 @@ const InvestmentForm = () => {
                             />
                         </div>
                     </div>
-
                     <div className={styles.submitSection}>
                         <button
                             type="button"
@@ -419,6 +452,6 @@ const InvestmentForm = () => {
             </div>
         </div>
     );
-};
+}
 
 export default InvestmentForm;
