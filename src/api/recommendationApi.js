@@ -12,8 +12,7 @@ const api = axios.create({
 // Get all recommendations
 export const getAllRecommendations = async (status = null) => {
   try {
-    const params = status ? { status } : {};
-    const response = await api.get('/', { params });
+    const response = await api.get('/');
     return response.data;
   } catch (error) {
     console.error('Error fetching recommendations:', error);

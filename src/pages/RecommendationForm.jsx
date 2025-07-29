@@ -6,15 +6,15 @@ import ErrorPage from "../components/ErrorPage";
 import { useNotification } from "../components/NotificationProvider";
 import TickerSearch from "../components/TickerSearch";
 import styles from "./RecommendationForm.module.css";
+import {getCurrentPrice } from '../api/tickerApi';
 
-export default function RecommendationForm() {
+export default function RecommendationForm() {   
   const [form, setForm] = useState({
     ticker: '',
-    buy_below: '',
-    notes: '',
-    source: '',
-    sector: '',
-    reviewed_on: ''
+    buyBelow: '',
+    currentPrice: '',
+    source: 'Finology',
+    sector: ''
   });
   
   const [loading, setLoading] = useState(false);
@@ -39,11 +39,9 @@ export default function RecommendationForm() {
       const rec = response.data;
       setForm({
         ticker: rec.ticker || '',
-        buy_below: rec.buy_below?.toString() || '',
-        notes: rec.notes || '',
+        buyBelow: rec.buy_below?.toString() || '',
         source: rec.source || '',
-        sector: rec.sector || '',
-        reviewed_on: rec.reviewed_on || ''
+        sector: rec.sector.toUpperCase() || '',
       });
       setError(null);
     } catch (err) {
@@ -58,15 +56,37 @@ export default function RecommendationForm() {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
+  const handleTickerChange = (ticker) => { }
+  const handleTickerSelect = (ticker) => {
+    const symbol = typeof ticker === 'string' ? ticker : ticker.symbol;
+    fetchCurrentPrice(symbol);
+    console.log('Ticker selected:', ticker);
+    console.log('Ticker symbol:', symbol);
+    console.log('Ticker sector:', ticker.sector || '');
 
-  const handleTickerChange = (ticker) => {
-    setForm(prev => ({ ...prev, ticker }));
+    setForm(prev => ({ ...prev, ticker: symbol, sector: ticker.sector || '' }));
   };
+
+  const fetchCurrentPrice = async (ticker) => {
+      if (!ticker) return;
+      try {
+        const response = await getCurrentPrice(ticker);
+        if (response.data && response.data.price) {
+          setForm(prev => ({ ...prev, currentPrice: response.data.price }));
+        } else {
+            setForm(prev => ({ ...prev, currentPrice: 0 }));
+        }
+      } catch (error) {
+        console.error('Error fetching current price:', error);
+        setForm(prev => ({ ...prev, currentPrice: 0 }));
+      } finally {
+      }
+    };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!form.ticker || !form.buy_below) {
+    if (!form.ticker || !form.buyBelow) {
       notification.error('Ticker and Buy Below price are required');
       return;
     }
@@ -76,7 +96,8 @@ export default function RecommendationForm() {
     try {
       const formData = {
         ...form,
-        buy_below: parseFloat(form.buy_below)
+        sector: form.sector.toUpperCase(),
+        buyBelow: parseFloat(form.buyBelow)
       };
 
       if (isEdit) {
@@ -148,8 +169,10 @@ export default function RecommendationForm() {
                 <TickerSearch 
                   value={form.ticker}
                   onChange={handleTickerChange}
+                  onSelect={handleTickerSelect}
                   placeholder="e.g., TCS, RELIANCE"
                   apiSource="yahoo"
+                  instrumentType={"Stocks"}  // Assuming Stocks as default, can be dynamic based on user selection
                 />
               </div>
 
@@ -157,9 +180,8 @@ export default function RecommendationForm() {
                 <label className={styles.label}>Buy Below Price (₹) *</label>
                 <input
                   type="number"
-                  step="0.01"
-                  name="buy_below"
-                  value={form.buy_below}
+                  name="buyBelow"
+                  value={form.buyBelow}
                   onChange={handleChange}
                   className={styles.input}
                   placeholder="e.g., 3200"
@@ -190,34 +212,6 @@ export default function RecommendationForm() {
                   placeholder="e.g., IT, Banking, Pharma"
                 />
               </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Reviewed On</label>
-                <input
-                  type="date"
-                  name="reviewed_on"
-                  value={form.reviewed_on}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className={styles.card}>
-            <h3 className={styles.cardTitle}>Additional Notes</h3>
-            
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Notes & Analysis</label>
-              <textarea
-                name="notes"
-                value={form.notes}
-                onChange={handleChange}
-                className={styles.textarea}
-                rows="4"
-                placeholder="Add any analysis, reasoning, or additional notes about this recommendation..."
-              />
             </div>
           </div>
 

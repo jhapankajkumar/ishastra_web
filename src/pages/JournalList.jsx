@@ -255,7 +255,18 @@ export default function JournalList() {
           </tbody>
         </table>
       </div>
-
+      {journals.length === 0 && (
+                                  <div className={styles.emptyState}>
+                                      <h3>No journal found</h3>
+                                      <p>Start by adding your first journal entry to track your thoughts.</p>
+                                      <button
+                                          className={styles.addButton}
+                                          onClick={() => navigate('/journal/new')}
+                                      >
+                                          + Add First Journal
+                                      </button>
+                                  </div>
+                              )}
       {/* Journal Details Popup */}
       {showPopup && popupJournal && (
         <JournalDetailsPopup 

@@ -10,6 +10,45 @@
   font-family: 'Inter', system-ui, sans-serif;
 }
 
+.emptyState {
+  margin-top: 20px;
+  text-align: center;
+  padding: 60px 20px;
+  background: #1A2332;
+  border-radius: 12px;
+  border: 1px solid #2A3441;
+}
+
+.emptyState h3 {
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.emptyState p {
+  color: #9CA3AF;
+  font-size: 16px;
+  margin-bottom: 24px;
+}
+
+.addButton {
+  display: inline-block;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.addButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+}
 /* Responsive: reduce horizontal padding on small screens */
 @media (max-width: 768px) {
   .container {

@@ -30,14 +30,13 @@ export default function InvestmentList() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [investmentsRes, recommendationsRes, pricesRes] = await Promise.all([
-        getAllInvestments(filter === 'all' ? null : filter),
+      const [investmentsRes, recommendationsRes] = await Promise.all([
+        getAllInvestments(),
         getAllRecommendations(),
       ]);
       
       setInvestments(investmentsRes.data);
       setRecommendations(recommendationsRes.data);
-      setPrices(pricesRes.data);
       setError(null);
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -90,9 +89,9 @@ export default function InvestmentList() {
   };
 
   const calculateMetrics = (investment) => {
-    const currentPrice = prices[investment.ticker]?.current_price || investment.buy_avg_price;
-    const investedAmount = investment.qty * investment.buy_avg_price;
-    const currentValue = investment.qty * currentPrice;
+    const currentPrice = investment.currentPrice || investment.avgBuyPrice;
+    const investedAmount = investment.quantity * investment.avgBuyPrice;
+    const currentValue = investment.quantity * currentPrice;
     const gainLoss = currentValue - investedAmount;
     const gainLossPercent = (gainLoss / investedAmount * 100).toFixed(2);
     
@@ -106,7 +105,7 @@ export default function InvestmentList() {
   };
 
   const getLinkedRecommendation = (investment) => {
-    return recommendations.find(rec => rec.id === investment.recommendation_id);
+    return recommendations.find(rec => rec.ticker === investment.ticker);
   };
 
   const groupInvestments = () => {
@@ -233,10 +232,10 @@ export default function InvestmentList() {
                           )}
                         </div>
                       </td>
-                      <td className={styles.tableCell}>{investment.qty}</td>
-                      <td className={styles.tableCell}>₹{investment.buy_avg_price?.toFixed(2)}</td>
+                      <td className={styles.tableCell}>{investment.quantity}</td>
+                      <td className={styles.tableCell}>₹{investment.avgBuyPrice?.toFixed(2)}</td>
                       <td className={styles.tableCell}>
-                        {prices[investment.ticker]?.current_price ? (
+                        {investment.currentPrice ? (
                           <span className={styles.currentPrice}>
                             ₹{metrics.currentPrice.toFixed(2)}
                           </span>
@@ -261,7 +260,7 @@ export default function InvestmentList() {
                           {investment.status === 'open' ? 'Open' : 'Closed'}
                         </span>
                       </td>
-                      <td className={styles.tableCell}>{formatDate(investment.invested_on)}</td>
+                      <td className={styles.tableCell}>{formatDate(investment.entryDate)}</td>
                       <td className={styles.tableCell}>
                         <div className={styles.actionButtons}>
                           <button 
@@ -328,7 +327,6 @@ export default function InvestmentList() {
                 <label>Close Price (₹)</label>
                 <input
                   type="number"
-                  step="0.01"
                   value={closeForm.close_price}
                   onChange={(e) => setCloseForm(prev => ({ ...prev, close_price: e.target.value }))}
                   className={styles.modalInput}

@@ -180,6 +180,26 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
 }
+.emptyState {
+  margin-top: 20px;
+  text-align: center;
+  padding: 60px 20px;
+  background: #1A2332;
+  border-radius: 12px;
+  border: 1px solid #2A3441;
+}
+
+.emptyState h3 {
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.emptyState p {
+  color: #9CA3AF;
+  font-size: 16px;
+  margin-bottom: 24px;
+}
 
 /* Responsive table */
 @media (max-width: 768px) {

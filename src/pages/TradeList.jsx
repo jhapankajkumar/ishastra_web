@@ -67,27 +67,27 @@ export default function TradeList() {
 
   const handleDeleteConfirm = async () => {
     if (!tradeToDelete) return;
-    
+
     try {
       await deleteTrade(tradeToDelete.id);
       notification.success(`Trade ${tradeToDelete.ticker} deleted successfully!`);
-      
+
       // Remove the deleted trade from the local state
       setTrades(prev => prev.filter(trade => trade.id !== tradeToDelete.id));
-      
+
       // Close confirmation dialog
       setShowDeleteConfirm(false);
       setTradeToDelete(null);
     } catch (err) {
       console.error('Failed to delete trade:', err);
       let errorMessage = "Failed to delete trade.";
-      
+
       if (err.type === 'NETWORK_ERROR') {
         errorMessage = "Unable to connect to server. Please check your internet connection.";
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       notification.error(errorMessage);
     }
   };
@@ -105,13 +105,13 @@ export default function TradeList() {
     } catch (err) {
       console.error('Failed to fetch trade details:', err);
       let errorMessage = "Failed to load trade details.";
-      
+
       if (err.type === 'NETWORK_ERROR') {
         errorMessage = "Unable to connect to server. Please check your internet connection.";
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       notification.error(errorMessage);
     }
   };
@@ -196,11 +196,11 @@ export default function TradeList() {
       if (mode === "review") return "Review Trade";
       return "Edit Trade";
     };
-    
+
     const getSubtitle = () => {
       const companyName = getTickerBySymbol(selectedTrade.ticker)?.name;
       const tickerDisplay = companyName ? `${selectedTrade.ticker} (${companyName})` : selectedTrade.ticker;
-      
+
       if (mode === "update") return `Update exit details for ${tickerDisplay}`;
       if (mode === "review") return `Add post-trade analysis for ${tickerDisplay}`;
       return `Edit trade details for ${tickerDisplay}`;
@@ -208,7 +208,7 @@ export default function TradeList() {
 
     return (
       <div className={styles.container}>
-        <PageHeader 
+        <PageHeader
           title={getTitle()}
           subtitle={getSubtitle()}
           showBackButton={true}
@@ -232,14 +232,14 @@ export default function TradeList() {
   if (loading) {
     return (
       <div className={styles.container}>
-        <PageHeader 
+        <PageHeader
           title="Trade List"
           subtitle="View and manage all your trades"
         />
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
           height: '200px',
           color: '#9CA3AF'
         }}>
@@ -319,12 +319,18 @@ export default function TradeList() {
 
   return (
     <div className={styles.container}>
-      <PageHeader 
+      <PageHeader
         title="Trade List"
         subtitle="View and manage all your trades"
       />
 
-      {/* Modern Table with Partial Exit Columns */}
+      {trades.length > 0 && !error && (
+        <div className={styles.emptyState}>
+          <h3>No trades found</h3>
+          <p>Start by adding your first trade to track your portfolio.</p>
+        </div>
+      )}
+
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead className={styles.tableHeader}>
@@ -381,28 +387,28 @@ export default function TradeList() {
                   <td className={`${styles.tableCell} ${styles.priceCell}`}>{remainingQty.toLocaleString()}</td>
                   <td className={`${styles.tableCell} ${styles.priceCell}`}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exit_price !== undefined && trade.exit_price !== null ? Number(trade.exit_price).toFixed(2) : "-")) : '-'}</td>
                   <td className={`${styles.tableCell} ${styles.priceCell}`}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
-                  <td className={`${styles.tableCell} ${styles.profitCell} ${soldQty > 0 && getPartialPL(trade) !== "-" ? (getPartialPL(trade) > 0 ? styles.profitPositive : styles.profitNegative) : ''}`}> 
+                  <td className={`${styles.tableCell} ${styles.profitCell} ${soldQty > 0 && getPartialPL(trade) !== "-" ? (getPartialPL(trade) > 0 ? styles.profitPositive : styles.profitNegative) : ''}`}>
                     {soldQty > 0 && getPartialPL(trade) !== "-" ? `$${getPartialPL(trade)}` : "-"}
                   </td>
                   <td className={styles.tableCell}>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <button 
+                      <button
                         onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
                         className={`${styles.actionButton} ${styles.viewButton}`}
                       >
                         View
                       </button>
                       {getExitTransactions(trade).length > 0 && remainingQty === 0
-                        ? <button 
-                            onClick={e => { e.stopPropagation(); handleReview(trade.id); }}
-                            className={`${styles.actionButton} ${styles.reviewButton}`}
-                          >Review</button>
-                        : <button 
-                            onClick={e => { e.stopPropagation(); handleEdit(trade.id); }}
-                            className={`${styles.actionButton} ${styles.editButton}`}
-                          >Update</button>
+                        ? <button
+                          onClick={e => { e.stopPropagation(); handleReview(trade.id); }}
+                          className={`${styles.actionButton} ${styles.reviewButton}`}
+                        >Review</button>
+                        : <button
+                          onClick={e => { e.stopPropagation(); handleEdit(trade.id); }}
+                          className={`${styles.actionButton} ${styles.editButton}`}
+                        >Update</button>
                       }
-                      <button 
+                      <button
                         onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}
                         className={`${styles.actionButton} ${styles.deleteButton}`}
                       >
@@ -417,11 +423,24 @@ export default function TradeList() {
         </table>
       </div>
 
+      {trades.length === 0 && (
+        <div className={styles.emptyState}>
+          <h3>No trades found</h3>
+          <p>Start by adding your first trade to track your portfolio.</p>
+          <button
+            className={styles.addButton}
+            onClick={() => navigate('/trades/new')}
+          >
+            + Add First Trade
+          </button>
+        </div>
+      )}
+
       {/* Trade Details Popup */}
       {showPopup && popupTrade && (
-        <TradeDetailsPopup 
-          trade={popupTrade} 
-          onClose={handleClosePopup} 
+        <TradeDetailsPopup
+          trade={popupTrade}
+          onClose={handleClosePopup}
         />
       )}
 
@@ -456,14 +475,14 @@ export default function TradeList() {
             }}>
               Delete Trade
             </h3>
-            
+
             <p style={{
               fontSize: '16px',
               color: '#9CA3AF',
               margin: '0 0 24px 0',
               lineHeight: '1.5'
             }}>
-              Are you sure you want to delete the trade for <strong style={{ color: '#fff' }}>{tradeToDelete.ticker}</strong>? 
+              Are you sure you want to delete the trade for <strong style={{ color: '#fff' }}>{tradeToDelete.ticker}</strong>?
               This action cannot be undone and will permanently remove all trade data including charts and analysis.
             </p>
 

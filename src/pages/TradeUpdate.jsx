@@ -492,7 +492,6 @@ const TradeUpdate = () => {
                     <div className={styles.priceInputGroup}>
                       <input
                         type="number"
-                        step="0.01"
                         name="exitOrderPrice"
                         value={exitForm.exitOrderPrice}
                         onChange={handleExitFormChange}

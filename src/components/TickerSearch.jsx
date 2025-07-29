@@ -70,7 +70,7 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
           currency = 'INR';
         }
       }
-      onSelect({ symbol: ticker.symbol, name: companyName, currency });
+      onSelect({ symbol: ticker.symbol, name: companyName, currency, sector: ticker.sector.toUpperCase() || '' });
     }
     inputRef.current?.blur();
   };
