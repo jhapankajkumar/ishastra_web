@@ -2,11 +2,17 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllTrades } from '../api/tradeApi';
 import { getDashboardSummary } from '../api/dashboardApi';
+import { getAllInvestments, getInvestmentSummary } from '../api/investmentApi';
 import EquityCurve from '../components/EquityCurve';
 import PerformanceChart from '../components/PerformanceChart';
 import DonutChart from '../components/DonutChart';
+
 import PageHeader from '../components/PageHeader';
 import ErrorPage from '../components/ErrorPage';
+import InvestmentValueChart from '../components/InvestmentValueChart';
+import SectorDonutChart from '../components/SectorDonutChart';
+import TopHoldingsBarChart from '../components/TopHoldingsBarChart';
+import MarketCapPieChart from '../components/MarketCapPieChart';
 // import { useNotification } from '../components/NotificationProvider'; // Reserved for future use
 import styles from './Dashboard.module.css';
 import { getAllTags } from "../api/tagApi";
@@ -18,7 +24,31 @@ const Dashboard = () => {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // const notification = useNotification(); // Reserved for future use
+  // Tabs: 'trading' or 'investment'
+  const [activeTab, setActiveTab] = useState('trading');
+  // Investment tab state
+  const [investmentSummary, setInvestmentSummary] = useState(null);
+  const [investments, setInvestments] = useState([]);
+  const [investmentLoading, setInvestmentLoading] = useState(false);
+  const [investmentError, setInvestmentError] = useState(null);
+  // Load investment data when tab is switched to 'investment'
+  useEffect(() => {
+    if (activeTab !== 'investment') return;
+    setInvestmentLoading(true);
+    setInvestmentError(null);
+    Promise.all([getInvestmentSummary(), getAllInvestments()])
+      .then(([summary, list]) => {
+        setInvestmentSummary(summary);
+        setInvestments(list);
+        // Debug log for investments data
+        // eslint-disable-next-line no-console
+        console.log('[Dashboard] investments loaded:', list);
+      })
+      .catch((err) => {
+        setInvestmentError(err);
+      })
+      .finally(() => setInvestmentLoading(false));
+  }, [activeTab]);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -226,6 +256,20 @@ const Dashboard = () => {
     window.location.reload();
   };
 
+  // --- Tab UI ---
+  const tabStyle = (tab) => ({
+    padding: '12px 32px',
+    cursor: 'pointer',
+    fontWeight: 600,
+    fontSize: 18,
+    border: 'none',
+    borderBottom: activeTab === tab ? '3px solid #3B82F6' : '3px solid transparent',
+    background: 'none',
+    color: activeTab === tab ? '#3B82F6' : '#9CA3AF',
+    outline: 'none',
+    transition: 'border 0.2s, color 0.2s'
+  });
+
   if (error && error.type === 'NETWORK_ERROR') {
     return (
       <ErrorPage
@@ -240,8 +284,8 @@ const Dashboard = () => {
     return (
       <div className={styles.dashboardContainer}>
         <PageHeader 
-          title="Trading Dashboard"
-          subtitle="Track your trading performance and analytics"
+          title="Dashboard"
+          subtitle="Track your trading and investment analytics"
         />
         <div style={{ 
           display: 'flex', 
@@ -258,382 +302,400 @@ const Dashboard = () => {
 
   if (!stats) return <div>Loading...</div>;
 
-  console.log("tags", tags);
-  console.log("trades", trades);
-  console.log("tagIdToName", tagIdToName);
-  console.log("tagData", tagData);
-
   return (
     <div className={styles.dashboardContainer}>
       <PageHeader 
-        title="Trading Dashboard"
-        subtitle="Track your trading performance and analytics"
+        title="Dashboard"
+        subtitle="Track your trading and investment analytics"
       />
-
-      {/* Stats Cards */}
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 20,
-        marginBottom: 32
-      }}>
-        {/* First Row - Financial Overview */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: 20
-        }}>
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            border: "1px solid #2A3441",
-            textAlign: "center"
-          }}>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              marginBottom: 8
-            }}>
-              Total Equity
-            </div>
-            <div style={{
-              fontSize: "32px",
-              fontWeight: "700",
-              color: totalEquity >= 100000 ? "#10B981" : "#EF4444"
-            }}>
-              ${totalEquity.toLocaleString()}
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            border: "1px solid #2A3441",
-            textAlign: "center"
-          }}>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              marginBottom: 8
-            }}>
-              Total P&L
-            </div>
-            <div style={{
-              fontSize: "32px",
-              fontWeight: "700",
-              color: totalPnL >= 0 ? "#10B981" : "#EF4444"
-            }}>
-              {totalPnL >= 0 ? '+' : ''}${totalPnL.toLocaleString()}
-            </div>
-          </div>
-        </div>
-
-        {/* Second Row - Performance Metrics */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 20
-        }}>
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            border: "1px solid #2A3441",
-            textAlign: "center"
-          }}>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              marginBottom: 8
-            }}>
-              Win Rate
-            </div>
-            <div style={{
-              fontSize: "28px",
-              fontWeight: "700",
-              color: "#10B981"
-            }}>
-              {stats.winRate}%
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            border: "1px solid #2A3441",
-            textAlign: "center"
-          }}>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              marginBottom: 8
-            }}>
-              Total Trades
-            </div>
-            <div style={{
-              fontSize: "28px",
-              fontWeight: "700",
-              color: "#E5E7EB"
-            }}>
-              {stats.totalTrades || trades.length}
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            border: "1px solid #2A3441",
-            textAlign: "center"
-          }}>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              marginBottom: 8
-            }}>
-              Profit Factor
-            </div>
-            <div style={{
-              fontSize: "28px",
-              fontWeight: "700",
-              color: "#F59E0B"
-            }}>
-              {stats.profitFactor || "N/A"}
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            border: "1px solid #2A3441",
-            textAlign: "center"
-          }}>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              marginBottom: 8
-            }}>
-              Avg Win
-            </div>
-            <div style={{
-              fontSize: "28px",
-              fontWeight: "700",
-              color: "#10B981"
-            }}>
-              ${avgWin.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </div>
-          </div>
-          
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            border: "1px solid #2A3441",
-            textAlign: "center"
-          }}>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              marginBottom: 8
-            }}>
-              Avg Loss
-            </div>
-            <div style={{
-              fontSize: "28px",
-              fontWeight: "700",
-              color: "#EF4444"
-            }}>
-              ${avgLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </div>
-          </div>
-        </div>
+      {/* Tabs */}
+      <div style={{ display: 'flex', borderBottom: '1px solid #2A3441', marginBottom: 32 }}>
+        <button style={tabStyle('trading')} onClick={() => setActiveTab('trading')}>Trading</button>
+        <button style={tabStyle('investment')} onClick={() => setActiveTab('investment')}>Investment</button>
       </div>
+      {/* Tab Content */}
+      {activeTab === 'trading' ? (
+        <>
+          {/* ...existing trading dashboard content... */}
+          {/* Stats Cards */}
+          // ...existing code...
+        </>
+      ) : (
+        // Investment Tab Content
+        <>
+          {/* Investment Loading/Error States */}
+          {investmentLoading ? (
+            <div style={{ color: '#9CA3AF', textAlign: 'center', padding: 40 }}>Loading investment dashboard...</div>
+          ) : investmentError ? (
+            <div style={{ color: '#EF4444', textAlign: 'center', padding: 40 }}>Failed to load investment data.</div>
+          ) : (
+            <>
+              {/* Investment Summary Cards */}
 
-      {/* Chart Grid */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
-        gap: 24,
-        marginBottom: 24
-      }}>
-        <div style={{
-          backgroundColor: "#1A2332",
-          borderRadius: 12,
-          padding: 24,
-          border: "1px solid #2A3441"
-        }}>
-          <h3 style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#fff",
-            margin: "0 0 20px 0"
-          }}>
-            Equity Curve
-          </h3>
-          <div style={{ width: '100%', height: 250 }}>
-            <EquityCurve trades={tradesLast6Months} />
-          </div>
-        </div>
-        
-        <div style={{
-          backgroundColor: "#1A2332",
-          borderRadius: 12,
-          padding: 24,
-          border: "1px solid #2A3441"
-        }}>
-          <h3 style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#fff",
-            margin: "0 0 20px 0"
-          }}>
-            Monthly Performance
-          </h3>
-          <div style={{ width: '100%', height: 250 }}>
-            <PerformanceChart data={monthlyPnlData} />
-          </div>
-        </div>
-      </div>
-
-      {/* Donut Charts Grid */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
-        gap: 24,
-        marginBottom: 24
-      }}>
-        <div style={{
-          backgroundColor: "#1A2332",
-          borderRadius: 12,
-          padding: 24,
-          border: "1px solid #2A3441"
-        }}>
-          <div style={{ width: '100%', height: 320 }}>
-            <DonutChart data={setupData} title="Setup Breakdown" />
-          </div>
-        </div>
-        
-        <div style={{
-          backgroundColor: "#1A2332",
-          borderRadius: 12,
-          padding: 24,
-          border: "1px solid #2A3441"
-        }}>
-          <div style={{ width: '100%', height: 320 }}>
-            <DonutChart data={tagData} title="Tag Distribution" />
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Trades */}
-      <div style={{
-        backgroundColor: "#1A2332",
-        borderRadius: 12,
-        padding: 24,
-        border: "1px solid #2A3441",
-        marginBottom: 24
-      }}>
-        <h3 style={{
-          fontSize: "18px",
-          fontWeight: "600",
-          color: "#fff",
-          margin: "0 0 20px 0"
-        }}>
-          Recent Trades
-        </h3>
-        <div style={{
-          display: "grid",
-          gap: 12
-        }}>
-          {recentTrades.length > 0 ? recentTrades.map((trade, index) => {
-            const pnl = calculatePnl(trade);
-            return (
-              <div key={trade.id || index} style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "12px 16px",
-                backgroundColor: "#0F1419",
-                borderRadius: 8,
-                border: "1px solid #2A3441"
+              {/* Enhanced Investment Summary Cards */}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: 28,
+                marginBottom: 40,
+                background: "linear-gradient(90deg, #181F2A 60%, #1A2332 100%)",
+                borderRadius: 18,
+                padding: 16
               }}>
+                {/* Card: Total Invested */}
                 <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12
+                  background: "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
+                  borderRadius: 16,
+                  padding: 28,
+                  border: "1px solid #2A3441",
+                  textAlign: "center",
+                  boxShadow: "0 4px 24px 0 rgba(59,130,246,0.08)",
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}>
-                  <div style={{
-                    fontWeight: "600",
-                    color: "#fff",
-                    fontSize: "16px"
-                  }}>
-                    {trade.ticker}
-                  </div>
-                  <div style={{
-                    fontSize: "14px",
-                    color: "#9CA3AF"
-                  }}>
-                    {trade.exit_date ? new Date(trade.exit_date).toLocaleDateString() : 'Open'}
-                  </div>
+                  <span style={{
+                    position: 'absolute',
+                    top: 18, left: 18,
+                    fontSize: 28,
+                    color: '#3B82F6',
+                    opacity: 0.18
+                  }}>💰</span>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Invested</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: "#3B82F6", letterSpacing: 1 }}>₹{investmentSummary?.totalInvested?.toLocaleString() ?? '-'}</div>
                 </div>
+                {/* Card: Total Holdings */}
                 <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12
+                  background: "linear-gradient(135deg, #1A2332 60%, #193C3A 100%)",
+                  borderRadius: 16,
+                  padding: 28,
+                  border: "1px solid #2A3441",
+                  textAlign: "center",
+                  boxShadow: "0 4px 24px 0 rgba(16,185,129,0.08)",
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}>
-                  <div style={{
-                    fontWeight: "700",
-                    fontSize: "16px",
-                    color: pnl >= 0 ? "#10B981" : "#EF4444"
-                  }}>
-                    {pnl >= 0 ? '+' : ''}${pnl.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </div>
-                  {!trade.exit_date && (
-                    <button
-                      onClick={() => navigate(`/trades/update/${trade.id}`)}
-                      style={{
-                        background: "#3B82F6",
-                        border: "none",
-                        borderRadius: "6px",
-                        color: "white",
-                        padding: "4px 8px",
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        cursor: "pointer",
-                        transition: "background 0.2s ease"
-                      }}
-                      onMouseOver={(e) => e.target.style.background = "#2563EB"}
-                      onMouseOut={(e) => e.target.style.background = "#3B82F6"}
-                    >
-                      Update
-                    </button>
-                  )}
+                  <span style={{
+                    position: 'absolute',
+                    top: 18, left: 18,
+                    fontSize: 28,
+                    color: '#10B981',
+                    opacity: 0.18
+                  }}>📈</span>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Holdings</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: "#10B981", letterSpacing: 1 }}>₹{investmentSummary?.totalHoldings?.toLocaleString() ?? '-'}</div>
+                </div>
+                {/* Card: Unrealized P&L */}
+                <div style={{
+                  background: "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
+                  borderRadius: 16,
+                  padding: 28,
+                  border: "1px solid #2A3441",
+                  textAlign: "center",
+                  boxShadow: "0 4px 24px 0 rgba(245,158,11,0.08)",
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  <span style={{
+                    position: 'absolute',
+                    top: 18, left: 18,
+                    fontSize: 28,
+                    color: '#F59E0B',
+                    opacity: 0.18
+                  }}>💹</span>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Unrealized P&L</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: "#F59E0B", letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString() ?? '-'}</div>
+                </div>
+                {/* Card: Avg Buy Price */}
+                <div style={{
+                  background: "linear-gradient(135deg, #1A2332 60%, #2A3441 100%)",
+                  borderRadius: 16,
+                  padding: 28,
+                  border: "1px solid #2A3441",
+                  textAlign: "center",
+                  boxShadow: "0 4px 24px 0 rgba(229,231,235,0.08)",
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  <span style={{
+                    position: 'absolute',
+                    top: 18, left: 18,
+                    fontSize: 28,
+                    color: '#E5E7EB',
+                    opacity: 0.18
+                  }}>🏷️</span>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Avg Buy Price</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: "#E5E7EB", letterSpacing: 1 }}>₹{investmentSummary?.avgBuyPrice?.toLocaleString() ?? '-'}</div>
                 </div>
               </div>
-            );
-          }) : (
-            <div style={{
-              textAlign: "center",
-              color: "#9CA3AF",
-              fontSize: "14px",
-              padding: "20px"
-            }}>
-              No recent trades found
-            </div>
+
+
+
+              {/* Investment Analytics Section */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 32,
+                marginBottom: 36,
+                alignItems: 'stretch',
+                flexWrap: 'wrap'
+              }}>
+                {/* Investment Value Over Time Chart */}
+                <div style={{
+                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  borderRadius: 16,
+                  padding: 36,
+                  border: "1px solid #2A3441",
+                  minHeight: 260,
+                  boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center'
+                }}>
+                  <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 22, marginBottom: 18, letterSpacing: 0.5 }}>Investment Value Over Time</div>
+                  <InvestmentValueChart investments={Array.isArray(investments) ? investments : []} />
+                </div>
+                {/* Sector Allocation Donut Chart */}
+                <div style={{
+                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  borderRadius: 16,
+                  padding: 36,
+                  border: "1px solid #2A3441",
+                  minHeight: 260,
+                  boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center'
+                }}>
+                  <div style={{ fontWeight: 700, color: '#10B981', fontSize: 22, marginBottom: 18, letterSpacing: 0.5 }}>Sector Allocation</div>
+                  <SectorDonutChart investments={Array.isArray(investments) ? investments : []} />
+                </div>
+              </div>
+
+              {/* Deeper Analytics Section */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 1fr 1fr',
+                gap: 32,
+                marginBottom: 36,
+                alignItems: 'stretch',
+                flexWrap: 'wrap'
+              }}>
+                {/* Top Holdings Bar Chart */}
+                <div style={{
+                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  borderRadius: 16,
+                  padding: 36,
+                  border: "1px solid #2A3441",
+                  minHeight: 220,
+                  boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center'
+                }}>
+                  <div style={{ fontWeight: 700, color: '#F59E0B', fontSize: 20, marginBottom: 18, letterSpacing: 0.5 }}>Top Holdings by Value</div>
+                  <TopHoldingsBarChart investments={Array.isArray(investments) ? investments : []} />
+                </div>
+                {/* Market Cap Pie Chart */}
+                <div style={{
+                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  borderRadius: 16,
+                  padding: 36,
+                  border: "1px solid #2A3441",
+                  minHeight: 220,
+                  boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center'
+                }}>
+                  <div style={{ fontWeight: 700, color: '#6366F1', fontSize: 20, marginBottom: 18, letterSpacing: 0.5 }}>Market Cap Allocation</div>
+                  <MarketCapPieChart investments={Array.isArray(investments) ? investments : []} />
+                </div>
+                {/* Key Stats & CAGR */}
+                <div style={{
+                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  borderRadius: 16,
+                  padding: 36,
+                  border: "1px solid #2A3441",
+                  minHeight: 220,
+                  boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#E5E7EB'
+                }}>
+                  <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 20, marginBottom: 18, letterSpacing: 0.5 }}>Key Investment Stats <span title="Compound Annual Growth Rate" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></div>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 16 }}>
+                    <li><b>Total Investments:</b> {Array.isArray(investments) ? investments.length : 0}</li>
+                    <li><b>Total Return:</b> {(() => {
+                      const arr = Array.isArray(investments) ? investments : [];
+                      const invested = arr.reduce((sum, inv) => sum + (inv.avgBuyPrice || 0) * (inv.quantity || 0), 0);
+                      const current = arr.reduce((sum, inv) => sum + (inv.currentPrice || 0) * (inv.quantity || 0), 0);
+                      if (!invested) return '-';
+                      const ret = ((current - invested) / invested) * 100;
+                      return `${ret >= 0 ? '+' : ''}${ret.toFixed(2)}%`;
+                    })()}</li>
+                    <li><b>CAGR:</b> {(() => {
+                      const arr = Array.isArray(investments) ? investments : [];
+                      if (!arr.length) return '-';
+                      const invested = arr.reduce((sum, inv) => sum + (inv.avgBuyPrice || 0) * (inv.quantity || 0), 0);
+                      const current = arr.reduce((sum, inv) => sum + (inv.currentPrice || 0) * (inv.quantity || 0), 0);
+                      if (!invested) return '-';
+                      // Use earliest createdAt as start date
+                      const dates = arr.map(inv => inv.createdAt ? new Date(inv.createdAt) : null).filter(Boolean);
+                      if (!dates.length) return '-';
+                      const start = new Date(Math.min(...dates.map(d => d.getTime())));
+                      const now = new Date();
+                      const years = (now - start) / (365.25 * 24 * 3600 * 1000);
+                      if (years <= 0) return '-';
+                      const cagr = Math.pow(current / invested, 1 / years) - 1;
+                      return `${(cagr * 100).toFixed(2)}%`;
+                    })()}</li>
+                    <li><b>Most Invested Sector:</b> {(() => {
+                      const arr = Array.isArray(investments) ? investments : [];
+                      const sectorMap = {};
+                      arr.forEach(inv => {
+                        const sector = inv.sector || 'Other';
+                        const value = (inv.currentPrice || 0) * (inv.quantity || 0);
+                        sectorMap[sector] = (sectorMap[sector] || 0) + value;
+                      });
+                      const sorted = Object.entries(sectorMap).sort((a, b) => b[1] - a[1]);
+                      return sorted.length ? `${sorted[0][0]} (₹${sorted[0][1].toLocaleString()})` : '-';
+                    })()}</li>
+                    <li><b>Best Performer:</b> {(() => {
+                      const arr = Array.isArray(investments) ? investments : [];
+                      if (!arr.length) return '-';
+                      const best = [...arr].sort((a, b) => ((b.currentPrice - b.avgBuyPrice) * b.quantity) - ((a.currentPrice - a.avgBuyPrice) * a.quantity))[0];
+                      if (!best) return '-';
+                      const pnl = (best.currentPrice - best.avgBuyPrice) * best.quantity;
+                      return `${best.ticker} (${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString()})`;
+                    })()}</li>
+                    <li><b>Worst Performer:</b> {(() => {
+                      const arr = Array.isArray(investments) ? investments : [];
+                      if (!arr.length) return '-';
+                      const worst = [...arr].sort((a, b) => ((a.currentPrice - a.avgBuyPrice) * a.quantity) - ((b.currentPrice - b.avgBuyPrice) * b.quantity))[0];
+                      if (!worst) return '-';
+                      const pnl = (worst.currentPrice - worst.avgBuyPrice) * worst.quantity;
+                      return `${worst.ticker} (${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString()})`;
+                    })()}</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Top Gainers/Losers Table */}
+              <div style={{
+                background: "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
+                borderRadius: 16,
+                padding: 28,
+                border: "1px solid #2A3441",
+                marginBottom: 28,
+                boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                color: '#E5E7EB'
+              }}>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 22px 0", letterSpacing: 0.5 }}>Top Gainers & Losers <span title="% return = (Current - Buy)/Buy" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></h3>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(21,27,40,0.98)' }}>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Ticker</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'left' }}>Sector</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'right' }}>% Return</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'right' }}>Unrealized P&L</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const arr = Array.isArray(investments) ? investments : [];
+                        if (!arr.length) return <tr><td colSpan={4} style={{ textAlign: 'center', color: '#9CA3AF', padding: 24 }}>No data</td></tr>;
+                        const sorted = [...arr]
+                          .map(inv => {
+                            const ret = inv.avgBuyPrice ? ((inv.currentPrice - inv.avgBuyPrice) / inv.avgBuyPrice) * 100 : 0;
+                            const pnl = (inv.currentPrice - inv.avgBuyPrice) * inv.quantity;
+                            return { ...inv, ret, pnl };
+                          })
+                          .sort((a, b) => b.ret - a.ret);
+                        const top = sorted.slice(0, 3);
+                        const bottom = sorted.slice(-3).reverse();
+                        return [
+                          ...top.map((inv, idx) => (
+                            <tr key={inv.id || `gainer-${idx}`} style={{ background: '#182032' }}>
+                              <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.ticker}</td>
+                              <td style={{ padding: '12px 14px' }}>{inv.sector || '-'}</td>
+                              <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.ret >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.ret >= 0 ? '+' : ''}{inv.ret.toFixed(2)}%</td>
+                              <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.pnl >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.pnl >= 0 ? '+' : ''}₹{isNaN(inv.pnl) ? '-' : inv.pnl.toLocaleString()}</td>
+                            </tr>
+                          )),
+                          <tr key="sep"><td colSpan={4} style={{ height: 8 }}></td></tr>,
+                          ...bottom.map((inv, idx) => (
+                            <tr key={inv.id || `loser-${idx}`} style={{ background: '#2A1A1A' }}>
+                              <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.ticker}</td>
+                              <td style={{ padding: '12px 14px' }}>{inv.sector || '-'}</td>
+                              <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.ret >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.ret >= 0 ? '+' : ''}{inv.ret.toFixed(2)}%</td>
+                              <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.pnl >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.pnl >= 0 ? '+' : ''}₹{isNaN(inv.pnl) ? '-' : inv.pnl.toLocaleString()}</td>
+                            </tr>
+                          ))
+                        ];
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+
+              {/* Recent Investments Table - Enhanced */}
+              <div style={{
+                background: "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
+                borderRadius: 16,
+                padding: 28,
+                border: "1px solid #2A3441",
+                marginBottom: 28,
+                boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)"
+              }}>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 22px 0", letterSpacing: 0.5 }}>Recent Investments</h3>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(21,27,40,0.98)' }}>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Ticker</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'left' }}>Sector</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'right' }}>Quantity</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'right' }}>Avg Buy Price</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'right' }}>Current Price</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'right', borderTopRightRadius: 10 }}>Unrealized P&L</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {investments && investments.length > 0 ? investments.slice(0, 8).map((inv, idx) => {
+                        const pnl = (inv.currentPrice - inv.avgBuyPrice) * inv.quantity;
+                        return (
+                          <tr key={inv.id || idx} style={{
+                            borderBottom: '1px solid #232B3B',
+                            background: idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)',
+                            transition: 'background 0.2s',
+                            borderRadius: 8
+                          }}
+                          onMouseOver={e => e.currentTarget.style.background = '#232B3B'}
+                          onMouseOut={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)'}
+                          >
+                            <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.ticker}</td>
+                            <td style={{ padding: '12px 14px' }}>{inv.sector || '-'}</td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>{inv.quantity}</td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>₹{inv.avgBuyPrice?.toLocaleString() ?? '-'}</td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>₹{inv.currentPrice?.toLocaleString() ?? '-'}</td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right', color: pnl >= 0 ? '#10B981' : '#EF4444', fontWeight: 800 }}>
+                              {pnl >= 0 ? '+' : ''}₹{isNaN(pnl) ? '-' : pnl.toLocaleString()}
+                            </td>
+                          </tr>
+                        );
+                      }) : (
+                        <tr><td colSpan={6} style={{ textAlign: 'center', color: '#9CA3AF', padding: 28 }}>No investments found</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 };

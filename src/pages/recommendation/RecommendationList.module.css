@@ -356,6 +356,33 @@
   margin-bottom: 24px;
 }
 
+.marketCapLarge {
+  background-color: #0f5132;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.marketCapMid {
+  background-color: #084298;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.marketCapSmall {
+  background-color: #6c757d;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .container {

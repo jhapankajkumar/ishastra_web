@@ -20,10 +20,26 @@ const TradeReview = () => {
   
   const [reviewForm, setReviewForm] = useState({
     postTradeAnalysis: '',
-    lessonsLearned: '',
-    emotionalState: ''
+    lessonLearned: '',
+    emotionalState: '',
+    reviewCharts: []
   });
 
+  const handleReviewFormChange = (e) => {
+    const { name, value, files } = e.target;
+    if (files) {
+      setReviewForm(prev => ({ ...prev, [name]: Array.from(files) }));
+    } else {
+      setReviewForm(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const removeReviewChart = (index) => {
+    setReviewForm(prev => ({
+      ...prev,
+      reviewCharts: prev.reviewCharts.filter((_, i) => i !== index)
+    }));
+  };
   useEffect(() => {
     loadTradeData();
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -37,14 +53,15 @@ const TradeReview = () => {
       
       // Load exit transactions for P&L calculation
       const txRes = await getTradeTransactions(id);
-      const exitTx = (txRes.data || []).filter(tx => tx.transaction_type === 'Exit');
+      const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
       setExitTransactions(exitTx);
       
       // Pre-fill review form
       setReviewForm({
-        postTradeAnalysis: tradeData.post_trade_analysis || '',
-        lessonsLearned: tradeData.lessons_learned || '',
-        emotionalState: tradeData.emotional_state || ''
+        postTradeAnalysis: tradeData.postTradeAnalysis || '',
+        lessonLearned: tradeData.lessonLearned || '',
+        emotionalState: tradeData.emotionalState || '',
+        reviewCharts: tradeData.reviewCharts || []
       });
       
     } catch (err) {
@@ -57,14 +74,14 @@ const TradeReview = () => {
 
   // Calculate total P&L from all exit transactions
   const getTotalPL = () => {
-    if (!exitTransactions.length || !trade?.entry_price) return 0;
-    
+    if (!exitTransactions.length || !trade?.entryPrice) return 0;
+
     let totalPL = 0;
     exitTransactions.forEach(tx => {
       if (tx.price && tx.quantity) {
         const priceDiff = trade.direction?.toLowerCase() === 'long'
-          ? Number(tx.price) - Number(trade.entry_price)
-          : Number(trade.entry_price) - Number(tx.price);
+          ? Number(tx.price) - Number(trade.entryPrice)
+          : Number(trade.entryPrice) - Number(tx.price);
         totalPL += priceDiff * Number(tx.quantity);
       }
     });
@@ -89,7 +106,7 @@ const TradeReview = () => {
 
   const getPercentGain = () => {
     const avgExit = getAvgExitPrice();
-    const entryPrice = Number(trade?.entry_price || 0);
+    const entryPrice = Number(trade?.entryPrice || 0);
     
     if (!avgExit || !entryPrice) return 0;
     
@@ -127,9 +144,9 @@ const TradeReview = () => {
   };
 
   // Prepare images for gallery
-  const entryImages = trade?.trade_images?.filter(img => img.image_type === "entry") || [];
-  const exitImages = trade?.trade_images?.filter(img => img.image_type === "exit") || [];
-  const postImages = trade?.trade_images?.filter(img => img.image_type === "post") || [];
+  const entryImages = trade?.tradeImages?.filter(img => img.imageType === "entry") || [];
+  const exitImages = trade?.tradeImages?.filter(img => img.imageType === "exit") || [];
+  const postImages = trade?.tradeImages?.filter(img => img.imageType === "post") || [];
 
   if (loading) {
     return (
@@ -175,7 +192,7 @@ const TradeReview = () => {
             </h4>
             <ImageGallery
               images={entryImages.map((img, idx) => ({
-                src: `http://localhost:8000/${img.image_url || img.file_path}`,
+                src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
                 alt: `Entry Chart ${idx + 1}`
               }))}
               maxHeight={180}
@@ -201,7 +218,7 @@ const TradeReview = () => {
             </h4>
             <ImageGallery
               images={exitImages.map((img, idx) => ({
-                src: `http://localhost:8000/${img.image_url || img.file_path}`,
+                src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
                 alt: `Exit Chart ${idx + 1}`
               }))}
               maxHeight={180}
@@ -227,7 +244,7 @@ const TradeReview = () => {
             </h4>
             <ImageGallery
               images={postImages.map((img, idx) => ({
-                src: `http://localhost:8000/${img.image_url || img.file_path}`,
+                src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
                 alt: `Post Trade ${idx + 1}`
               }))}
               maxHeight={180}
@@ -255,15 +272,15 @@ const TradeReview = () => {
           <div className={styles.perfCard}>
             <div className={styles.perfIcon}>📅</div>
             <div className={styles.perfValue}>
-              {trade.entry_date && exitTransactions.length ? 
-                Math.ceil((new Date(exitTransactions[exitTransactions.length - 1]?.transaction_date) - new Date(trade.entry_date)) / (1000 * 60 * 60 * 24)) : 0}
+              {trade.entryDate && exitTransactions.length ? 
+                Math.ceil((new Date(exitTransactions[exitTransactions.length - 1]?.transactionDate) - new Date(trade.entryDate)) / (1000 * 60 * 60 * 24)) : 0}
             </div>
             <div className={styles.perfLabel}>Days Held</div>
           </div>
 
           <div className={styles.perfCard}>
             <div className={styles.perfIcon}>🎯</div>
-            <div className={styles.perfValue}>{trade.exit_grade || 'N/A'}</div>
+            <div className={styles.perfValue}>{trade.exitGrade || 'N/A'}</div>
             <div className={styles.perfLabel}>Exit Grade</div>
           </div>
         </div>
@@ -285,7 +302,7 @@ const TradeReview = () => {
                     <div className={styles.metricInfo}>
                       <div className={styles.metricLabel}>Entry Date</div>
                       <div className={styles.metricValue}>
-                        {trade.entry_date ? new Date(trade.entry_date).toLocaleDateString('en-US', { 
+                        {trade.entryDate ? new Date(trade.entryDate).toLocaleDateString('en-US', { 
                           weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
                         }) : 'N/A'}
                       </div>
@@ -298,7 +315,7 @@ const TradeReview = () => {
                     <div className={styles.metricInfo}>
                       <div className={styles.metricLabel}>Entry Price</div>
                       <div className={styles.metricValue}>
-                        {trade.market === "India" ? "₹" : "$"}{Number(trade.entry_price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {trade.market === "India" ? "₹" : "$"}{Number(trade.entryPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
                   </div>
@@ -333,7 +350,7 @@ const TradeReview = () => {
                     <div className={styles.metricInfo}>
                       <div className={styles.metricLabel}>Setup Type</div>
                       <div className={styles.metricValue}>
-                        <span className={styles.setupBadge}>{trade.setup_type || 'N/A'}</span>
+                        <span className={styles.setupBadge}>{trade.setupType || 'N/A'}</span>
                       </div>
                     </div>
                   </div>
@@ -343,7 +360,7 @@ const TradeReview = () => {
                     <div className={styles.metricIcon}>💭</div>
                     <div className={styles.metricInfo}>
                       <div className={styles.metricLabel}>Entry Reason</div>
-                      <div className={styles.metricValue}>{trade.reason_for_entry || 'N/A'}</div>
+                      <div className={styles.metricValue}>{trade.reasonForEntry || 'N/A'}</div>
                     </div>
                   </div>
                 </div>
@@ -365,8 +382,8 @@ const TradeReview = () => {
                       <div className={styles.metricInfo}>
                         <div className={styles.metricLabel}>Last Exit Date</div>
                         <div className={styles.metricValue}>
-                          {exitTransactions[exitTransactions.length - 1]?.transaction_date ? 
-                            new Date(exitTransactions[exitTransactions.length - 1].transaction_date).toLocaleDateString('en-US', { 
+                          {exitTransactions[exitTransactions.length - 1]?.transactionDate ? 
+                            new Date(exitTransactions[exitTransactions.length - 1].transactionDate).toLocaleDateString('en-US', { 
                               weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
                             }) : 'N/A'
                           }
@@ -412,9 +429,9 @@ const TradeReview = () => {
                     {/* Exit Grade */}
                     <div className={styles.performanceMetric}>
                       <div className={`${styles.metricIcon} ${
-                        trade.exit_grade === 'A' ? styles.profitIcon : 
-                        trade.exit_grade === 'B' ? styles.metricIcon : 
-                        trade.exit_grade === 'C' ? styles.metricIcon : 
+                        trade.exitGrade === 'A' ? styles.profitIcon : 
+                        trade.exitGrade === 'B' ? styles.metricIcon : 
+                        trade.exitGrade === 'C' ? styles.metricIcon : 
                         styles.lossIcon
                       }`}>
                         ⭐
@@ -422,8 +439,8 @@ const TradeReview = () => {
                       <div className={styles.metricInfo}>
                         <div className={styles.metricLabel}>Exit Grade</div>
                         <div className={styles.metricValue}>
-                          <span className={`${styles.gradeBadge} ${styles[`grade${trade.exit_grade}`]}`}>
-                            {trade.exit_grade || 'N/A'}
+                          <span className={`${styles.gradeBadge} ${styles[`grade${trade.exitGrade}`]}`}>
+                            {trade.exitGrade || 'N/A'}
                           </span>
                         </div>
                       </div>
@@ -434,7 +451,7 @@ const TradeReview = () => {
                       <div className={styles.metricIcon}>💭</div>
                       <div className={styles.metricInfo}>
                         <div className={styles.metricLabel}>Exit Reason</div>
-                        <div className={styles.metricValue}>{trade.reason_for_exit || 'N/A'}</div>
+                        <div className={styles.metricValue}>{trade.reasonForExit || 'N/A'}</div>
                       </div>
                     </div>
                   </div>
@@ -463,7 +480,7 @@ const TradeReview = () => {
                 <div className={styles.metricInfo}>
                   <div className={styles.metricLabel}>Total Invested</div>
                   <div className={styles.metricValue}>
-                    {trade.market === "India" ? "₹" : "$"}{(Number(trade.entry_price || 0) * Number(trade.quantity || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {trade.market === "India" ? "₹" : "$"}{(Number(trade.entryPrice || 0) * Number(trade.quantity || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>
@@ -500,8 +517,8 @@ const TradeReview = () => {
                 <div className={styles.metricInfo}>
                   <div className={styles.metricLabel}>Holding Period</div>
                   <div className={styles.metricValue}>
-                    {trade.entry_date && exitTransactions.length ? 
-                      Math.ceil((new Date(exitTransactions[exitTransactions.length - 1]?.transaction_date) - new Date(trade.entry_date)) / (1000 * 60 * 60 * 24)) : 0
+                    {trade.entryDate && exitTransactions.length ? 
+                      Math.ceil((new Date(exitTransactions[exitTransactions.length - 1]?.transactionDate) - new Date(trade.entryDate)) / (1000 * 60 * 60 * 24)) : 0
                     } days
                   </div>
                 </div>
@@ -541,7 +558,7 @@ const TradeReview = () => {
               <div className={styles.summaryBarContent}>
                 <div className={styles.summaryStats}>
                   <span className={styles.summaryStatItem}>
-                    <strong>Entry:</strong> {trade.market === "India" ? "₹" : "$"}{Number(trade.entry_price || 0).toFixed(2)}
+                    <strong>Entry:</strong> {trade.market === "India" ? "₹" : "$"}{Number(trade.entryPrice || 0).toFixed(2)}
                   </span>
                   <span className={styles.summaryStatItem}>
                     <strong>Exit:</strong> {trade.market === "India" ? "₹" : "$"}{getAvgExitPrice().toFixed(2)}
@@ -549,7 +566,7 @@ const TradeReview = () => {
                   <span className={styles.summaryStatItem}>
                     <strong>Difference:</strong> 
                     <span className={`${totalPL >= 0 ? styles.profitText : styles.lossText}`}>
-                      {trade.market === "India" ? "₹" : "$"}{Math.abs(getAvgExitPrice() - Number(trade.entry_price || 0)).toFixed(2)}
+                      {trade.market === "India" ? "₹" : "$"}{Math.abs(getAvgExitPrice() - Number(trade.entryPrice || 0)).toFixed(2)}
                     </span>
                   </span>
                 </div>
@@ -586,8 +603,8 @@ const TradeReview = () => {
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Key lessons learned from this trade *</label>
               <textarea
-                name="lessonsLearned"
-                value={reviewForm.lessonsLearned}
+                name="lessonLearned"
+                value={reviewForm.lessonLearned}
                 onChange={handleChange}
                 className={styles.textarea}
                 rows="4"
@@ -607,6 +624,33 @@ const TradeReview = () => {
                 placeholder="Market conditions, setup quality, execution details, future improvements..."
               />
             </div>
+            <div className={styles.fieldGroup}>
+                              <label className={styles.label}>Review Charts (Optional)</label>
+                              <input
+                                type="file"
+                                name="reviewCharts"
+                                onChange={handleReviewFormChange}
+                                className={styles.fileInput}
+                                multiple
+                                accept="image/*"
+                              />
+                              {reviewForm.reviewCharts.length > 0 && (
+                                <div className={styles.fileList}>
+                                  {reviewForm.reviewCharts.map((file, index) => (
+                                    <div key={index} className={styles.fileItem}>
+                                      <span>{file.name}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => removeReviewChart(index)}
+                                        className={styles.removeFileButton}
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
 
             <div className={styles.buttonGroup}>
               <button 

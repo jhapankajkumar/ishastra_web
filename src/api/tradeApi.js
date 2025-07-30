@@ -64,11 +64,13 @@ export const getTradeTransactions = (id) => API.get(`/trades/${id}/transactions`
 export async function addPostAnalysis(id, form) {
   const formData = new FormData();
   formData.append('postTradeAnalysis', form.postTradeAnalysis);
+  formData.append('emotionalState', form.emotionalState);
+  formData.append('lessonLearned', form.lessonLearned);
 
-  // Handle postTradeFiles - handle FileList or Array properly
-  if (form.postTradeFiles) {
-    const files = Array.from(form.postTradeFiles);
-    files.forEach(file => formData.append('postTradeFiles', file));
+  // Handle reviewCharts - handle FileList or Array properly
+  if (form.reviewCharts) {
+    const files = Array.from(form.reviewCharts);
+    files.forEach(file => formData.append('reviewCharts', file));
   }
 
   return API.put(`/trades/${id}/post-analysis`, formData, {
@@ -103,21 +105,19 @@ export async function createTrade(form) {
   formData.append('reasonForEntry', defaultText(form.reasonForEntry));
   // Ensure entryDate is properly formatted (YYYY-MM-DD) or default to today
   let entryDate = form.entryDate;
+  console.log('Entry Date:', entryDate); // Debug log
   if (!entryDate || entryDate === 'undefined' || entryDate.trim() === '') {
     entryDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
   }
+  console.log('Formatted Entry Date:', entryDate); // Debug log
   formData.append('entryDate', entryDate);
   formData.append('entryOrderPrice', defaultNumber(form.entryOrderPrice));
   formData.append('entryFilledShares', defaultNumber(form.entryFilledShares));
   // Always send riskPerTrade and risk_per_trade as valid numbers (default 0 if invalid)
   let riskVal = form.riskPerTrade;
-  if (riskVal === undefined || riskVal === null || riskVal === '' || riskVal === 'undefined' || isNaN(Number(riskVal))) {
-    riskVal = 0;
-  } else {
-    riskVal = Number(riskVal);
-  }
+  console.log('Risk Per Trade:', riskVal); // Debug log
   formData.append('riskPerTrade', riskVal);
-  formData.append('risk_per_trade', riskVal);
+  formData.append('riskPerTradeValue', 0);
   formData.append('stopLossPrice', defaultNumber(form.stopLossPrice));
   formData.append('stopLossMethod', defaultDropdown(form.stopLossMethod, stopLossMethodOptions));
   formData.append('atrMultiplier', defaultNumber(form.atrMultiplier));

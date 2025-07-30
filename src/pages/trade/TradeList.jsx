@@ -31,13 +31,13 @@ export default function TradeList() {
           try {
             const txRes = await getTradeTransactions(trade.id);
             // Only keep exit transactions
-            const exitTx = (txRes.data || []).filter(tx => tx.transaction_type === 'Exit');
-            return { ...trade, exit_transactions: exitTx };
+            const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
+            return { ...trade, exitTransactions: exitTx };
           } catch (e) {
-            return { ...trade, exit_transactions: [] };
+            return { ...trade, exitTransactions: [] };
           }
         }));
-        const sorted = [...tradesWithExits].sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date));
+        const sorted = [...tradesWithExits].sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
         setTrades(sorted);
         setError(null);
       })
@@ -134,13 +134,13 @@ export default function TradeList() {
         const tradesWithExits = await Promise.all(res.data.map(async trade => {
           try {
             const txRes = await getTradeTransactions(trade.id);
-            const exitTx = (txRes.data || []).filter(tx => tx.transaction_type === 'Exit');
-            return { ...trade, exit_transactions: exitTx };
+            const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
+            return { ...trade, exitTransactions: exitTx };
           } catch (e) {
-            return { ...trade, exit_transactions: [] };
+            return { ...trade, exitTransactions: [] };
           }
         }));
-        const sorted = [...tradesWithExits].sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date));
+        const sorted = [...tradesWithExits].sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
         setTrades(sorted);
         setError(null);
       })
@@ -164,26 +164,26 @@ export default function TradeList() {
   };
 
   const getInvested = (trade) => {
-    if (trade.entry_price && trade.quantity) {
-      return (Number(trade.entry_price) * Number(trade.quantity)).toFixed(2);
+    if (trade.entryPrice && trade.quantity) {
+      return (Number(trade.entryPrice) * Number(trade.quantity)).toFixed(2);
     }
     return "-";
   };
 
   const getPL = (trade) => {
     if (
-      trade.exit_price !== undefined &&
-      trade.exit_price !== null &&
-      trade.entry_price !== undefined &&
-      trade.entry_price !== null &&
+      trade.exitPrice !== undefined &&
+      trade.exitPrice !== null &&
+      trade.entryPrice !== undefined &&
+      trade.entryPrice !== null &&
       trade.quantity !== undefined &&
       trade.quantity !== null &&
       trade.direction
     ) {
       // Calculate P&L correctly for both LONG and SHORT trades
       const priceDiff = trade.direction.toLowerCase() === 'long'
-        ? Number(trade.exit_price) - Number(trade.entry_price)
-        : Number(trade.entry_price) - Number(trade.exit_price);
+        ? Number(trade.exitPrice) - Number(trade.entryPrice)
+        : Number(trade.entryPrice) - Number(trade.exitPrice);
       const pl = priceDiff * Number(trade.quantity);
       return pl.toFixed(2);
     }
@@ -252,13 +252,13 @@ export default function TradeList() {
   // --- Helper functions for partial exits ---
   // Get all exit transactions for a trade (array of {transaction_date, price, quantity})
   const getExitTransactions = (trade) => {
-    let txs = trade.exit_transactions || trade.exitTransactions || [];
-    // If no array but trade has exit_price and exit_date, treat as single exit
-    if ((!txs || !Array.isArray(txs) || txs.length === 0) && trade.exit_price && trade.exit_date && trade.quantity) {
+    let txs = trade.exitTransactions || [];
+    // If no array but trade has exitPrice and exitDate, treat as single exit
+    if ((!txs || !Array.isArray(txs) || txs.length === 0) && trade.exitPrice && trade.exitDate && trade.quantity) {
       txs = [{
-        transaction_date: trade.exit_date,
-        price: trade.exit_price,
-        quantity: trade.quantity - (trade.remaining_quantity ?? 0)
+        transaction_date: trade.exitDate,
+        price: trade.exitPrice,
+        quantity: trade.quantity - (trade.remainingQuantity ?? 0)
       }];
     }
     return txs || [];
@@ -270,15 +270,15 @@ export default function TradeList() {
     if (!exits.length) return "-";
     // Find the latest exit by comparing dates (handle both string and numeric)
     const last = exits.reduce((latest, tx) => {
-      if (!tx.transaction_date) return latest;
-      const txDate = typeof tx.transaction_date === 'number' ? new Date(tx.transaction_date) : new Date(tx.transaction_date);
+      if (!tx.transactionDate) return latest;
+      const txDate = typeof tx.transactionDate === 'number' ? new Date(tx.transactionDate) : new Date(tx.transactionDate);
       if (!latest) return tx;
-      const latestDate = typeof latest.transaction_date === 'number' ? new Date(latest.transaction_date) : new Date(latest.transaction_date);
+      const latestDate = typeof latest.transactionDate === 'number' ? new Date(latest.transactionDate) : new Date(latest.transactionDate);
       return txDate > latestDate ? tx : latest;
     }, null);
-    if (last && last.transaction_date) {
+    if (last && last.transactionDate) {
       // Support both numeric and string date
-      const dateVal = typeof last.transaction_date === 'number' ? last.transaction_date : Date.parse(last.transaction_date);
+      const dateVal = typeof last.transactionDate === 'number' ? last.transactionDate : Date.parse(last.transactionDate);
       if (!isNaN(dateVal)) {
         return formatDate(dateVal);
       }
@@ -304,13 +304,13 @@ export default function TradeList() {
   // Calculate P&L based on all partial exits
   const getPartialPL = (trade) => {
     const exits = getExitTransactions(trade);
-    if (!exits.length || !trade.entry_price || !trade.direction) return "-";
+    if (!exits.length || !trade.entryPrice || !trade.direction) return "-";
     let pl = 0;
     exits.forEach(tx => {
       if (tx.price !== undefined && tx.quantity !== undefined) {
         const priceDiff = trade.direction.toLowerCase() === 'long'
-          ? Number(tx.price) - Number(trade.entry_price)
-          : Number(trade.entry_price) - Number(tx.price);
+          ? Number(tx.price) - Number(trade.entryPrice)
+          : Number(trade.entryPrice) - Number(tx.price);
         pl += priceDiff * Number(tx.quantity);
       }
     });
@@ -351,7 +351,7 @@ export default function TradeList() {
           <tbody>
             {trades.map(trade => {
               const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
-              const remainingQty = trade.remaining_quantity !== undefined && trade.remaining_quantity !== null ? Number(trade.remaining_quantity) : originalQty;
+              const remainingQty = trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty;
               const soldQty = originalQty - remainingQty;
               // Debug logs for exit/PL/avg price
               console.log('[TradeList] Ticker:', trade.ticker, {
@@ -360,14 +360,14 @@ export default function TradeList() {
                 avgExitPrice: getAverageExitPrice(trade),
                 partialPL: getPartialPL(trade),
                 soldQty,
-                exit_price: trade.exit_price,
-                exit_date: trade.exit_date,
+                exitPrice: trade.exitPrice,
+                exitDate: trade.exitDate,
                 originalQty,
                 remainingQty
               });
               return (
                 <tr
-                  key={trade.trade_id}
+                  key={trade.tradeId}
                   className={styles.tableRow}
                   onClick={() => handleShowDetails(trade.id)}
                 >
@@ -379,13 +379,13 @@ export default function TradeList() {
                       )}
                     </div>
                   </td>
-                  <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.entry_date ? formatDate(trade.entry_date) : "-"}</td>
+                  <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.entryDate ? formatDate(trade.entryDate) : "-"}</td>
                   <td className={`${styles.tableCell} ${styles.dateCell}`}>{getExitTransactions(trade).length > 0 ? getLastExitDate(trade) : '-'}</td>
-                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.entry_price !== undefined && trade.entry_price !== null ? Number(trade.entry_price).toFixed(2) : "-"}</td>
+                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.entryPrice !== undefined && trade.entryPrice !== null ? Number(trade.entryPrice).toFixed(2) : "-"}</td>
                   <td className={`${styles.tableCell} ${styles.priceCell}`}>{originalQty.toLocaleString()}</td>
                   <td className={`${styles.tableCell} ${styles.priceCell}`}>{soldQty > 0 ? soldQty.toLocaleString() : 0}</td>
                   <td className={`${styles.tableCell} ${styles.priceCell}`}>{remainingQty.toLocaleString()}</td>
-                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exit_price !== undefined && trade.exit_price !== null ? Number(trade.exit_price).toFixed(2) : "-")) : '-'}</td>
+                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exitPrice !== undefined && trade.exitPrice !== null ? Number(trade.exitPrice).toFixed(2) : "-")) : '-'}</td>
                   <td className={`${styles.tableCell} ${styles.priceCell}`}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
                   <td className={`${styles.tableCell} ${styles.profitCell} ${soldQty > 0 && getPartialPL(trade) !== "-" ? (getPartialPL(trade) > 0 ? styles.profitPositive : styles.profitNegative) : ''}`}>
                     {soldQty > 0 && getPartialPL(trade) !== "-" ? `$${getPartialPL(trade)}` : "-"}

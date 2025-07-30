@@ -189,9 +189,8 @@ export default function InvestmentList() {
               <thead className={styles.tableHeader}>
                 <tr>
                   <th className={styles.tableHeaderCell}>Ticker</th>
-                  <th className={styles.tableHeaderCell}>Buy Below</th>
+                  <th className={styles.tableHeaderCell}>Recommendation</th>
                   <th className={styles.tableHeaderCell}>Current Price</th>
-                  <th className={styles.tableHeaderCell}>Diff %</th>
                   <th className={styles.tableHeaderCell}>Qty</th>
                   <th className={styles.tableHeaderCell}>Buy Avg</th>
                   <th className={styles.tableHeaderCell}>Invested</th>
@@ -206,7 +205,7 @@ export default function InvestmentList() {
                   const metrics = calculateMetrics(investment);
                   return (
                     <tr key={investment.id} className={styles.tableRow}>
-                      <td className={`${styles.tableCell} ${styles.tickerCell}`} colSpan={2} style={{ minWidth: 180 }}>
+                  <td className={`${styles.tableCell} ${styles.tickerCell}`} colSpan={2} style={{ minWidth: 180 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.2rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <span className={styles.ticker}>{investment.ticker}</span>
@@ -214,34 +213,33 @@ export default function InvestmentList() {
                               <span className={styles.linkedBadge} title={`From recommendation: Buy below ₹${investment.buyBelow}`}>Rec</span>
                             )}
                           </div>
-                          <div style={{ fontSize: '0.50rem', color: '#bbb' }}>
-                            {investment.sector || '—'} · {investment.marketCap || '—'}
+                          <div></div>
+                          <div style={{ fontSize: '0.60rem', color: '#bbb' }}>
+                            {investment.sector || '—'} | {investment.marketCap || '—'}
                           </div>
-                          <div style={{ fontSize: '0.50rem', color: '#bbb' }}>
+                          <div style={{ fontSize: '0.60rem', color: '#bbb' }}>
                             {investment.notes || '—'}
                           </div>
                         </div>
                       </td>
-                      <td className={styles.tableCell}>
-                        <span className={styles.pnlCell}>
-                            ₹{investment.buyBelow ? investment.buyBelow.toFixed(2) : '-'}
-                          </span>
-                      </td>
-                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>
-                        {investment.currentPrice ? (
-                          <span className={styles.currentPrice}>
-                            ₹{metrics.currentPrice.toFixed(2)}
-                          </span>
-                        ) : (
-                          <span className={styles.noPrice}>-</span>
-                        )}
-                      </td>
-                      {/* Diff % */}
-                      <td className={styles.tableCell}>
-                        <span className={investment.differencePercentage >= 0 ? styles.profit : styles.loss}>
-                            {investment.differencePercentage >= 0 ? '+' : ''}{investment.differencePercentage}%
-                          </span>
-                      </td>
+                  <td className={styles.tableCell} style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <span>₹{investment.buyBelow ? investment.buyBelow.toFixed(2) : '-'}</span>
+                      <span className={investment.differencePercentage >= 0 ? styles.profit : styles.loss}>
+                        {investment.differencePercentage >= 0 ? '+' : ''}
+                        {investment.differencePercentage}%
+                      </span>
+                    </div>
+                  </td>
+                  <td className={styles.tableCell} style={{ textAlign: 'center' }}>
+                    {investment.currentPrice ? (
+                      <span className={styles.currentPrice}>
+                        ₹{metrics.currentPrice.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className={styles.noPrice}>-</span>
+                    )}
+                  </td>
                       <td className={styles.tableCell} style={{ textAlign: 'center' }}>{investment.quantity}</td>
                       <td className={styles.tableCell} style={{ textAlign: 'center' }}>₹{investment.avgBuyPrice?.toFixed(2)}</td>
                       <td className={styles.tableCell} style={{ textAlign: 'center' }}>₹{metrics.investedAmount.toLocaleString()}</td>

@@ -2,17 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styles from "./TradeUpdate.module.css";
 import PageHeader from "../../components/PageHeader";
-import { getTradeById, updateTrade, partialExitTrade, addPostAnalysis } from '../../api/tradeApi';
-import { fetchExitTactics } from '../../api/firebaseMetaApi';
+import { getTradeById, updateTrade, partialExitTrade } from '../../api/tradeApi';
 import { getCurrentPrice } from '../../api/tickerApi';
 import { useNotification } from '../../components/NotificationProvider';
 import ErrorPage from '../../components/ErrorPage';
+import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
 
 const TradeUpdate = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const showNotification = useNotification();
-  
+
   const [activeTab, setActiveTab] = useState('exit');
   const [loading, setLoading] = useState(true);
   const [loadingPrice, setLoadingPrice] = useState(false);
@@ -20,7 +20,8 @@ const TradeUpdate = () => {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [exitTactics, setExitTactics] = useState([]);
-  
+  const [setups, setSetups] = useState([]);
+
   const [trade, setTrade] = useState(null);
   const [exitForm, setExitForm] = useState({
     exitDate: new Date().toISOString().split('T')[0], // Default to today
@@ -32,13 +33,6 @@ const TradeUpdate = () => {
     exitCharts: [],
     tradeStatus: 'Closed'
   });
-  
-  const [postAnalysisForm, setPostAnalysisForm] = useState({
-    postTradeAnalysis: '',
-    lessonsLearned: '',
-    emotionalState: '',
-    postTradeFiles: []
-  });
 
   // Get today's date for max date validation
   const today = new Date().toISOString().split('T')[0];
@@ -46,10 +40,21 @@ const TradeUpdate = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       await loadTradeData();
-      await loadExitTactics();
     };
     loadInitialData();
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchExitTactics()
+      .then(data => setExitTactics(data))
+      .catch(() => setExitTactics([]));
+  }, []);
+
+  useEffect(() => {
+    fetchSetups()
+      .then(data => setSetups(data))
+      .catch(() => setSetups([]));
+  }, []);
 
   const loadTradeData = async () => {
     try {
@@ -57,35 +62,27 @@ const TradeUpdate = () => {
       const response = await getTradeById(id);
       const tradeData = response.data;
       setTrade(tradeData);
-      
+
       // Pre-fill exit form with existing data
       setExitForm({
-        exitDate: formatDateForInput(tradeData.exit_date) || new Date().toISOString().split('T')[0],
-        exitOrderPrice: tradeData.exit_order_price || '',
-        exitFilledShares: tradeData.exit_filled_shares || '', // Don't pre-fill with remaining quantity
-        exitGrade: tradeData.exit_grade || '',
-        reasonForExit: tradeData.reason_for_exit || '',
-        exitTactic: tradeData.exit_tactic_id || '',
+        exitDate: formatDateForInput(tradeData.exitDate) || new Date().toISOString().split('T')[0],
+        exitOrderPrice: tradeData.exitOrderPrice || '',
+        exitFilledShares: tradeData.exitFilledShares || '', // Don't pre-fill with remaining quantity
+        exitGrade: tradeData.exitGrade || '',
+        reasonForExit: tradeData.reasonForExit || '',
+        exitTactic: tradeData.exitTacticId || '',
         exitCharts: [],
-        tradeStatus: tradeData.trade_status || (tradeData.remaining_quantity === tradeData.quantity ? 'Closed' : 'Partial Closed')
-      });
-      
-      // Pre-fill post analysis form
-      setPostAnalysisForm({
-        postTradeAnalysis: tradeData.post_trade_analysis || '',
-        lessonsLearned: tradeData.lessons_learned || '',
-        emotionalState: tradeData.emotional_state || '',
-        postTradeFiles: []
+        tradeStatus: tradeData.tradeStatus || (tradeData.remainingQuantity === tradeData.quantity ? 'Closed' : 'Partial Closed')
       });
 
       // Fetch current price if exit price is not already set (don't block on failure)
-      if (!tradeData.exit_order_price && tradeData.ticker) {
+      if (!tradeData.exitOrderPrice && tradeData.ticker) {
         fetchCurrentPrice(tradeData.ticker).catch(() => {
           // Silently handle price fetch failure - don't block the main flow
           console.log('Price fetch failed, continuing without current price');
         });
       }
-      
+
     } catch (err) {
       console.error('Error loading trade:', err);
       // Only show full-screen error for critical trade loading failures
@@ -105,7 +102,7 @@ const TradeUpdate = () => {
       setPriceError(null);
       const response = await getCurrentPrice(ticker);
       const currentPrice = response.data?.price || response.data?.regularMarketPrice;
-      
+
       if (currentPrice) {
         setExitForm(prev => ({
           ...prev,
@@ -128,18 +125,6 @@ const TradeUpdate = () => {
     }
   };
 
-  const loadExitTactics = async () => {
-    try {
-      const response = await fetchExitTactics();
-      setExitTactics(response.data || []);
-    } catch (err) {
-      console.error('Error loading exit tactics:', err);
-      // Don't block the UI for exit tactics failure
-      // Just use empty array and let user continue
-      setExitTactics([]);
-    }
-  };
-
   const formatDateForInput = (dateValue) => {
     if (!dateValue) return "";
     try {
@@ -159,42 +144,35 @@ const TradeUpdate = () => {
     } else {
       setExitForm(prev => {
         const updated = { ...prev, [name]: value };
-        
+
         // Auto-update trade status based on exit quantity
         if (name === 'exitFilledShares' && value && trade) {
           const exitQty = parseInt(value);
-          const remainingQty = trade.remaining_quantity || trade.quantity || 0;
-          
+          const remainingQty = trade.remainingQuantity || trade.quantity || 0;
+
           if (exitQty === remainingQty) {
             updated.tradeStatus = 'Closed';
           } else if (exitQty < remainingQty) {
             updated.tradeStatus = 'Partial Closed';
           }
         }
-        
+
         return updated;
       });
     }
   };
 
-  const handlePostAnalysisFormChange = (e) => {
-    const { name, value, files } = e.target;
-    if (files) {
-      setPostAnalysisForm(prev => ({ ...prev, [name]: Array.from(files) }));
-    } else {
-      setPostAnalysisForm(prev => ({ ...prev, [name]: value }));
-    }
-  };
+  
 
   const handleExitSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    
+
     try {
       const exitQuantity = parseInt(exitForm.exitFilledShares);
-      const remainingQuantity = trade.remaining_quantity || trade.quantity;
+      const remainingQuantity = trade.remainingQuantity || trade.quantity;
       const isPartialExit = exitQuantity < remainingQuantity;
-      
+
       // Use the appropriate API based on whether it's a partial exit
       if (isPartialExit) {
         await partialExitTrade(id, {
@@ -207,17 +185,17 @@ const TradeUpdate = () => {
           exitQuantity: exitQuantity
         });
       }
-      
+
       if (typeof showNotification === 'function') {
-        const message = isPartialExit 
+        const message = isPartialExit
           ? `Partial exit of ${exitQuantity} shares recorded successfully!`
           : 'Trade completely exited successfully!';
         showNotification(message, 'success');
       }
-      
+
       // Reload trade data to reflect the changes
       await loadTradeData();
-      
+
       // Reset form for potential additional exits
       if (isPartialExit) {
         setExitForm(prev => ({
@@ -230,10 +208,10 @@ const TradeUpdate = () => {
         }));
       } else {
         // If complete exit, navigate based on post-analysis
-        if (activeTab === 'exit' && postAnalysisForm.postTradeAnalysis) {
+        if (activeTab === 'exit') {
           setActiveTab('analysis');
         } else {
-          navigate('/dashboard');
+          navigate('/trades');
         }
       }
     } catch (err) {
@@ -247,26 +225,6 @@ const TradeUpdate = () => {
     }
   };
 
-  const handlePostAnalysisSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    
-    try {
-      await addPostAnalysis(id, postAnalysisForm);
-      if (typeof showNotification === 'function') {
-        showNotification('Post-trade analysis added successfully!', 'success');
-      }
-      navigate('/dashboard');
-    } catch (err) {
-      console.error('Error adding post-trade analysis:', err);
-      if (typeof showNotification === 'function') {
-        showNotification('Failed to add post-trade analysis. Please try again.', 'error');
-      }
-      // Don't show full-screen error, just let user retry
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const removeExitChart = (index) => {
     setExitForm(prev => ({
@@ -275,18 +233,11 @@ const TradeUpdate = () => {
     }));
   };
 
-  const removePostFile = (index) => {
-    setPostAnalysisForm(prev => ({
-      ...prev,
-      postTradeFiles: prev.postTradeFiles.filter((_, i) => i !== index)
-    }));
-  };
-
   if (loading) {
     return (
       <div className={styles.container}>
-        <PageHeader 
-          title="Update Trade" 
+        <PageHeader
+          title="Update Trade"
           showBackButton={true}
           onBackClick={() => navigate('/dashboard')}
         />
@@ -305,47 +256,47 @@ const TradeUpdate = () => {
 
   // Calculate trade metrics
   const calculatePnL = () => {
-    if (!trade.entry_price || !exitForm.exitOrderPrice || !exitForm.exitFilledShares) return 0;
-    const entryPrice = parseFloat(trade.entry_price);
+    if (!trade.entryPrice || !exitForm.exitOrderPrice || !exitForm.exitFilledShares) return 0;
+    const entryPrice = parseFloat(trade.entryPrice);
     const exitPrice = parseFloat(exitForm.exitOrderPrice);
     const quantity = parseFloat(exitForm.exitFilledShares);
-    
+
     if (isNaN(entryPrice) || isNaN(exitPrice) || isNaN(quantity)) return 0;
-    
-    const priceDiff = trade.direction?.toLowerCase() === 'long' 
-      ? exitPrice - entryPrice 
+
+    const priceDiff = trade.direction?.toLowerCase() === 'long'
+      ? exitPrice - entryPrice
       : entryPrice - exitPrice;
     return priceDiff * quantity;
   };
 
   const calculatePercentGain = () => {
-    if (!trade.entry_price || !exitForm.exitOrderPrice) return 0;
-    const entryPrice = parseFloat(trade.entry_price);
+    if (!trade.entryPrice || !exitForm.exitOrderPrice) return 0;
+    const entryPrice = parseFloat(trade.entryPrice);
     const exitPrice = parseFloat(exitForm.exitOrderPrice);
-    
+
     if (isNaN(entryPrice) || isNaN(exitPrice) || entryPrice === 0) return 0;
-    
-    const percentChange = trade.direction?.toLowerCase() === 'long' 
+
+    const percentChange = trade.direction?.toLowerCase() === 'long'
       ? ((exitPrice - entryPrice) / entryPrice) * 100
       : ((entryPrice - exitPrice) / entryPrice) * 100;
     return percentChange;
   };
 
   const calculateHoldingPeriod = () => {
-    if (!trade.entry_date || !exitForm.exitDate) return 0;
-    const entryDate = new Date(trade.entry_date);
+    if (!trade.entryDate || !exitForm.exitDate) return 0;
+    const entryDate = new Date(trade.entryDate);
     const exitDate = new Date(exitForm.exitDate);
-    
+
     if (isNaN(entryDate.getTime()) || isNaN(exitDate.getTime())) return 0;
-    
+
     const diffTime = Math.abs(exitDate - entryDate);
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   return (
     <div className={styles.container}>
-      <PageHeader 
-        title={`Update Trade - ${trade.ticker}`} 
+      <PageHeader
+        title={`Update Trade - ${trade.ticker}`}
         subtitle="Add exit details and post-trade analysis"
         showBackButton={true}
         onBackClick={() => navigate('/dashboard')}
@@ -367,7 +318,7 @@ const TradeUpdate = () => {
             <div className={styles.summaryItem}>
               <span className={styles.summaryLabel}>Entry Price:</span>
               <span className={styles.summaryValue}>
-                {trade.market === "India" ? "₹" : "$"}{trade.entry_price || 'N/A'}
+                {trade.market === "India" ? "₹" : "$"}{trade.entryPrice || 'N/A'}
               </span>
             </div>
             <div className={styles.summaryItem}>
@@ -377,13 +328,13 @@ const TradeUpdate = () => {
             <div className={styles.summaryItem}>
               <span className={styles.summaryLabel}>Remaining Quantity:</span>
               <span className={styles.summaryValue}>
-                {trade.remaining_quantity || trade.quantity || 'N/A'}
+                {trade.remainingQuantity || trade.quantity || 'N/A'}
               </span>
             </div>
             <div className={styles.summaryItem}>
               <span className={styles.summaryLabel}>Status:</span>
               <span className={`${styles.summaryValue} ${styles.statusValue}`}>
-                {trade.trade_status || 'Open'}
+                {trade.tradeStatus || 'Open'}
               </span>
             </div>
           </div>
@@ -421,7 +372,7 @@ const TradeUpdate = () => {
                   <div className={styles.summaryItem}>
                     <span className={styles.summaryLabel}>Remaining After Exit:</span>
                     <span className={styles.summaryValue}>
-                      {Math.max(0, (trade.remaining_quantity || trade.quantity || 0) - parseInt(exitForm.exitFilledShares || 0))} shares
+                      {Math.max(0, (trade.remainingQuantity || trade.quantity || 0) - parseInt(exitForm.exitFilledShares || 0))} shares
                     </span>
                   </div>
                 )}
@@ -442,17 +393,17 @@ const TradeUpdate = () => {
                 <div className={styles.gridTwoCol}>
                   <div className={styles.fieldGroup}>
                     <label className={styles.label}>Trade Status *</label>
-                    <select 
-                      name="tradeStatus" 
-                      value={exitForm.tradeStatus} 
-                      onChange={handleExitFormChange} 
+                    <select
+                      name="tradeStatus"
+                      value={exitForm.tradeStatus}
+                      onChange={handleExitFormChange}
                       className={styles.select}
                       required
                     >
                       {/* Auto-determine status based on exit quantity */}
-                      {exitForm.exitFilledShares && parseInt(exitForm.exitFilledShares) === (trade.remaining_quantity || trade.quantity || 0) ? (
+                      {exitForm.exitFilledShares && parseInt(exitForm.exitFilledShares) === (trade.remainingQuantity || trade.quantity || 0) ? (
                         <option value="Closed">Closed (Exiting all remaining shares)</option>
-                      ) : exitForm.exitFilledShares && parseInt(exitForm.exitFilledShares) < (trade.remaining_quantity || trade.quantity || 0) ? (
+                      ) : exitForm.exitFilledShares && parseInt(exitForm.exitFilledShares) < (trade.remainingQuantity || trade.quantity || 0) ? (
                         <option value="Partial Closed">Partial Closed (Keeping some shares)</option>
                       ) : (
                         <>
@@ -463,9 +414,9 @@ const TradeUpdate = () => {
                     </select>
                     {exitForm.exitFilledShares && (
                       <div className={styles.statusHint}>
-                        {parseInt(exitForm.exitFilledShares) === (trade.remaining_quantity || trade.quantity || 0) 
-                          ? '🔒 Closing entire position' 
-                          : `📊 Keeping ${Math.max(0, (trade.remaining_quantity || trade.quantity || 0) - parseInt(exitForm.exitFilledShares))} shares open`
+                        {parseInt(exitForm.exitFilledShares) === (trade.remainingQuantity || trade.quantity || 0)
+                          ? '🔒 Closing entire position'
+                          : `📊 Keeping ${Math.max(0, (trade.remainingQuantity || trade.quantity || 0) - parseInt(exitForm.exitFilledShares))} shares open`
                         }
                       </div>
                     )}
@@ -478,7 +429,7 @@ const TradeUpdate = () => {
                       name="exitDate"
                       value={exitForm.exitDate}
                       onChange={handleExitFormChange}
-                      min={trade.entry_date ? formatDateForInput(trade.entry_date) : undefined}
+                      min={trade.entryDate ? formatDateForInput(trade.entryDate) : undefined}
                       max={today}
                       className={styles.input}
                       required
@@ -518,9 +469,9 @@ const TradeUpdate = () => {
 
                   <div className={styles.fieldGroup}>
                     <label className={styles.label}>
-                      Exit Quantity * 
+                      Exit Quantity *
                       <span style={{ color: '#9ca3af', fontSize: '0.8rem', fontWeight: 'normal' }}>
-                        (Max: {trade.remaining_quantity || trade.quantity || 0} shares available)
+                        (Max: {trade.remainingQuantity || trade.quantity || 0} shares available)
                       </span>
                     </label>
                     <div className={styles.quantityInputGroup}>
@@ -530,17 +481,17 @@ const TradeUpdate = () => {
                         value={exitForm.exitFilledShares}
                         onChange={handleExitFormChange}
                         className={styles.input}
-                        placeholder={`Max ${trade.remaining_quantity || trade.quantity || 0}`}
+                        placeholder={`Max ${trade.remainingQuantity || trade.quantity || 0}`}
                         min="1"
-                        max={trade.remaining_quantity || trade.quantity || 0}
+                        max={trade.remainingQuantity || trade.quantity || 0}
                         required
                       />
                       <div className={styles.quantityButtons}>
                         <button
                           type="button"
-                          onClick={() => setExitForm(prev => ({ 
-                            ...prev, 
-                            exitFilledShares: Math.floor((trade.remaining_quantity || trade.quantity || 0) * 0.25).toString() 
+                          onClick={() => setExitForm(prev => ({
+                            ...prev,
+                            exitFilledShares: Math.floor((trade.remainingQuantity || trade.quantity || 0) * 0.25).toString()
                           }))}
                           className={styles.quantityButton}
                         >
@@ -548,9 +499,9 @@ const TradeUpdate = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setExitForm(prev => ({ 
-                            ...prev, 
-                            exitFilledShares: Math.floor((trade.remaining_quantity || trade.quantity || 0) * 0.5).toString() 
+                          onClick={() => setExitForm(prev => ({
+                            ...prev,
+                            exitFilledShares: Math.floor((trade.remainingQuantity || trade.quantity || 0) * 0.5).toString()
                           }))}
                           className={styles.quantityButton}
                         >
@@ -558,9 +509,9 @@ const TradeUpdate = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setExitForm(prev => ({ 
-                            ...prev, 
-                            exitFilledShares: (trade.remaining_quantity || trade.quantity || 0).toString() 
+                          onClick={() => setExitForm(prev => ({
+                            ...prev,
+                            exitFilledShares: (trade.remainingQuantity || trade.quantity || 0).toString()
                           }))}
                           className={styles.quantityButton}
                         >
@@ -568,19 +519,19 @@ const TradeUpdate = () => {
                         </button>
                       </div>
                     </div>
-                    {exitForm.exitFilledShares && parseInt(exitForm.exitFilledShares) > (trade.remaining_quantity || trade.quantity || 0) && (
+                    {exitForm.exitFilledShares && parseInt(exitForm.exitFilledShares) > (trade.remainingQuantity || trade.quantity || 0) && (
                       <div className={styles.quantityError}>
-                        Cannot exit more than {trade.remaining_quantity || trade.quantity || 0} remaining shares
+                        Cannot exit more than {trade.remainingQuantity || trade.quantity || 0} remaining shares
                       </div>
                     )}
                   </div>
 
                   <div className={styles.fieldGroup}>
                     <label className={styles.label}>Exit Grade</label>
-                    <select 
-                      name="exitGrade" 
-                      value={exitForm.exitGrade} 
-                      onChange={handleExitFormChange} 
+                    <select
+                      name="exitGrade"
+                      value={exitForm.exitGrade}
+                      onChange={handleExitFormChange}
                       className={styles.select}
                     >
                       <option value="">Select grade...</option>
@@ -594,10 +545,10 @@ const TradeUpdate = () => {
 
                   <div className={styles.fieldGroup}>
                     <label className={styles.label}>Exit Tactic</label>
-                    <select 
-                      name="exitTactic" 
-                      value={exitForm.exitTactic} 
-                      onChange={handleExitFormChange} 
+                    <select
+                      name="exitTactic"
+                      value={exitForm.exitTactic}
+                      onChange={handleExitFormChange}
                       className={styles.select}
                     >
                       <option value="">Select exit tactic...</option>
@@ -638,8 +589,8 @@ const TradeUpdate = () => {
                       {exitForm.exitCharts.map((file, index) => (
                         <div key={index} className={styles.fileItem}>
                           <span>{file.name}</span>
-                          <button 
-                            type="button" 
+                          <button
+                            type="button"
                             onClick={() => removeExitChart(index)}
                             className={styles.removeFileButton}
                           >
@@ -652,15 +603,15 @@ const TradeUpdate = () => {
                 </div>
 
                 <div className={styles.buttonGroup}>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => navigate('/dashboard')}
                     className={styles.cancelButton}
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className={styles.submitButton}
                     disabled={submitting}
                   >

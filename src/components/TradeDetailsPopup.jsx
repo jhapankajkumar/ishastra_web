@@ -25,7 +25,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     if (trade?.id) {
       getTradeTransactions(trade.id)
         .then(res => {
-          const exitTx = (res.data || []).filter(tx => tx.transaction_type === 'Exit');
+          const exitTx = (res.data || []).filter(tx => tx.transactionType === 'Exit');
           setExitTransactions(exitTx);
         })
         .catch(() => setExitTransactions([]));
@@ -43,12 +43,12 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   };
 
   const getSetupName = (setupId) => {
-    const setup = setups.find(s => s.id === setupId || s.trade_setup_id === setupId);
+    const setup = setups.find(s => s.id === setupId || s.tradeSetupId === setupId);
     return setup ? setup.name : "-";
   };
 
   const getExitTacticName = (tacticId) => {
-    const tactic = exitTactics.find(t => t.id === tacticId || t.tactic_id === tacticId);
+    const tactic = exitTactics.find(t => t.id === tacticId || t.tacticId === tacticId);
     return tactic ? tactic.name : "-";
   };
 
@@ -64,8 +64,8 @@ export default function TradeDetailsPopup({ trade, onClose }) {
       if (tx.quantity && tx.price) {
         totalExitedQty += Number(tx.quantity);
         totalValue += Number(tx.price) * Number(tx.quantity);
-        
-        const txDate = new Date(tx.transaction_date);
+
+        const txDate = new Date(tx.transactionDate);
         if (!lastExitDate || txDate > lastExitDate) {
           lastExitDate = txDate;
         }
@@ -83,14 +83,14 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   };
 
   const getPartialPL = () => {
-    if (!exitTransactions.length || !trade.entry_price || !trade.direction) return "-";
-    
+    if (!exitTransactions.length || !trade.entryPrice || !trade.direction) return "-";
+
     let totalPL = 0;
     exitTransactions.forEach(tx => {
       if (tx.price !== undefined && tx.quantity !== undefined) {
         const priceDiff = trade.direction.toLowerCase() === 'long'
-          ? Number(tx.price) - Number(trade.entry_price)
-          : Number(trade.entry_price) - Number(tx.price);
+          ? Number(tx.price) - Number(trade.entryPrice)
+          : Number(trade.entryPrice) - Number(tx.price);
         totalPL += priceDiff * Number(tx.quantity);
       }
     });
@@ -99,8 +99,8 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   };
 
   const getRemainingQuantity = () => {
-    return trade.remaining_quantity !== undefined && trade.remaining_quantity !== null 
-      ? Number(trade.remaining_quantity) 
+    return trade.remainingQuantity !== undefined && trade.remainingQuantity !== null
+      ? Number(trade.remainingQuantity)
       : Number(trade.quantity || 0);
   };
 
@@ -109,8 +109,8 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   };
 
   const getInvested = () => {
-    if (trade.entry_price && trade.quantity) {
-      return `$${(Number(trade.entry_price) * Number(trade.quantity)).toFixed(2)}`;
+    if (trade.entryPrice && trade.quantity) {
+      return `$${(Number(trade.entryPrice) * Number(trade.quantity)).toFixed(2)}`;
     }
     return "-";
   };
@@ -124,26 +124,26 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     
     // Fallback to original calculation for legacy trades
     if (
-      trade.exit_price !== undefined &&
-      trade.exit_price !== null &&
-      trade.entry_price !== undefined &&
-      trade.entry_price !== null &&
+      trade.exitPrice !== undefined &&
+      trade.exitPrice !== null &&
+      trade.entryPrice !== undefined &&
+      trade.entryPrice !== null &&
       trade.quantity !== undefined &&
       trade.quantity !== null &&
       trade.direction
     ) {
       const priceDiff = trade.direction.toLowerCase() === 'long'
-        ? Number(trade.exit_price) - Number(trade.entry_price)
-        : Number(trade.entry_price) - Number(trade.exit_price);
+        ? Number(trade.exitPrice) - Number(trade.entryPrice)
+        : Number(trade.entryPrice) - Number(trade.exitPrice);
       const pl = priceDiff * Number(trade.quantity);
       return `$${pl.toFixed(2)}`;
     }
     return "-";
   };
 
-  const entryImages = trade.trade_images?.filter(img => img.image_type === "entry") || [];
-  const exitImages = trade.trade_images?.filter(img => img.image_type === "exit") || [];
-  const postImages = trade.trade_images?.filter(img => img.image_type === "post") || [];
+  const entryImages = trade.tradeImages?.filter(img => img.imageType === "entry") || [];
+  const exitImages = trade.tradeImages?.filter(img => img.imageType === "exit") || [];
+  const postImages = trade.tradeImages?.filter(img => img.imageType === "post") || [];
 
   return (
     <div style={{
@@ -293,7 +293,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
               minHeight: 60,
               whiteSpace: "pre-wrap"
             }}>
-              {trade.reason_for_entry || "No reason provided"}
+              {trade.reasonForEntry || "No reason provided"}
             </div>
           </div>
         </div>
@@ -336,7 +336,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                 color: "#E5E7EB",
                 fontWeight: "500"
               }}>
-                {formatDate(trade.entry_date)}
+                {formatDate(trade.entryDate)}
               </span>
             </div>
             
@@ -355,7 +355,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                 color: "#E5E7EB",
                 fontWeight: "500"
               }}>
-                {trade.entry_price !== undefined && trade.entry_price !== null ? `$${Number(trade.entry_price).toFixed(2)}` : "-"}
+                {trade.entryPrice !== undefined && trade.entryPrice !== null ? `$${Number(trade.entryPrice).toFixed(2)}` : "-"}
               </span>
             </div>
             
@@ -412,7 +412,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                 color: "#E5E7EB",
                 fontWeight: "500"
               }}>
-                {getSetupName(trade.trade_setup_id)}
+                {getSetupName(trade.tradeSetupId)}
               </span>
             </div>
           </div>
@@ -484,7 +484,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
             {entryImages.map((img, idx) => (
               <div key={idx} style={{ marginBottom: idx < entryImages.length - 1 ? 20 : 0 }}>
                 <img
-                  src={`http://localhost:8000/${img.image_url || img.file_path}`}
+                  src={`http://localhost:8000/${img.imageUrl || img.filePath}`}
                   alt="Entry Chart"
                   style={{ 
                     width: "100%", 
@@ -501,7 +501,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
         )}
 
         {/* Exit Section - Enhanced for Partial Exits */}
-        {(exitTransactions.length > 0 || trade.exit_date || trade.exit_price) && (
+        {(exitTransactions.length > 0 || trade.exitDate || trade.exitPrice) && (
           <div style={{
             backgroundColor: "#1A2332",
             borderRadius: 12,
@@ -604,7 +604,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                       <div>
                         <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Date</span>
                         <span style={{ fontSize: "14px", color: "#E5E7EB", fontWeight: "500" }}>
-                          {formatDate(tx.transaction_date)}
+                          {formatDate(tx.transactionDate)}
                         </span>
                       </div>
                       <div>
@@ -622,7 +622,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                       <div>
                         <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Tactic</span>
                         <span style={{ fontSize: "14px", color: "#E5E7EB", fontWeight: "500" }}>
-                          {getExitTacticName(tx.exit_tactic_id)}
+                          {getExitTacticName(tx.exitTacticId)}
                         </span>
                       </div>
                     </div>
@@ -632,7 +632,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
             )}
 
             {/* Legacy Exit Data (for backward compatibility) */}
-            {!exitTransactions.length && (trade.exit_date || trade.exit_price) && (
+            {!exitTransactions.length && (trade.exitDate || trade.exitPrice) && (
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
@@ -654,7 +654,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                     color: "#E5E7EB",
                     fontWeight: "500"
                   }}>
-                    {formatDate(trade.exit_date)}
+                    {formatDate(trade.exitDate)}
                   </span>
                 </div>
                 
@@ -673,7 +673,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                     color: "#E5E7EB",
                     fontWeight: "500"
                   }}>
-                    {trade.exit_price !== undefined && trade.exit_price !== null ? `$${Number(trade.exit_price).toFixed(2)}` : "-"}
+                    {trade.exitPrice !== undefined && trade.exitPrice !== null ? `$${Number(trade.exitPrice).toFixed(2)}` : "-"}
                   </span>
                 </div>
                 
@@ -692,13 +692,13 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                     color: "#E5E7EB",
                     fontWeight: "500"
                   }}>
-                    {getExitTacticName(trade.exit_tactic_id)}
+                    {getExitTacticName(trade.exitTacticId)}
                   </span>
                 </div>
               </div>
             )}
-            
-            {trade.reason_for_exit && (
+
+            {trade.reasonForExit && (
               <div style={{ marginTop: 20 }}>
                 <label style={{
                   fontSize: "14px",
@@ -719,7 +719,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                   lineHeight: "1.5",
                   whiteSpace: "pre-wrap"
                 }}>
-                  {trade.reason_for_exit}
+                  {trade.reasonForExit || "No reason provided"}
                 </div>
               </div>
             )}
@@ -746,7 +746,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
             {exitImages.map((img, idx) => (
               <div key={idx} style={{ marginBottom: idx < exitImages.length - 1 ? 20 : 0 }}>
                 <img
-                  src={`http://localhost:8000/${img.image_url || img.file_path}`}
+                  src={`http://localhost:8000/${img.imageUrl || img.filePath}`}
                   alt="Exit Chart"
                   style={{ 
                     width: "100%", 
@@ -763,7 +763,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
         )}
 
         {/* Post Trade Analysis */}
-        {(trade.post_trade_analysis || postImages.length > 0) && (
+        {(trade.postTradeAnalysis || postImages.length > 0) && (
           <div style={{
             backgroundColor: "#1A2332",
             borderRadius: 12,
@@ -779,8 +779,8 @@ export default function TradeDetailsPopup({ trade, onClose }) {
             }}>
               Post Trade Analysis
             </h3>
-            
-            {trade.post_trade_analysis && (
+
+            {trade.postTradeAnalysis && (
               <div style={{ marginBottom: postImages.length > 0 ? 20 : 0 }}>
                 <label style={{
                   fontSize: "14px",
@@ -801,7 +801,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                   lineHeight: "1.5",
                   whiteSpace: "pre-wrap"
                 }}>
-                  {trade.post_trade_analysis}
+                  {trade.postTradeAnalysis}
                 </div>
               </div>
             )}
@@ -820,7 +820,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                 {postImages.map((img, idx) => (
                   <div key={idx} style={{ marginBottom: idx < postImages.length - 1 ? 20 : 0 }}>
                     <img
-                      src={`http://localhost:8000/${img.image_url || img.file_path}`}
+                      src={`http://localhost:8000/${img.imageUrl || img.filePath}`}
                       alt="Post Trade"
                       style={{ 
                         width: "100%", 

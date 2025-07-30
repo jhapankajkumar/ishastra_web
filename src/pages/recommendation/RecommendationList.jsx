@@ -185,7 +185,23 @@ export default function RecommendationList() {
                                         <span className={styles.ticker}>{rec.ticker}</span>
                                         {rec.sector && <span className={styles.sector}>{rec.sector}</span>}
                                     </td>
-                                    <td className={styles.tableCell}>{rec.marketCap ? rec.marketCap : '-'}</td>
+                                    <td className={styles.tableCell}>
+                                        {rec.marketCap ? (
+                                            <span
+                                                className={
+                                                    rec.marketCap.toLowerCase().includes('large')
+                                                        ? styles.marketCapLarge
+                                                        : rec.marketCap.toLowerCase().includes('mid')
+                                                        ? styles.marketCapMid
+                                                        : styles.marketCapSmall
+                                                }
+                                            >
+                                                {rec.marketCap.toUpperCase()}
+                                            </span>
+                                        ) : (
+                                            '-'
+                                        )}
+                                    </td>
                                     <td className={styles.tableCell}>₹{rec.buyBelow?.toLocaleString()}</td>
                                     <td className={styles.tableCell}>
                                         {rec.currentPrice ? (

@@ -143,7 +143,7 @@ function RiskManagement() {
     <div className={styles.container}>
       <div className={styles.content}>
         <div className={styles.inputSection}>
-          <h2 className={styles.sectionTitle}>Position Setup</h2>
+          <h3 className={styles.sectionTitle}>Position Setup</h3>
           <div className={styles.formGrid}>
             <div className={styles.inputGroup}>
               <label className={styles.label}>Trading Account Balance</label>
@@ -154,7 +154,7 @@ function RiskManagement() {
                 onChange={handleInputChange}
                 className={styles.input}
                 placeholder="Enter available trading balance"
-                step="0.01"
+                
               />
             </div>
             <div className={styles.inputGroup}>
@@ -166,7 +166,7 @@ function RiskManagement() {
                 onChange={handleInputChange}
                 className={styles.input}
                 placeholder="Current stock price"
-                step="0.01"
+                
               />
             </div>
             <div className={styles.inputGroup}>
