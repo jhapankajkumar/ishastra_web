@@ -15,27 +15,34 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip,
 function getInvestmentValueHistory(investments) {
   // Generate a time series of investment value over time
   // For demo: use createdAt or fallback to index, and accumulate value
-  if (!Array.isArray(investments) || investments.length === 0) return { labels: [], data: [] };
+  if (!Array.isArray(investments) || investments.length === 0) return { labels: [], invested: [], totalValue: [] };
   // Sort by date (if available)
   const sorted = [...investments].sort((a, b) => {
     const da = a.createdAt ? new Date(a.createdAt) : new Date();
     const db = b.createdAt ? new Date(b.createdAt) : new Date();
     return da - db;
   });
-  let total = 0;
+  let invested = 0;
+  let totalVal = 0;
   const labels = [];
-  const data = [];
+  const investedArr = [];
+  const totalValueArr = [];
   sorted.forEach((inv, idx) => {
     const date = inv.createdAt ? new Date(inv.createdAt) : new Date(Date.now() - (sorted.length - idx) * 86400000);
-    total += (inv.avgBuyPrice || 0) * (inv.quantity || 0);
+    const invAmount = (inv.avgBuyPrice || 0) * (inv.quantity || 0);
+    invested += invAmount;
+    // For total value, use currentPrice if available, else avgBuyPrice
+    const currVal = (inv.currentPrice != null ? inv.currentPrice : inv.avgBuyPrice || 0) * (inv.quantity || 0);
+    totalVal += currVal;
     labels.push(date.toLocaleDateString());
-    data.push(total);
+    investedArr.push(invested);
+    totalValueArr.push(totalVal);
   });
-  return { labels, data };
+  return { labels, invested: investedArr, totalValue: totalValueArr };
 }
 
 const InvestmentValueChart = ({ investments }) => {
-  const { labels, data } = getInvestmentValueHistory(investments);
+  const { labels, invested, totalValue } = getInvestmentValueHistory(investments);
   if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 16 }}>No investment history data</div>;
   return (
     <Line
@@ -43,30 +50,44 @@ const InvestmentValueChart = ({ investments }) => {
         labels,
         datasets: [
           {
-            label: "Investment Value",
-            data,
-            fill: true,
-            backgroundColor: "rgba(59,130,246,0.08)",
-            borderColor: "#3B82F6",
-            pointRadius: 3,
-            tension: 0.3
+            label: "Invested Amount",
+            data: invested,
+            fill: false,
+            borderColor: "#F59E0B",
+            backgroundColor: "#F59E0B",
+            pointRadius: 2,
+            pointBackgroundColor: '#F59E0B',
+            borderWidth: 2.5,
+            tension: 0.55
+          },
+          {
+            label: "Total Value (with Profit)",
+            data: totalValue,
+            fill: false,
+            borderColor: "#6366F1",
+            backgroundColor: "#6366F1",
+            pointRadius: 2,
+            pointBackgroundColor: '#6366F1',
+            borderDash: [6,3],
+            borderWidth: 2.5,
+            tension: 0.55
           }
         ]
       }}
       options={{
         responsive: true,
         plugins: {
-          legend: { display: false },
+          legend: { display: true, labels: { color: '#E5E7EB', font: { size: 11 } } },
           tooltip: { mode: 'index', intersect: false }
         },
         scales: {
           x: {
             grid: { color: "rgba(156,163,175,0.08)" },
-            ticks: { color: "#9CA3AF" }
+            ticks: { color: "#9CA3AF", font: { size: 10 } }
           },
           y: {
             grid: { color: "rgba(156,163,175,0.08)" },
-            ticks: { color: "#9CA3AF" }
+            ticks: { color: "#9CA3AF", font: { size: 10 } }
           }
         }
       }}

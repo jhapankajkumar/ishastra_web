@@ -444,7 +444,7 @@ const Dashboard = () => {
                   borderRadius: 10,
                   padding: 18,
                   border: "1px solid #2A3441",
-                  minHeight: 160,
+                  minHeight: 320,
                   // maxWidth: 400,
                   maxHeight: 220,
                   width: '95%',
@@ -456,42 +456,13 @@ const Dashboard = () => {
                   <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Investment Value Over Time</div>
                   <InvestmentValueChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
-                {/* Sector Allocation Donut Chart */}
-                <div style={{
-                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
-                  borderRadius: 10,
-                  padding: 18,
-                  border: "1px solid #2A3441",
-                  minHeight: 160,
-                  // maxWidth: 400,
-                  maxHeight: 220,
-                  width: '95%',
-                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
-                  position: 'relative',
-                  overflow: 'hidden',
-                  display: 'flex', flexDirection: 'column', justifyContent: 'center'
-                }}>
-                  <div style={{ fontWeight: 700, color: '#10B981', fontSize: 13, marginBottom: 10, letterSpacing: 0.3 }}>Sector Allocation</div>
-                  <SectorDonutChart investments={Array.isArray(investments) ? investments : []} />
-                </div>
-              </div>
-
-              {/* Deeper Analytics Section (compact) */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 18,
-                marginBottom: 20,
-                alignItems: 'stretch',
-                flexWrap: 'wrap'
-              }}>
                 {/* Top Holdings Bar Chart */}
                 <div style={{
                   background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
                   borderRadius: 10,
                   padding: 16,
                   border: "1px solid #2A3441",
-                  minHeight: 120,
+                  minHeight: 320,
                   // maxWidth: 320,
                   maxHeight: 180,
                   width: '95%',
@@ -503,6 +474,36 @@ const Dashboard = () => {
                   <div style={{ fontWeight: 700, color: '#F59E0B', fontSize: 13, marginBottom: 8, letterSpacing: 0.2 }}>Top Holdings by Value</div>
                   <TopHoldingsBarChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
+                
+              </div>
+
+              {/* Deeper Analytics Section (compact) */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 1fr 1fr',
+                gap: 18,
+                marginBottom: 20,
+                alignItems: 'stretch',
+                flexWrap: 'wrap'
+              }}>
+                {/* Sector Allocation Donut Chart */}
+                <div style={{
+                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  borderRadius: 10,
+                  padding: 18,
+                  border: "1px solid #2A3441",
+                  minHeight: 120,
+                  // maxWidth: 400,
+                  maxHeight: 200,
+                  width: '95%',
+                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center'
+                }}>
+                  <div style={{ fontWeight: 700, color: '#10B981', fontSize: 13, marginBottom: 10, letterSpacing: 0.3 }}>Sector Allocation</div>
+                  <SectorDonutChart investments={Array.isArray(investments) ? investments : []} />
+                </div>
                 {/* Market Cap Pie Chart */}
                 <div style={{
                   background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
@@ -511,8 +512,8 @@ const Dashboard = () => {
                   border: "1px solid #2A3441",
                   minHeight: 120,
                   // maxWidth: 320,
-                  maxHeight: 180,
-                  width: '95%',
+                  maxHeight: 200,
+                  width: '90%',
                   boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
                   position: 'relative',
                   overflow: 'hidden',
@@ -530,7 +531,7 @@ const Dashboard = () => {
                   minHeight: 120,
                   // maxWidth: 320,
                   maxHeight: 200,
-                  width: '95%',
+                  width: '90%',
                   boxShadow: "0 2px 12px 0 rgba(59,130,246,0.10)",
                   position: 'relative',
                   overflow: 'hidden',
