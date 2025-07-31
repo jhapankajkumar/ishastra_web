@@ -10,6 +10,55 @@
   font-family: 'Inter', system-ui, sans-serif;
 }
 
+.actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px 0;
+}
+
+.filters {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterGroup label {
+  font-size: 14px;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+.filterSelect {
+  padding: 8px 12px;
+  border: 1px solid #2A3441;
+  background: #1A2332;
+  color: #E5E7EB;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+
+.filterButton:hover {
+  background: #232B3D;
+  color: #E5E7EB;
+  border-color: #4F46E5;
+}
+
+.filterButton.active {
+  background: #4F46E5;
+  color: #fff;
+  border-color: #4F46E5;
+}
+
 .emptyState {
   margin-top: 20px;
   text-align: center;

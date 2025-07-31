@@ -15,6 +15,8 @@ export default function JournalList() {
   const [loading, setLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [journalToDelete, setJournalToDelete] = useState(null);
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
   const notification = useNotification();
   const navigate = useNavigate();
 
@@ -22,9 +24,8 @@ export default function JournalList() {
     setLoading(true);
     getAllJournals()
       .then(res => {
-        console.log('Fetched journals:', res.data.data);
-        const sorted = [...res.data.data].sort((a, b) => new Date(b.date) - new Date(a.date));
-        setJournals(sorted);
+        let data = res.data.data;
+        setJournals(data);
         setError(null);
       })
       .catch(err => {
@@ -43,27 +44,27 @@ export default function JournalList() {
 
   const handleDeleteConfirm = async () => {
     if (!journalToDelete) return;
-    
+
     try {
       await deleteJournal(journalToDelete.id);
       notification.success(`Journal entry for ${journalToDelete.stock} deleted successfully!`);
-      
+
       // Remove the deleted journal from the local state
       setJournals(prev => prev.filter(journal => journal.id !== journalToDelete.id));
-      
+
       // Close confirmation dialog
       setShowDeleteConfirm(false);
       setJournalToDelete(null);
     } catch (err) {
       console.error('Failed to delete journal:', err);
       let errorMessage = "Failed to delete journal entry.";
-      
+
       if (err.type === 'NETWORK_ERROR') {
         errorMessage = "Unable to connect to server. Please check your internet connection.";
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       notification.error(errorMessage);
     }
   };
@@ -82,13 +83,13 @@ export default function JournalList() {
     } catch (err) {
       console.error('Failed to fetch journal details:', err);
       let errorMessage = "Failed to load journal details.";
-      
+
       if (err.type === 'NETWORK_ERROR') {
         errorMessage = "Unable to connect to server. Please check your internet connection.";
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       notification.error(errorMessage);
     }
   };
@@ -103,8 +104,7 @@ export default function JournalList() {
     setLoading(true);
     getAllJournals()
       .then(res => {
-        const sorted = [...res.data].sort((a, b) => new Date(b.date) - new Date(a.date));
-        setJournals(sorted);
+        setJournals(res.data.data);
         setError(null);
       })
       .catch(err => {
@@ -114,6 +114,35 @@ export default function JournalList() {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  // Sorting logic
+  const getSortedJournals = () => {
+    let sorted = [...journals];
+    if (sortBy === 'ticker') {
+      sorted.sort((a, b) => {
+        if (!a.ticker) return 1;
+        if (!b.ticker) return -1;
+        if (a.ticker.toLowerCase() < b.ticker.toLowerCase()) return sortOrder === 'asc' ? -1 : 1;
+        if (a.ticker.toLowerCase() > b.ticker.toLowerCase()) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    } else if (sortBy === 'date') {
+      sorted.sort((a, b) => {
+        const dA = new Date(a.entryDate);
+        const dB = new Date(b.entryDate);
+        return sortOrder === 'asc' ? dA - dB : dB - dA;
+      });
+    } else if (sortBy === 'trend') {
+      sorted.sort((a, b) => {
+        if (!a.trend) return 1;
+        if (!b.trend) return -1;
+        if (a.trend.toLowerCase() < b.trend.toLowerCase()) return sortOrder === 'asc' ? -1 : 1;
+        if (a.trend.toLowerCase() > b.trend.toLowerCase()) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sorted;
   };
 
   const handleEdit = (journal) => {
@@ -131,7 +160,7 @@ export default function JournalList() {
   };
 
   const getTrendColor = (trend) => {
-    switch(trend?.toLowerCase()) {
+    switch (trend?.toLowerCase()) {
       case 'bullish': return '#10B981';
       case 'bearish': return '#EF4444';
       case 'sideways': return '#F59E0B';
@@ -152,14 +181,14 @@ export default function JournalList() {
   if (loading) {
     return (
       <div className={styles.container}>
-        <PageHeader 
+        <PageHeader
           title="Chart Reading Journal"
           subtitle="Track your chart analysis and market observations"
         />
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
           height: '200px',
           color: '#9CA3AF'
         }}>
@@ -176,6 +205,34 @@ export default function JournalList() {
         subtitle="Track your chart analysis and market observations"
       />
 
+      <div className={styles.actionBar}>
+              <div className={styles.filters}>
+                <label>Sort By:</label>
+                <select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value)}
+                  className={styles.filterSelect}
+                >
+                  <option value="ticker">Ticker (A-Z)</option>
+                  <option value="date">Date</option>
+                  <option value="trend">Trend</option>
+                </select>
+                <button
+                  className={styles.filterSelect}
+                  onClick={() => setSortOrder(order => order === 'asc' ? 'desc' : 'asc')}
+                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                >
+                  {sortOrder === 'asc' ? '▲' : '▼'}
+                </button>
+              </div>
+              <button
+                className={styles.addButton}
+                onClick={() => navigate('/journal/new')}
+              >
+                + Add Journal
+              </button>
+            </div>
+
       {/* Modern Table */}
       <div className={styles.tableContainer}>
         <table className={styles.table}>
@@ -190,7 +247,7 @@ export default function JournalList() {
             </tr>
           </thead>
           <tbody>
-            {journals.map(journal => (
+            {getSortedJournals().map(journal => (
               <tr
                 key={journal.id}
                 className={styles.tableRow}
@@ -199,9 +256,6 @@ export default function JournalList() {
                 <td className={`${styles.tableCell} ${styles.stockCell}`}>
                   <div className={styles.stockContainer}>
                     <span className={styles.stockSymbol}>{journal.ticker}</span>
-                    {/* {getTickerBySymbol(journal.ticker)?.name && (
-                      <span className={styles.companyName}>{getTickerBySymbol(journal.ticker).name}</span>
-                    )} */}
                   </div>
                 </td>
                 <td className={`${styles.tableCell} ${styles.dateCell}`}>{formatDate(journal.entryDate)}</td>
@@ -257,17 +311,17 @@ export default function JournalList() {
         </table>
       </div>
       {journals.length === 0 && (
-                                  <div className={styles.emptyState}>
-                                      <h3>No journal found</h3>
-                                      <p>Start by adding your first journal entry to track your thoughts.</p>
-                                      <button
-                                          className={styles.addButton}
-                                          onClick={() => navigate('/journal/new')}
-                                      >
-                                          + Add First Journal
-                                      </button>
-                                  </div>
-                              )}
+        <div className={styles.emptyState}>
+          <h3>No journal found</h3>
+          <p>Start by adding your first journal entry to track your thoughts.</p>
+          <button
+            className={styles.addButton}
+            onClick={() => navigate('/journal/new')}
+          >
+            + Add First Journal
+          </button>
+        </div>
+      )}
       {/* Journal Details Popup */}
       {showPopup && popupJournal && (
         console.log('Rendering popup with journal:', popupJournal.analysis),
@@ -310,14 +364,14 @@ export default function JournalList() {
             }}>
               Delete Journal Entry
             </h3>
-            
+
             <p style={{
               fontSize: '16px',
               color: '#9CA3AF',
               margin: '0 0 24px 0',
               lineHeight: '1.5'
             }}>
-              Are you sure you want to delete the journal entry for <strong style={{ color: '#fff' }}>{journalToDelete.stock}</strong> from {formatDate(journalToDelete.date)}? 
+              Are you sure you want to delete the journal entry for <strong style={{ color: '#fff' }}>{journalToDelete.stock}</strong> from {formatDate(journalToDelete.date)}?
               This action cannot be undone and will permanently remove all analysis data.
             </p>
 
