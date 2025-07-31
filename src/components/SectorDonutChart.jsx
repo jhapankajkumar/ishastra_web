@@ -12,7 +12,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 function getSectorData(investments) {
   const sectorMap = {};
   investments.forEach(inv => {
-    const sector = inv.sector || 'Other';
+    const sector = inv.sector.toUpperCase() || 'Other';
     const value = (inv.currentPrice || 0) * (inv.quantity || 0);
     sectorMap[sector] = (sectorMap[sector] || 0) + value;
   });
@@ -47,7 +47,7 @@ const SectorDonutChart = ({ investments }) => {
           legend: {
             display: true,
             position: 'right',
-            labels: { color: '#E5E7EB', font: { size: 14 } }
+            labels: { color: '#E5E7EB', font: { size: 10 } }
           },
           tooltip: { callbacks: { label: ctx => `${ctx.label}: ₹${ctx.parsed.toLocaleString()}` } }
         },

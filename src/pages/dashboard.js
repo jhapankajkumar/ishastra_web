@@ -429,137 +429,136 @@ const Dashboard = () => {
                 
               </div>
 
-              {/* Investment Analytics Section */}
+              {/* Investment Analytics Section (compact) */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: 32,
-                marginBottom: 36,
+                gap: 18,
+                marginBottom: 20,
                 alignItems: 'stretch',
                 flexWrap: 'wrap'
               }}>
                 {/* Investment Value Over Time Chart */}
                 <div style={{
                   background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
-                  borderRadius: 16,
-                  padding: 36,
+                  borderRadius: 10,
+                  padding: 18,
                   border: "1px solid #2A3441",
-                  minHeight: 260,
-                  maxWidth: 600,
-                  maxHeight: 350,
-                  width: '90%',
-                  boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                  minHeight: 160,
+                  // maxWidth: 400,
+                  maxHeight: 220,
+                  width: '95%',
+                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
-                  <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 22, marginBottom: 18, letterSpacing: 0.5 }}>Investment Value Over Time</div>
+                  <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Investment Value Over Time</div>
                   <InvestmentValueChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
                 {/* Sector Allocation Donut Chart */}
                 <div style={{
                   background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
-                  borderRadius: 16,
-                  padding: 36,
+                  borderRadius: 10,
+                  padding: 18,
                   border: "1px solid #2A3441",
-                  minHeight: 260,
-                  maxWidth: 600,
-                  maxHeight: 350,
-                  width: '90%',
-                  boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                  minHeight: 160,
+                  // maxWidth: 400,
+                  maxHeight: 220,
+                  width: '95%',
+                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
-                  <div style={{ fontWeight: 700, color: '#10B981', fontSize: 22, marginBottom: 18, letterSpacing: 0.5 }}>Sector Allocation</div>
+                  <div style={{ fontWeight: 700, color: '#10B981', fontSize: 13, marginBottom: 10, letterSpacing: 0.3 }}>Sector Allocation</div>
                   <SectorDonutChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
               </div>
 
-              {/* Deeper Analytics Section */}
+              {/* Deeper Analytics Section (compact) */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr',
-                gap: 32,
-                marginBottom: 36,
+                gridTemplateColumns: '1fr 1fr',
+                gap: 18,
+                marginBottom: 20,
                 alignItems: 'stretch',
                 flexWrap: 'wrap'
               }}>
                 {/* Top Holdings Bar Chart */}
                 <div style={{
                   background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
-                  borderRadius: 16,
-                  padding: 36,
+                  borderRadius: 10,
+                  padding: 16,
                   border: "1px solid #2A3441",
-                  minHeight: 220,
-                  maxWidth: 600,
-                  maxHeight: 350,
-                  width: '90%',
-                  boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                  minHeight: 120,
+                  // maxWidth: 320,
+                  maxHeight: 180,
+                  width: '95%',
+                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
-                  <div style={{ fontWeight: 700, color: '#F59E0B', fontSize: 20, marginBottom: 18, letterSpacing: 0.5 }}>Top Holdings by Value</div>
+                  <div style={{ fontWeight: 700, color: '#F59E0B', fontSize: 13, marginBottom: 8, letterSpacing: 0.2 }}>Top Holdings by Value</div>
                   <TopHoldingsBarChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
                 {/* Market Cap Pie Chart */}
                 <div style={{
                   background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
-                  borderRadius: 16,
-                  padding: 36,
+                  borderRadius: 10,
+                  padding: 16,
                   border: "1px solid #2A3441",
-                  minHeight: 220,
-                  maxWidth: 600,
-                  maxHeight: 350,
-                  width: '80%',
-                  boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                  minHeight: 120,
+                  // maxWidth: 320,
+                  maxHeight: 180,
+                  width: '95%',
+                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
-                  <div style={{ fontWeight: 700, color: '#6366F1', fontSize: 20, marginBottom: 18, letterSpacing: 0.5 }}>Market Cap Allocation</div>
+                  <div style={{ fontWeight: 700, color: '#6366F1', fontSize: 13, marginBottom: 8, letterSpacing: 0.2 }}>Market Cap Allocation</div>
                   <MarketCapPieChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
-                {/* Key Stats & CAGR */}
+                {/* Key Stats & CAGR (compact) */}
                 <div style={{
                   background: "radial-gradient(ellipse at 80% 0%, #233554 0%, #1A2332 100%)",
-                  borderRadius: 20,
-                  padding: 38,
+                  borderRadius: 14,
+                  padding: 16,
                   border: "1.5px solid #2A3441",
-                  minHeight: 240,
-                  maxWidth: 600,
-                  maxHeight: 370,
-                  width: '90%',
-                  boxShadow: "0 6px 32px 0 rgba(59,130,246,0.10)",
+                  minHeight: 120,
+                  // maxWidth: 320,
+                  maxHeight: 200,
+                  width: '95%',
+                  boxShadow: "0 2px 12px 0 rgba(59,130,246,0.10)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#E5E7EB',
                   transition: 'box-shadow 0.2s',
                   backdropFilter: 'blur(2px)'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 22 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
                     <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      width: 44, height: 44,
+                      width: 28, height: 28,
                       background: 'linear-gradient(135deg, #3B82F6 60%, #6366F1 100%)',
                       borderRadius: '50%',
-                      marginRight: 18,
-                      boxShadow: '0 2px 12px 0 rgba(59,130,246,0.18)',
-                      fontSize: 26,
+                      marginRight: 8,
+                      boxShadow: '0 1px 6px 0 rgba(59,130,246,0.18)',
+                      fontSize: 15,
                       color: '#fff',
                       fontWeight: 700
                     }}>📊</span>
-                    <span style={{ fontWeight: 800, color: '#3B82F6', fontSize: 24, letterSpacing: 0.5 }}>Key Investment Stats</span>
-                    <span title="Compound Annual Growth Rate" style={{cursor:'help',color:'#9CA3AF',fontSize:18,marginLeft:10}}>ℹ️</span>
+                    <span style={{ fontWeight: 800, color: '#3B82F6', fontSize: 14, letterSpacing: 0.2 }}>Key Investment Stats</span>
+                    <span title="Compound Annual Growth Rate" style={{cursor:'help',color:'#9CA3AF',fontSize:12,marginLeft:6}}>ℹ️</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 8 }}>
-                    <div style={{ fontSize: 15, color: '#A1A7B3', fontWeight: 600 }}>Total Investments</div>
-                    <div style={{ fontSize: 18, color: '#fff', fontWeight: 800, textAlign: 'right' }}>{Array.isArray(investments) ? investments.length : 0}</div>
-                    <div style={{ fontSize: 15, color: '#A1A7B3', fontWeight: 600 }}>Total Return</div>
-                    <div style={{ fontSize: 18, color: '#10B981', fontWeight: 800, textAlign: 'right' }}>{(() => {
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 4 }}>
+              
+                    <div style={{ fontSize: 11, color: '#A1A7B3', fontWeight: 600 }}>Total Return</div>
+                    <div style={{ fontSize: 13, color: '#10B981', fontWeight: 800, textAlign: 'right' }}>{(() => {
                       const arr = Array.isArray(investments) ? investments : [];
                       const invested = arr.reduce((sum, inv) => sum + (inv.avgBuyPrice || 0) * (inv.quantity || 0), 0);
                       const current = arr.reduce((sum, inv) => sum + (inv.currentPrice || 0) * (inv.quantity || 0), 0);
@@ -567,8 +566,8 @@ const Dashboard = () => {
                       const ret = ((current - invested) / invested) * 100;
                       return `${ret >= 0 ? '+' : ''}${ret.toFixed(2)}%`;
                     })()}</div>
-                    <div style={{ fontSize: 15, color: '#A1A7B3', fontWeight: 600 }}>CAGR</div>
-                    <div style={{ fontSize: 18, color: '#F59E0B', fontWeight: 800, textAlign: 'right' }}>{(() => {
+                    <div style={{ fontSize: 11, color: '#A1A7B3', fontWeight: 600 }}>CAGR</div>
+                    <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 800, textAlign: 'right' }}>{(() => {
                       const arr = Array.isArray(investments) ? investments : [];
                       if (!arr.length) return '-';
                       const invested = arr.reduce((sum, inv) => sum + (inv.avgBuyPrice || 0) * (inv.quantity || 0), 0);
@@ -584,8 +583,8 @@ const Dashboard = () => {
                       const cagr = Math.pow(current / invested, 1 / years) - 1;
                       return `${(cagr * 100).toFixed(2)}%`;
                     })()}</div>
-                    <div style={{ fontSize: 15, color: '#A1A7B3', fontWeight: 600 }}>Most Invested Sector</div>
-                    <div style={{ fontSize: 18, color: '#60A5FA', fontWeight: 800, textAlign: 'right' }}>{(() => {
+                    <div style={{ fontSize: 11, color: '#A1A7B3', fontWeight: 600 }}>Most Invested Sector</div>
+                    <div style={{ fontSize: 13, color: '#60A5FA', fontWeight: 800, textAlign: 'right' }}>{(() => {
                       const arr = Array.isArray(investments) ? investments : [];
                       const sectorMap = {};
                       arr.forEach(inv => {
@@ -601,22 +600,22 @@ const Dashboard = () => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginTop: 18,
-                    gap: 12
+                    marginTop: 8,
+                    gap: 6
                   }}>
                     <div style={{
                       background: 'linear-gradient(135deg, #1A2332 60%, #193C3A 100%)',
-                      borderRadius: 12,
-                      padding: '14px 18px',
+                      borderRadius: 8,
+                      padding: '6px 8px',
                       flex: 1,
                       color: '#10B981',
                       fontWeight: 700,
-                      fontSize: 15,
+                      fontSize: 11,
                       display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                      boxShadow: '0 2px 8px 0 rgba(16,185,129,0.08)'
+                      boxShadow: '0 1px 4px 0 rgba(16,185,129,0.08)'
                     }}>
-                      <span style={{ color: '#A1A7B3', fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Best Performer</span>
-                      <span style={{ fontSize: 16, fontWeight: 800 }}>{(() => {
+                      <span style={{ color: '#A1A7B3', fontWeight: 600, fontSize: 10, marginBottom: 1 }}>Best Performer</span>
+                      <span style={{ fontSize: 12, fontWeight: 800 }}>{(() => {
                         const arr = Array.isArray(investments) ? investments : [];
                         if (!arr.length) return '-';
                         const best = [...arr].sort((a, b) => ((b.currentPrice - b.avgBuyPrice) * b.quantity) - ((a.currentPrice - a.avgBuyPrice) * a.quantity))[0];
@@ -627,17 +626,17 @@ const Dashboard = () => {
                     </div>
                     <div style={{
                       background: 'linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)',
-                      borderRadius: 12,
-                      padding: '14px 18px',
+                      borderRadius: 8,
+                      padding: '6px 8px',
                       flex: 1,
                       color: '#EF4444',
                       fontWeight: 700,
-                      fontSize: 15,
+                      fontSize: 11,
                       display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                      boxShadow: '0 2px 8px 0 rgba(245,158,11,0.08)'
+                      boxShadow: '0 1px 4px 0 rgba(245,158,11,0.08)'
                     }}>
-                      <span style={{ color: '#A1A7B3', fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Worst Performer</span>
-                      <span style={{ fontSize: 16, fontWeight: 800 }}>{(() => {
+                      <span style={{ color: '#A1A7B3', fontWeight: 600, fontSize: 10, marginBottom: 1 }}>Worst Performer</span>
+                      <span style={{ fontSize: 12, fontWeight: 800 }}>{(() => {
                         const arr = Array.isArray(investments) ? investments : [];
                         if (!arr.length) return '-';
                         const worst = [...arr].sort((a, b) => ((a.currentPrice - a.avgBuyPrice) * a.quantity) - ((b.currentPrice - b.avgBuyPrice) * b.quantity))[0];

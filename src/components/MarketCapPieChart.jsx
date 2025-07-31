@@ -27,7 +27,7 @@ const palette = [
 
 const MarketCapPieChart = ({ investments }) => {
   const { labels, data } = getMarketCapData(investments);
-  if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 16 }}>No market cap data</div>;
+  if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 13 }}>No market cap data</div>;
   return (
     <Pie
       data={{
@@ -47,7 +47,7 @@ const MarketCapPieChart = ({ investments }) => {
           legend: {
             display: true,
             position: 'right',
-            labels: { color: '#E5E7EB', font: { size: 14 } }
+            labels: { color: '#E5E7EB', font: { size: 10 } }
           },
           tooltip: { callbacks: { label: ctx => `${ctx.label}: ₹${ctx.parsed.toLocaleString()}` } }
         },
