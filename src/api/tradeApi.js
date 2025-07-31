@@ -89,11 +89,13 @@ export async function createTrade(form) {
   const defaultNull = (val) => (val !== undefined && val !== null && val !== 'undefined' && val !== '' ? val : null);
 
   // Dropdown options (customize as needed)
-  const instrumentTypeOptions = ['Stocks', 'Futures', 'Options'];
+  const instrumentTypeOptions = ['Stocks', 'ETF', 'Forex', 'Indices'];
   const marketOptions = ['India', 'US'];
   const positionTypeOptions = ['Swing', 'Intraday'];
   const directionOptions = ['Long', 'Short'];
   const stopLossMethodOptions = ['ATR', 'Fixed %', 'None'];
+  const timeframeOptions = ['Daily', 'Weekly', 'Hourly', 'Multiple'];
+  const confidenceOptions = ['Low', 'Medium', 'High'];
 
   // Required fields
   formData.append('ticker', defaultText(form.ticker));
@@ -117,35 +119,38 @@ export async function createTrade(form) {
   let riskVal = form.riskPerTrade;
   console.log('Risk Per Trade:', riskVal); // Debug log
   formData.append('riskPerTrade', riskVal);
-  formData.append('riskPerTradeValue', 0);
+  formData.append('riskPerTradeValue', form.riskPerTradeValue || 0);
   formData.append('stopLossPrice', defaultNumber(form.stopLossPrice));
   formData.append('stopLossMethod', defaultDropdown(form.stopLossMethod, stopLossMethodOptions));
   formData.append('atrMultiplier', defaultNumber(form.atrMultiplier));
-  // Always send targets as numbers (default 0)
   formData.append('target1', defaultNumber(form.target1));
   formData.append('target2', defaultNumber(form.target2));
   formData.append('target3', defaultNumber(form.target3));
   formData.append('atrValue', defaultNumber(form.atrValue));
   // Always send tradeSetup (setup) as null if not set
+  
   formData.append('tradeSetup', defaultNull(form.setupType));
+  
   // Timeframes used (array to comma-separated string, default to Daily)
-  let timeframes = form.timeframesUsed && Array.isArray(form.timeframesUsed) && form.timeframesUsed.length > 0 ? form.timeframesUsed : ['Daily'];
-  formData.append('timeframesUsed', timeframes.join(','));
+  console.log('Timeframes Used:', form.timeframesUsed); // Debug log
+  formData.append('timeframesUsed', defaultDropdown(form.timeframesUsed, timeframeOptions));
   // Always set status as Executed for new trades (or use form value if present)
   formData.append('tradeStatus', form.tradeStatus || 'Executed');
   // Add entryCommission, notes, confidence if present
   formData.append('entryCommission', defaultNumber(form.entryCommission));
   formData.append('notes', defaultText(form.notes));
-  // Send confidence as number if possible, else as string
-  let confidenceVal = form.confidence;
-  if (confidenceVal !== undefined && confidenceVal !== null && confidenceVal !== '' && confidenceVal !== 'undefined') {
-    if (!isNaN(confidenceVal)) {
-      formData.append('confidence', Number(confidenceVal));
-    } else {
-      formData.append('confidence', confidenceVal);
-    }
-  } else {
+  
+  let confidenceText = defaultDropdown(form.setupConfidence, confidenceOptions);
+  console.log('Confidence Text:', confidenceText); // Debug log
+  if (confidenceText && confidenceText === 'Low') {
     formData.append('confidence', 0);
+  }
+  else if (confidenceText && confidenceText === 'Medium') {
+    formData.append('confidence', 1);
+  } else if (confidenceText && confidenceText === 'High') {
+    formData.append('confidence', 2);
+  } else {
+    formData.append('confidence', 0); // Default to Low
   }
   // Only append entryCharts - handle FileList or Array properly
   if (form.entryCharts) {

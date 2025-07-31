@@ -1,13 +1,15 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import styles from "./JournalLog.module.css";
+import styles from "./JournalLogUpdate.module.css";
 import PageHeader from "../../components/PageHeader";
-import TickerSearch from "../../components/TickerSearch";
 import { updateJournal, getJournalById } from '../../api/journalApi';
 import { fetchSetups } from '../../api/firebaseMetaApi';
 import { useNotification } from '../../components/NotificationProvider';
 import ErrorPage from '../../components/ErrorPage';
-import { getTickerBySymbol } from '../../data/tickerData';
+import ImageGallery from '../../components/ImageGallery';
+import CommonAddChart from "../../components/CommonAddChart";
+
 
 const todayStr = new Date().toISOString().split('T')[0];
 
@@ -35,30 +37,30 @@ export default function JournalLogUpdate() {
     setInitialLoading(true);
     getJournalById(id)
       .then(res => {
-        const journal = res.data;
+        const journal = res.data.analysis;
         setForm({
-          date: journal.date ? new Date(journal.date).toISOString().split('T')[0] : "",
-          stock: journal.stock || "",
-          companyName: getTickerBySymbol(journal.stock)?.name || "",
+          date: journal.entryDate ? new Date(journal.entryDate).toISOString().split('T')[0] : "",
+          stock: journal.ticker || "",
           trend: journal.trend || "",
-          candle_type: journal.candle_type || "",
-          near_support: journal.near_support || false,
-          near_resistance: journal.near_resistance || false,
-          support_level: journal.support_level?.toString() || "",
-          resistance_level: journal.resistance_level?.toString() || "",
-          ema_touch: journal.ema_touch || false,
-          volume_spike: journal.volume_spike || false,
-          rsi_value: journal.rsi_value?.toString() || "",
-          entry_considered: journal.entry_considered || false,
-          action_plan: journal.action_plan || "",
-          notes: journal.notes || "",
-          screenshot: null,
-          reviewScreenshot: null,
+          candleType: journal.candleType || "",
+          nearSupport: journal.nearSupport || false,
+          nearResistance: journal.nearResistance || false,
+          supportLevel: journal.supportLevel?.toString() || "",
+          resistanceLevel: journal.resistanceLevel?.toString() || "",
+          emaTouch: journal.emaTouch || false,
+          volumeSpike: journal.volumeSpike || false,
+          rsiValue: journal.rsiValue?.toString() || "",
+          entryConsidered: journal.entryConsidered || false,
+          actionPlan: journal.actionPlan || "",
+          notes: journal.entryNotes || "",
+          reviewNotes: journal.reviewNotes || "",
+          reviewCharts: journal.reviewCharts || [],
         });
         setError(null);
       })
       .catch(err => {
         setError(err);
+        console.error('Error fetching journal for update:', err);
         notification.error('Failed to load journal for editing');
       })
       .finally(() => setInitialLoading(false));
@@ -70,8 +72,15 @@ export default function JournalLogUpdate() {
   };
 
   const handleFileChange = (e) => {
-    const { files, name } = e.target;
-    setForm((prev) => ({ ...prev, [name]: files[0] || null }));
+    const { files } = e.target;
+    setForm(prev => ({ ...prev, reviewCharts: Array.from(files) }));
+  };
+
+  const removeEntryChart = (index) => {
+    setForm(prev => ({
+      ...prev,
+      reviewCharts: prev.reviewCharts.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -81,8 +90,8 @@ export default function JournalLogUpdate() {
       const { companyName, ...formDataForBackend } = form;
       await updateJournal(id, formDataForBackend);
       notification.success("Journal entry updated successfully!");
-      navigate("/journal", { replace: true });
-      window.location.reload();
+      // navigate("/journal", { replace: true });
+      // window.location.reload();
     } catch (err) {
       let errorMessage = "Failed to update journal entry. Please try again.";
       if (err.type === 'NETWORK_ERROR') {
@@ -116,7 +125,7 @@ export default function JournalLogUpdate() {
   if (initialLoading || !form) {
     return (
       <div className={styles.container}>
-        <PageHeader 
+        <PageHeader
           title="Update Chart Reading"
           subtitle="Loading journal data..."
         />
@@ -127,136 +136,135 @@ export default function JournalLogUpdate() {
     );
   }
 
+  // --- Helper for display ---
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    if (isNaN(d)) return "-";
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mmm = d.toLocaleString('en-US', { month: 'short' });
+    const yyyy = d.getFullYear();
+    return `${dd} ${mmm} ${yyyy}`;
+  };
+
+  const getTrendColor = (trend) => {
+    switch (trend?.toLowerCase()) {
+      case 'bullish': return '#10B981';
+      case 'bearish': return '#EF4444';
+      case 'sideways': return '#F59E0B';
+      default: return '#9CA3AF';
+    }
+  };
+
+  // --- UI ---
   return (
     <div className={styles.container}>
-      <PageHeader 
+      <PageHeader
         title="Update Chart Reading"
         subtitle="Update your chart analysis and observations"
       />
-      <div className={styles.formContainer}>
-        <form onSubmit={handleSubmit}>
-          {/* Basic Info Section (read-only) */}
-          <div className={styles.card}>
-            <h3 className={`${styles.cardTitle} ${styles.basicTitle}`}>Basic Information</h3>
-            <div className={styles.gridTwoCol}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Date</label>
-                <input type="date" name="date" value={form.date} className={`${styles.input} ${styles.inputDisabled}`} disabled readOnly />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Stock Symbol</label>
-                <TickerSearch value={form.stock} disabled apiSource="yahoo" />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Company Name</label>
-                <input type="text" name="companyName" value={form.companyName} className={`${styles.input} ${styles.inputDisabled}`} disabled readOnly />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Overall Trend</label>
-                <select name="trend" value={form.trend} className={`${styles.input} ${styles.inputDisabled}`} disabled readOnly>
-                  <option value="">Select trend...</option>
-                  <option value="Bullish">Bullish</option>
-                  <option value="Bearish">Bearish</option>
-                  <option value="Sideways">Sideways</option>
-                  <option value="Uncertain">Uncertain</option>
-                </select>
-              </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Setup Type</label>
-                <select name="setup_type" value={form.setup_type} className={`${styles.input} ${styles.inputDisabled}`} disabled readOnly>
-                  <option value="">{setupsLoaded ? "Select setup..." : "Loading..."}</option>
-                  {setups.map((setup) => (
-                    <option key={setup.id} value={setup.id}>{setup.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Setup Confidence</label>
-                <select name="setup_confidence" value={form.setup_confidence} className={`${styles.input} ${styles.inputDisabled}`} disabled readOnly>
-                  <option value="">Select confidence...</option>
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </select>
-              </div>
+      <div className={styles.journalUpdateContainer}>
+        {/* Header */}
+        <div className={styles.journalHeader}>
+          <div className={styles.journalHeaderRow}>
+            <div className={styles.journalTrendDot} style={{ backgroundColor: getTrendColor(form.trend) }}></div>
+            <h1 className={styles.journalTitle}>{form.stock}</h1>
+          </div>
+          <p className={styles.journalSubtitle}>Chart Reading Analysis - {formatDate(form.date)}</p>
+          <p className={styles.journalTicker}>{form.stock}</p>
+        </div>
+
+        {/* Basic Info Section */}
+        <div className={styles.journalCard}>
+          <h3 className={styles.journalCardTitle}>Basic Information</h3>
+          <div className={styles.journalGridInfo}>
+            <div>
+              <label className={styles.journalLabel}>Date</label>
+              <span className={styles.journalValue}>{formatDate(form.date)}</span>
+            </div>
+            <div>
+              <label className={styles.journalLabel}>Overall Trend</label>
+              <span className={styles.journalTrendValue} style={{ color: getTrendColor(form.trend), backgroundColor: getTrendColor(form.trend) + '20' }}>{form.trend || "Not specified"}</span>
+            </div>
+            <div>
+              <label className={styles.journalLabel}>Candle Type</label>
+              <span className={styles.journalValue}>{form.candleType || "-"}</span>
+            </div>
+            <div>
+              <label className={styles.journalLabel}>Entry Considered</label>
+              <span className={form.entryConsidered ? styles.journalYes : styles.journalNo}>{form.entryConsidered ? "Yes" : "No"}</span>
             </div>
           </div>
+        </div>
 
-          {/* Technical Analysis Section (read-only) */}
-          <div className={styles.card}>
-            <h3 className={`${styles.cardTitle} ${styles.technicalTitle}`}>Technical Analysis (Read-only)</h3>
-            <div className={styles.gridTwoCol}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Candle Type</label>
-                <select name="candle_type" value={form.candle_type} className={`${styles.input} ${styles.inputDisabled}`} disabled readOnly>
-                  <option value="">Select candle type...</option>
-                  <option value="Doji">Doji</option>
-                  <option value="Hammer">Hammer</option>
-                  <option value="Shooting Star">Shooting Star</option>
-                  <option value="Engulfing">Engulfing</option>
-                  <option value="Spinning Top">Spinning Top</option>
-                  <option value="Long Body">Long Body</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>RSI Value</label>
-                <input type="number" name="rsi_value" value={form.rsi_value} className={`${styles.input} ${styles.inputDisabled}`} disabled readOnly />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Support Level</label>
-                <input type="number" name="support_level" value={form.support_level} className={`${styles.input} ${styles.inputDisabled}`} disabled readOnly />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Resistance Level</label>
-                <input type="number" name="resistance_level" value={form.resistance_level} className={`${styles.input} ${styles.inputDisabled}`} disabled readOnly />
-              </div>
+        {/* Technical Analysis Section */}
+        <div className={styles.journalCard}>
+          <h3 className={styles.journalCardTitleTech}>Technical Analysis</h3>
+          <div className={styles.journalGridInfo}>
+            <div>
+              <label className={styles.journalLabel}>Support Level</label>
+              <span className={styles.journalValue}>{form.supportLevel ? `$${Number(form.supportLevel).toFixed(2)}` : "-"}</span>
             </div>
-            <div className={styles.checkboxGrid}>
-              <div className={styles.checkboxGroup}>
-                <input type="checkbox" id="near_support" name="near_support" checked={form.near_support} className={styles.checkbox} disabled readOnly />
-                <label htmlFor="near_support" className={styles.checkboxLabel}>Near Support</label>
-              </div>
-              <div className={styles.checkboxGroup}>
-                <input type="checkbox" id="near_resistance" name="near_resistance" checked={form.near_resistance} className={styles.checkbox} disabled readOnly />
-                <label htmlFor="near_resistance" className={styles.checkboxLabel}>Near Resistance</label>
-              </div>
-              <div className={styles.checkboxGroup}>
-                <input type="checkbox" id="ema_touch" name="ema_touch" checked={form.ema_touch} className={styles.checkbox} disabled readOnly />
-                <label htmlFor="ema_touch" className={styles.checkboxLabel}>EMA Touch</label>
-              </div>
-              <div className={styles.checkboxGroup}>
-                <input type="checkbox" id="volume_spike" name="volume_spike" checked={form.volume_spike} className={styles.checkbox} disabled readOnly />
-                <label htmlFor="volume_spike" className={styles.checkboxLabel}>Volume Spike</label>
-              </div>
-              <div className={styles.checkboxGroup}>
-                <input type="checkbox" id="entry_considered" name="entry_considered" checked={form.entry_considered} className={styles.checkbox} disabled readOnly />
-                <label htmlFor="entry_considered" className={styles.checkboxLabel}>Potential Trade</label>
-              </div>
+            <div>
+              <label className={styles.journalLabel}>Resistance Level</label>
+              <span className={styles.journalValue}>{form.resistanceLevel ? `$${Number(form.resistanceLevel).toFixed(2)}` : "-"}</span>
+            </div>
+            <div>
+              <label className={styles.journalLabel}>RSI Value</label>
+              <span className={styles.journalValue}>{form.rsiValue ? Number(form.rsiValue).toFixed(1) : "-"}</span>
             </div>
           </div>
-
-          {/* Review Section (editable) */}
-          <div className={styles.card}>
-            <h3 className={`${styles.cardTitle} ${styles.technicalTitle}`}>Review Analysis</h3>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Updated Analysis & Notes</label>
-              <textarea name="notes" value={form.notes} onChange={handleChange} className={`${styles.textarea} ${styles.inputEnabled}`} placeholder="Add your updated analysis, observations, and learnings..." rows="6" />
-            </div>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Review Chart Screenshot</label>
-              <div className={styles.fileInputWrapper}>
-                <input type="file" id="reviewScreenshot" name="reviewScreenshot" accept="image/*" onChange={handleFileChange} className={styles.customFileInput} />
-                <label htmlFor="reviewScreenshot" className={`${styles.fileInputLabel} ${form.reviewScreenshot ? styles.hasFile : ''}`}>{form.reviewScreenshot ? form.reviewScreenshot.name : 'Choose review screenshot'}</label>
-                {form.reviewScreenshot && (<div className={styles.fileName}>{form.reviewScreenshot.name}</div>)}
+          <div className={styles.journalIndicatorsGrid}>
+            {[
+              { key: 'nearSupport', label: 'Near Support' },
+              { key: 'nearResistance', label: 'Near Resistance' },
+              { key: 'emaTouch', label: 'EMA Touch' },
+              { key: 'volumeSpike', label: 'Volume Spike' }
+            ].map(indicator => (
+              <div key={indicator.key} className={form[indicator.key] ? styles.journalIndicatorActive : styles.journalIndicatorInactive}>
+                <div className={styles.journalIndicatorDot} style={{ backgroundColor: form[indicator.key] ? "#10B981" : "#6B7280" }}></div>
+                <span className={form[indicator.key] ? styles.journalIndicatorLabelActive : styles.journalIndicatorLabelInactive}>{indicator.label}</span>
               </div>
-            </div>
+            ))}
           </div>
+        </div>
 
-          <button type="submit" className={styles.submitButton} disabled={loading}>
-            {loading ? "Processing..." : "Update Journal Entry"}
-          </button>
-        </form>
+        {/* Review Section (read-only + editable) */}
+        <div className={styles.journalCard}>
+          <h3 className={styles.journalCardTitleReview}>Review Analysis</h3>
+
+          {/* Show actionPlan and notes in read-only mode */}
+          {form.actionPlan && (
+            <div className={styles.journalReadOnlyBlock}>
+              <label className={styles.journalLabel}>Action Plan</label>
+              <div className={styles.journalReadOnlyValue}>{form.actionPlan}</div>
+            </div>
+          )}
+          {form.notes && (
+            <div className={styles.journalReadOnlyBlock}>
+              <label className={styles.journalLabel}>Original Notes</label>
+              <div className={styles.journalReadOnlyValue}>{form.notes}</div>
+            </div>
+          )}
+
+          {/* Editable review notes and chart upload */}
+          <form onSubmit={handleSubmit}>
+            <div className={styles.journalFormGroup}>
+              <label className={styles.journalLabel}>Updated Analysis & Notes</label>
+              <textarea name="reviewNotes" value={form.reviewNotes} onChange={handleChange} className={styles.journalTextarea} placeholder="Add your updated analysis, observations, and learnings..." rows="6" />
+            </div>
+            <CommonAddChart
+              addChart={handleFileChange}
+              removeChart={removeEntryChart}
+              charts={form.reviewCharts}
+              title="Review Charts"
+            />
+            <div style={{ marginTop: '20px' }}></div>
+            <button type="submit" className={styles.journalSubmitButton} disabled={loading}>
+              {loading ? "Processing..." : "Update Journal Entry"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

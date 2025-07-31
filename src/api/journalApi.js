@@ -5,11 +5,11 @@ export const getJournalById = (id) => API.get(`/journal/${id}`);
 export const deleteJournal = (id) => API.delete(`/journal/${id}`);
 export const updateJournal = (id, form) => {
   const formData = new FormData();
-  formData.append('notes', form.notes);
+  formData.append('reviewNotes', form.reviewNotes);
 
-  // Append review screenshot if provided
-  if (form.reviewScreenshot) {
-    formData.append('reviewScreenshot', form.reviewScreenshot);
+  if (form.reviewCharts) {
+    const files = Array.from(form.reviewCharts);
+    files.forEach(file => formData.append('reviewCharts', file));
   }
 
   return API.put(`/journal/${id}`, formData, {
@@ -22,24 +22,29 @@ export const updateJournal = (id, form) => {
 // Create journal entry
 export async function createJournal(form) {
   const formData = new FormData();
-  formData.append('date', form.date);
-  formData.append('stock', form.stock);
+  console.log('Form data being sent:', form);
+  formData.append('entryDate', form.date);
+  formData.append('ticker', form.stock);
   formData.append('trend', form.trend);
-  formData.append('candle_type', form.candle_type);
-  formData.append('near_support', form.near_support);
-  formData.append('near_resistance', form.near_resistance);
-  formData.append('support_level', form.support_level);
-  formData.append('resistance_level', form.resistance_level);
-  formData.append('ema_touch', form.ema_touch);
-  formData.append('volume_spike', form.volume_spike);
-  formData.append('rsi_value', form.rsi_value);
-  formData.append('entry_considered', form.entry_considered);
-  formData.append('action_plan', form.action_plan);
-  formData.append('notes', form.notes);
+  formData.append('candleType', form.candleType);
+  formData.append('nearSupport', form.nearSupport);
+  formData.append('nearResistance', form.nearResistance);
+  formData.append('supportLevel', form.supportLevel);
+  formData.append('resistanceLevel', form.resistanceLevel);
+  formData.append('emaTouch', form.emaTouch);
+  formData.append('volumeSpike', form.volumeSpike);
+  formData.append('rsiValue', form.rsiValue);
+  formData.append('entryConsidered', form.entryConsidered);
+  formData.append('actionPlan', form.actionPlan);
+  formData.append('entryNotes', form.notes);
+  formData.append('setupConfidence', form.setupConfidence);
+  let setupType = Number(form.setupType)
+  formData.append('setupType', setupType); 
 
   // Append screenshot if provided
-  if (form.screenshot) {
-    formData.append('screenshot', form.screenshot);
+  if (form.entryCharts) {
+    const files = Array.from(form.entryCharts);
+    files.forEach(file => formData.append('entryCharts', file));
   }
 
   return API.post('/journal', formData, {

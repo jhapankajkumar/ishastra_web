@@ -1,7 +1,6 @@
 import React from "react";
-import { getTickerBySymbol } from '../data/tickerData';
-
-export default function JournalDetailsPopup({ journal, onClose }) {
+import ImageGallery from "../../components/ImageGallery";
+export default function JournalDetailsPopup({ journal, charts, onClose }) {
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
     const d = new Date(dateStr);
@@ -21,7 +20,8 @@ export default function JournalDetailsPopup({ journal, onClose }) {
     }
   };
 
-  const companyName = getTickerBySymbol(journal.stock)?.name;
+  const entryImages = charts.filter(img => img.imageType === "entry") || [];
+  const exitImages = charts.filter(img => img.imageType === "review") || [];
 
   return (
     <div style={{
@@ -130,17 +130,15 @@ export default function JournalDetailsPopup({ journal, onClose }) {
             color: "#9CA3AF",
             margin: 0
           }}>
-            Chart Reading Analysis - {formatDate(journal.date)}
+            Chart Reading Analysis - {formatDate(journal.entryDate)}
           </p>
-          {companyName && (
-            <p style={{
+          <p style={{
               fontSize: "14px",
               color: "#6B7280",
               margin: "4px 0 0 0"
             }}>
-              {companyName}
+              {journal.ticker}
             </p>
-          )}
         </div>
 
         {/* Basic Info Section */}
@@ -181,7 +179,7 @@ export default function JournalDetailsPopup({ journal, onClose }) {
                 color: "#E5E7EB",
                 fontWeight: "500"
               }}>
-                {formatDate(journal.date)}
+                {formatDate(journal.entryDate)}
               </span>
             </div>
             
@@ -223,7 +221,7 @@ export default function JournalDetailsPopup({ journal, onClose }) {
                 color: "#E5E7EB",
                 fontWeight: "500"
               }}>
-                {journal.candle_type || "-"}
+                {journal.candleType || "-"}
               </span>
             </div>
 
@@ -239,10 +237,10 @@ export default function JournalDetailsPopup({ journal, onClose }) {
               </label>
               <span style={{
                 fontSize: "16px",
-                color: journal.entry_considered ? "#10B981" : "#9CA3AF",
+                color: journal.entryConsidered ? "#10B981" : "#9CA3AF",
                 fontWeight: "600"
               }}>
-                {journal.entry_considered ? "Yes" : "No"}
+                {journal.entryConsidered ? "Yes" : "No"}
               </span>
             </div>
           </div>
@@ -286,7 +284,7 @@ export default function JournalDetailsPopup({ journal, onClose }) {
                 color: "#E5E7EB",
                 fontWeight: "500"
               }}>
-                {journal.support_level ? `$${Number(journal.support_level).toFixed(2)}` : "-"}
+                {journal.supportLevel ? `$${Number(journal.supportLevel).toFixed(2)}` : "-"}
               </span>
             </div>
             
@@ -305,7 +303,7 @@ export default function JournalDetailsPopup({ journal, onClose }) {
                 color: "#E5E7EB",
                 fontWeight: "500"
               }}>
-                {journal.resistance_level ? `$${Number(journal.resistance_level).toFixed(2)}` : "-"}
+                {journal.resistanceLevel ? `$${Number(journal.resistanceLevel).toFixed(2)}` : "-"}
               </span>
             </div>
 
@@ -324,7 +322,7 @@ export default function JournalDetailsPopup({ journal, onClose }) {
                 color: "#E5E7EB",
                 fontWeight: "500"
               }}>
-                {journal.rsi_value ? Number(journal.rsi_value).toFixed(1) : "-"}
+                {journal.rsiValue ? Number(journal.rsiValue).toFixed(1) : "-"}
               </span>
             </div>
           </div>
@@ -337,10 +335,10 @@ export default function JournalDetailsPopup({ journal, onClose }) {
             marginTop: 20
           }}>
             {[
-              { key: 'near_support', label: 'Near Support' },
-              { key: 'near_resistance', label: 'Near Resistance' },
-              { key: 'ema_touch', label: 'EMA Touch' },
-              { key: 'volume_spike', label: 'Volume Spike' }
+              { key: 'nearSupport', label: 'Near Support' },
+              { key: 'nearResistance', label: 'Near Resistance' },
+              { key: 'emaTouch', label: 'EMA Touch' },
+              { key: 'volumeSpike', label: 'Volume Spike' }
             ].map(indicator => (
               <div key={indicator.key} style={{
                 display: "flex",
@@ -386,7 +384,7 @@ export default function JournalDetailsPopup({ journal, onClose }) {
             Analysis & Notes
           </h3>
 
-          {journal.action_plan && (
+          {journal.actionPlan && (
             <div style={{ marginBottom: 20 }}>
               <label style={{
                 fontSize: "14px",
@@ -407,13 +405,13 @@ export default function JournalDetailsPopup({ journal, onClose }) {
                 lineHeight: "1.5",
                 whiteSpace: "pre-wrap"
               }}>
-                {journal.action_plan}
+                {journal.actionPlan}
               </div>
             </div>
           )}
 
-          {journal.notes && (
-            <div style={{ marginBottom: journal.screenshot_url ? 20 : 0 }}>
+          {journal.entryNotes && (
+            <div style={{ marginBottom: entryImages.length > 0 ? 20 : 0 }}>
               <label style={{
                 fontSize: "14px",
                 fontWeight: "500",
@@ -433,14 +431,54 @@ export default function JournalDetailsPopup({ journal, onClose }) {
                 lineHeight: "1.5",
                 whiteSpace: "pre-wrap"
               }}>
-                {journal.notes}
+                {journal.entryNotes}
               </div>
             </div>
           )}
 
           {/* Screenshot */}
-          {journal.screenshot_url && (
-            <div style={{ marginBottom: journal.review_screenshot_url ? 24 : 0 }}>
+          {entryImages.length > 0 && (
+              <div style={{ marginBottom: entryImages.length > 0 ? 20 : 0 }}>
+                <label style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#9CA3AF",
+                display: "block",
+                marginBottom: 8
+              }}>
+                Entry Files
+              </label>
+                <ImageGallery
+                  images={entryImages.map(img => ({
+                    src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
+                    alt: "Entry Trade"
+                  }))}
+                  maxHeight={220}
+                />
+              </div>
+            )}
+
+          {/* Review Screenshot */}
+          
+        </div>
+         {journal.reviewNotes && <div style={{
+          backgroundColor: "#1A2332",
+          borderRadius: 12,
+          padding: 24,
+          marginBottom: 24,
+          border: "1px solid #2A3441"
+        }}>
+          <h3 style={{
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#8B5CF6",
+            margin: "0 0 20px 0"
+          }}>
+            Review & Notes
+          </h3>
+
+          {journal.reviewNotes && (
+            <div style={{ marginBottom: charts > 0 ? 20 : 0 }}>
               <label style={{
                 fontSize: "14px",
                 fontWeight: "500",
@@ -448,54 +486,47 @@ export default function JournalDetailsPopup({ journal, onClose }) {
                 display: "block",
                 marginBottom: 8
               }}>
-                Original Chart Screenshot
+                Review Notes
               </label>
-              <div style={{ marginBottom: 0 }}>
-                <img
-                  src={`http://localhost:8000/${journal.screenshot_url}`}
-                  alt="Original Chart Screenshot"
-                  style={{ 
-                    width: "100%", 
-                    maxHeight: "500px", 
-                    objectFit: "contain", 
-                    borderRadius: 8, 
-                    border: "1px solid #2A3441",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.25)" 
-                  }}
-                />
+              <div style={{
+                backgroundColor: "#0F1419",
+                border: "1px solid #2A3441",
+                borderRadius: 8,
+                padding: 16,
+                color: "#E5E7EB",
+                fontSize: "15px",
+                lineHeight: "1.5",
+                whiteSpace: "pre-wrap"
+              }}>
+                {journal.reviewNotes}
               </div>
             </div>
           )}
 
-          {/* Review Screenshot */}
-          {journal.review_screenshot_url && (
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 8
-              }}>
-                Review Chart Screenshot
-              </label>
-              <div style={{ marginBottom: 0 }}>
-                <img
-                  src={`http://localhost:8000/${journal.review_screenshot_url}`}
-                  alt="Review Chart Screenshot"
-                  style={{ 
-                    width: "100%", 
-                    maxHeight: "500px", 
-                    objectFit: "contain", 
-                    borderRadius: 8, 
-                    border: "1px solid #2A3441",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.25)" 
-                  }}
+          {/* Screenshot */}
+          {exitImages.length > 0 && (
+              <div style={{ marginTop: exitImages.length > 0 ? 20 : 0 }} >
+                <h4 style={{
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "#9CA3AF",
+                  margin: "0 0 16px 0"
+                }}>
+                  Exit Files
+                </h4>
+                <ImageGallery
+                  images={exitImages.map(img => ({
+                    src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
+                    alt: "Exit Trade"
+                  }))}
+                  maxHeight={220}
                 />
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+          {/* Review Screenshot */}
+          
+        </div>} 
       </div>
     </div>
   );

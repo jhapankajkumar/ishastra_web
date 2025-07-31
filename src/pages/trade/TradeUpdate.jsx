@@ -7,6 +7,7 @@ import { getCurrentPrice } from '../../api/tickerApi';
 import { useNotification } from '../../components/NotificationProvider';
 import ErrorPage from '../../components/ErrorPage';
 import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
+import CommonAddChart from '../../components/CommonAddChart';
 
 const TradeUpdate = () => {
   const { id } = useParams();
@@ -140,7 +141,8 @@ const TradeUpdate = () => {
   const handleExitFormChange = (e) => {
     const { name, value, files } = e.target;
     if (files) {
-      setExitForm(prev => ({ ...prev, [name]: Array.from(files) }));
+      console.log('Files selected:', files, name);
+      setExitForm(prev => ({ ...prev, exitCharts: Array.from(files) }));
     } else {
       setExitForm(prev => {
         const updated = { ...prev, [name]: value };
@@ -573,34 +575,12 @@ const TradeUpdate = () => {
                     required
                   />
                 </div>
-
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Exit Charts (Optional)</label>
-                  <input
-                    type="file"
-                    name="exitCharts"
-                    onChange={handleExitFormChange}
-                    className={styles.fileInput}
-                    multiple
-                    accept="image/*"
-                  />
-                  {exitForm.exitCharts.length > 0 && (
-                    <div className={styles.fileList}>
-                      {exitForm.exitCharts.map((file, index) => (
-                        <div key={index} className={styles.fileItem}>
-                          <span>{file.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeExitChart(index)}
-                            className={styles.removeFileButton}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <CommonAddChart
+                  addChart={handleExitFormChange}
+                  removeChart={removeExitChart}
+                  charts={exitForm.exitCharts}
+                  title="Exit Charts (Optional)"
+                />
 
                 <div className={styles.buttonGroup}>
                   <button

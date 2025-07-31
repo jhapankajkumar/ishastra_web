@@ -3,9 +3,7 @@ import React from "react";
 export default function TradeContextSection(props) {
   const { form, handleChange, isReview, isUpdate, setups, setupsLoaded, entryDisabled, styles } = props;
   const safeSetups = Array.isArray(setups) ? setups : [];
-  
-  console.log('TradeContextSection - setups:', setups, 'setupsLoaded:', setupsLoaded, 'safeSetups:', safeSetups);
-  
+
   return (
     <div className={styles.cardSection}>
       <h2 className={styles.sectionTitle}>Trade Context & Setup 🔍</h2>
@@ -32,20 +30,36 @@ export default function TradeContextSection(props) {
           <label className={styles.label}>Setup Type</label>
           {entryDisabled ? (
             <div className={styles.readOnlyField}>
-              {!setupsLoaded 
-                ? "Loading..." 
-                : (setups.find(s => String(s.trade_setup_id) === String(form.setupType))?.name || "N/A")
+              {!setupsLoaded
+                ? "Loading..."
+                : (setups.find(s => String(s.tradeSetupId) === String(form.setupType))?.name || "N/A")
               }
             </div>
           ) : (
-            <select name="setupType" value={form.setupType} onChange={handleChange} className={styles.select} disabled={entryDisabled}>
+            <select
+              name="setupType"
+              value={form.setupType}
+              onChange={(e) => {
+                const value = e.target.value;
+                const selectedSetup = safeSetups.find(s => String(s.trade_setup_id) === value);
+                console.log('Selected Setup:', selectedSetup); // Debug log
+                handleChange({
+                  target: {
+                    name: "setupType",
+                    value,
+                    setupName: selectedSetup?.trade_setup_id || 2003
+                  }
+                });
+              }}
+              className={styles.select}
+              disabled={entryDisabled}
+            >
               <option value="">Select setup...</option>
-          {safeSetups.map((setup, index) => {
-            console.log(`Setup ${index}:`, setup, 'trade_setup_id:', setup.trade_setup_id, 'name:', setup.name);
-            return (
-              <option key={setup.trade_setup_id} value={setup.trade_setup_id}>{setup.name}</option>
-            );
-          })}
+              {safeSetups.map((setup) => (
+                <option key={setup.trade_setup_id} value={setup.trade_setup_id}>
+                  {setup.name}
+                </option>
+              ))}
             </select>
           )}
         </div>

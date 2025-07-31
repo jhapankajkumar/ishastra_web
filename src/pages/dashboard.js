@@ -39,6 +39,9 @@ const Dashboard = () => {
     Promise.all([getInvestmentSummary(), getAllInvestments()])
       .then(([summary, list]) => {
         setInvestmentSummary(summary);
+        // Debug log for investment summary
+        // eslint-disable-next-line no-console
+        console.log('[Dashboard] investment summary loaded:', summary);
         setInvestments(list);
         // Debug log for investments data
         // eslint-disable-next-line no-console

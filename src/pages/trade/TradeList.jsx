@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from "../../api/tradeApi";
 import TradeAdd from "./TradeAdd";
-import TradeDetailsPopup from "../../components/TradeDetailsPopup";
+import TradeDetailsPopup from "./TradeDetailsPopup";
 import PageHeader from "../../components/PageHeader";
 import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
@@ -12,6 +12,8 @@ import styles from "./TradeList.module.css";
 export default function TradeList() {
   const navigate = useNavigate();
   const [trades, setTrades] = useState([]);
+  const [sortBy, setSortBy] = useState('entryDate');
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [mode, setMode] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
@@ -37,8 +39,7 @@ export default function TradeList() {
             return { ...trade, exitTransactions: [] };
           }
         }));
-        const sorted = [...tradesWithExits].sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
-        setTrades(sorted);
+        setTrades(tradesWithExits);
         setError(null);
       })
       .catch(err => {
@@ -317,6 +318,58 @@ export default function TradeList() {
     return pl.toFixed(2);
   };
 
+
+  // --- Sorting logic ---
+  const getPLForSort = (trade) => {
+    // Use getPartialPL for correct P&L
+    const pl = getPartialPL(trade);
+    return pl === "-" ? 0 : Number(pl);
+  };
+
+  const getInvestedForSort = (trade) => {
+    const invested = getInvested(trade);
+    return invested === "-" ? 0 : Number(invested);
+  };
+
+  const sortedTrades = [...trades].sort((a, b) => {
+    let valA, valB;
+    switch (sortBy) {
+      case 'ticker':
+        valA = a.ticker?.toUpperCase() || '';
+        valB = b.ticker?.toUpperCase() || '';
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      case 'entryDate':
+        valA = a.entryDate ? new Date(a.entryDate).getTime() : 0;
+        valB = b.entryDate ? new Date(b.entryDate).getTime() : 0;
+        return sortOrder === 'asc' ? valA - valB : valB - valA;
+      case 'entryPrice':
+        valA = a.entryPrice !== undefined && a.entryPrice !== null ? Number(a.entryPrice) : 0;
+        valB = b.entryPrice !== undefined && b.entryPrice !== null ? Number(b.entryPrice) : 0;
+        return sortOrder === 'asc' ? valA - valB : valB - valA;
+      case 'invested':
+        valA = getInvestedForSort(a);
+        valB = getInvestedForSort(b);
+        return sortOrder === 'asc' ? valA - valB : valB - valA;
+      case 'pl':
+        valA = getPLForSort(a);
+        valB = getPLForSort(b);
+        return sortOrder === 'asc' ? valA - valB : valB - valA;
+      default:
+        return 0;
+    }
+  });
+
+  // --- Sorting UI ---
+  const sortOptions = [
+    { value: 'ticker', label: 'Ticker (A-Z)' },
+    { value: 'entryDate', label: 'Entry Date' },
+    { value: 'entryPrice', label: 'Entry Price' },
+    { value: 'invested', label: 'Invested Value' },
+    { value: 'pl', label: 'Profit & Loss' },
+  ];
+
   return (
     <div className={styles.container}>
       <PageHeader
@@ -324,13 +377,35 @@ export default function TradeList() {
         subtitle="View and manage all your trades"
       />
 
-      {trades.length > 0 && !error && (
-        <div className={styles.emptyState}>
-          <h3>No trades found</h3>
-          <p>Start by adding your first trade to track your portfolio.</p>
+      {/* Action Bar */}
+      <div className={styles.actionBar}>
+        <div className={styles.filters}>
+          <label>Sort By:</label>
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            className={styles.filterSelect}
+          >
+            {sortOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <button
+            className={styles.filterSelect}
+            onClick={() => setSortOrder(order => order === 'asc' ? 'desc' : 'asc')}
+            title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            {sortOrder === 'asc' ? '▲' : '▼'}
+          </button>
         </div>
-      )}
-
+        <button
+          className={styles.addButton}
+          onClick={() => navigate('/trades/new')}
+        >
+          + Add Trade
+        </button>
+      </div>
+      {/* Sorting Controls */}
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead className={styles.tableHeader}>
@@ -349,22 +424,12 @@ export default function TradeList() {
             </tr>
           </thead>
           <tbody>
-            {trades.map(trade => {
+            {sortedTrades.map(trade => {
               const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
               const remainingQty = trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty;
               const soldQty = originalQty - remainingQty;
               // Debug logs for exit/PL/avg price
-              console.log('[TradeList] Ticker:', trade.ticker, {
-                exitTransactions: getExitTransactions(trade),
-                lastExitDate: getLastExitDate(trade),
-                avgExitPrice: getAverageExitPrice(trade),
-                partialPL: getPartialPL(trade),
-                soldQty,
-                exitPrice: trade.exitPrice,
-                exitDate: trade.exitDate,
-                originalQty,
-                remainingQty
-              });
+              // console.log('[TradeList] Ticker:', trade.ticker, { ... });
               return (
                 <tr
                   key={trade.tradeId}

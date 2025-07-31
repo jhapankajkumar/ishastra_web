@@ -6,18 +6,19 @@ import PageHeader from "../../components/PageHeader";
 import { getTradeById, addPostAnalysis, getTradeTransactions } from '../../api/tradeApi';
 import { useNotification } from '../../components/NotificationProvider';
 import ErrorPage from '../../components/ErrorPage';
+import CommonAddChart from "../../components/CommonAddChart";
 
 const TradeReview = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [trade, setTrade] = useState(null);
   const [exitTransactions, setExitTransactions] = useState([]);
-  
+
   const [reviewForm, setReviewForm] = useState({
     postTradeAnalysis: '',
     lessonLearned: '',
@@ -28,7 +29,7 @@ const TradeReview = () => {
   const handleReviewFormChange = (e) => {
     const { name, value, files } = e.target;
     if (files) {
-      setReviewForm(prev => ({ ...prev, [name]: Array.from(files) }));
+      setReviewForm(prev => ({ ...prev, reviewCharts: Array.from(files) }));
     } else {
       setReviewForm(prev => ({ ...prev, [name]: value }));
     }
@@ -50,12 +51,12 @@ const TradeReview = () => {
       const response = await getTradeById(id);
       const tradeData = response.data;
       setTrade(tradeData);
-      
+
       // Load exit transactions for P&L calculation
       const txRes = await getTradeTransactions(id);
       const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
       setExitTransactions(exitTx);
-      
+
       // Pre-fill review form
       setReviewForm({
         postTradeAnalysis: tradeData.postTradeAnalysis || '',
@@ -63,7 +64,7 @@ const TradeReview = () => {
         emotionalState: tradeData.emotionalState || '',
         reviewCharts: tradeData.reviewCharts || []
       });
-      
+
     } catch (err) {
       console.error('Error loading trade:', err);
       setError(err.response?.status === 404 ? "Trade not found." : "Unable to load trade data.");
@@ -93,24 +94,24 @@ const TradeReview = () => {
     if (!exitTransactions.length) return 0;
     let totalValue = 0;
     let totalQty = 0;
-    
+
     exitTransactions.forEach(tx => {
       if (tx.price && tx.quantity) {
         totalValue += Number(tx.price) * Number(tx.quantity);
         totalQty += Number(tx.quantity);
       }
     });
-    
+
     return totalQty > 0 ? totalValue / totalQty : 0;
   };
 
   const getPercentGain = () => {
     const avgExit = getAvgExitPrice();
     const entryPrice = Number(trade?.entryPrice || 0);
-    
+
     if (!avgExit || !entryPrice) return 0;
-    
-    return trade.direction?.toLowerCase() === 'long' 
+
+    return trade.direction?.toLowerCase() === 'long'
       ? ((avgExit - entryPrice) / entryPrice) * 100
       : ((entryPrice - avgExit) / entryPrice) * 100;
   };
@@ -165,11 +166,11 @@ const TradeReview = () => {
   const isProfit = totalPL >= 0;
   return (
     <div className={styles.container}>
-      <PageHeader 
-        title={`Trade Review - ${trade.ticker}`} 
+      <PageHeader
+        title={`Trade Review - ${trade.ticker}`}
         subtitle="Analyze your completed trade performance"
-        showBackButton 
-        onBackClick={() => navigate('/')} 
+        showBackButton
+        onBackClick={() => navigate('/')}
       />
 
       <div className={styles.formContainer}>
@@ -260,7 +261,7 @@ const TradeReview = () => {
             </div>
             <div className={styles.perfLabel}>Total P&L</div>
           </div>
-          
+
           <div className={`${styles.perfCard} ${isProfit ? styles.profitCard : styles.lossCard}`}>
             <div className={styles.perfIcon}>%</div>
             <div className={styles.perfValue}>
@@ -272,7 +273,7 @@ const TradeReview = () => {
           <div className={styles.perfCard}>
             <div className={styles.perfIcon}>📅</div>
             <div className={styles.perfValue}>
-              {trade.entryDate && exitTransactions.length ? 
+              {trade.entryDate && exitTransactions.length ?
                 Math.ceil((new Date(exitTransactions[exitTransactions.length - 1]?.transactionDate) - new Date(trade.entryDate)) / (1000 * 60 * 60 * 24)) : 0}
             </div>
             <div className={styles.perfLabel}>Days Held</div>
@@ -302,8 +303,8 @@ const TradeReview = () => {
                     <div className={styles.metricInfo}>
                       <div className={styles.metricLabel}>Entry Date</div>
                       <div className={styles.metricValue}>
-                        {trade.entryDate ? new Date(trade.entryDate).toLocaleDateString('en-US', { 
-                          weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+                        {trade.entryDate ? new Date(trade.entryDate).toLocaleDateString('en-US', {
+                          weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
                         }) : 'N/A'}
                       </div>
                     </div>
@@ -382,9 +383,9 @@ const TradeReview = () => {
                       <div className={styles.metricInfo}>
                         <div className={styles.metricLabel}>Last Exit Date</div>
                         <div className={styles.metricValue}>
-                          {exitTransactions[exitTransactions.length - 1]?.transactionDate ? 
-                            new Date(exitTransactions[exitTransactions.length - 1].transactionDate).toLocaleDateString('en-US', { 
-                              weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+                          {exitTransactions[exitTransactions.length - 1]?.transactionDate ?
+                            new Date(exitTransactions[exitTransactions.length - 1].transactionDate).toLocaleDateString('en-US', {
+                              weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
                             }) : 'N/A'
                           }
                         </div>
@@ -428,12 +429,11 @@ const TradeReview = () => {
 
                     {/* Exit Grade */}
                     <div className={styles.performanceMetric}>
-                      <div className={`${styles.metricIcon} ${
-                        trade.exitGrade === 'A' ? styles.profitIcon : 
-                        trade.exitGrade === 'B' ? styles.metricIcon : 
-                        trade.exitGrade === 'C' ? styles.metricIcon : 
-                        styles.lossIcon
-                      }`}>
+                      <div className={`${styles.metricIcon} ${trade.exitGrade === 'A' ? styles.profitIcon :
+                          trade.exitGrade === 'B' ? styles.metricIcon :
+                            trade.exitGrade === 'C' ? styles.metricIcon :
+                              styles.lossIcon
+                        }`}>
                         ⭐
                       </div>
                       <div className={styles.metricInfo}>
@@ -517,7 +517,7 @@ const TradeReview = () => {
                 <div className={styles.metricInfo}>
                   <div className={styles.metricLabel}>Holding Period</div>
                   <div className={styles.metricValue}>
-                    {trade.entryDate && exitTransactions.length ? 
+                    {trade.entryDate && exitTransactions.length ?
                       Math.ceil((new Date(exitTransactions[exitTransactions.length - 1]?.transactionDate) - new Date(trade.entryDate)) / (1000 * 60 * 60 * 24)) : 0
                     } days
                   </div>
@@ -564,7 +564,7 @@ const TradeReview = () => {
                     <strong>Exit:</strong> {trade.market === "India" ? "₹" : "$"}{getAvgExitPrice().toFixed(2)}
                   </span>
                   <span className={styles.summaryStatItem}>
-                    <strong>Difference:</strong> 
+                    <strong>Difference:</strong>
                     <span className={`${totalPL >= 0 ? styles.profitText : styles.lossText}`}>
                       {trade.market === "India" ? "₹" : "$"}{Math.abs(getAvgExitPrice() - Number(trade.entryPrice || 0)).toFixed(2)}
                     </span>
@@ -579,13 +579,13 @@ const TradeReview = () => {
         <form onSubmit={handleSubmit} className={styles.reviewForm}>
           <div className={styles.formSection}>
             <h3>📝 Trade Review</h3>
-            
+
             <div className={styles.fieldGroup}>
               <label className={styles.label}>How did you feel during this trade?</label>
-              <select 
-                name="emotionalState" 
-                value={reviewForm.emotionalState} 
-                onChange={handleChange} 
+              <select
+                name="emotionalState"
+                value={reviewForm.emotionalState}
+                onChange={handleChange}
                 className={styles.select}
               >
                 <option value="">Select...</option>
@@ -612,7 +612,7 @@ const TradeReview = () => {
                 required
               />
             </div>
-            
+
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Additional analysis (optional)</label>
               <textarea
@@ -624,44 +624,50 @@ const TradeReview = () => {
                 placeholder="Market conditions, setup quality, execution details, future improvements..."
               />
             </div>
-            <div className={styles.fieldGroup}>
-                              <label className={styles.label}>Review Charts (Optional)</label>
-                              <input
-                                type="file"
-                                name="reviewCharts"
-                                onChange={handleReviewFormChange}
-                                className={styles.fileInput}
-                                multiple
-                                accept="image/*"
-                              />
-                              {reviewForm.reviewCharts.length > 0 && (
-                                <div className={styles.fileList}>
-                                  {reviewForm.reviewCharts.map((file, index) => (
-                                    <div key={index} className={styles.fileItem}>
-                                      <span>{file.name}</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => removeReviewChart(index)}
-                                        className={styles.removeFileButton}
-                                      >
-                                        ×
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+            <CommonAddChart
+              addChart={handleReviewFormChange}
+              removeChart={removeReviewChart}
+              charts={reviewForm.reviewCharts}
+              title="Review Charts (Optional)"
+            />
+            {/* <div className={styles.fieldGroup}>
+              <label className={styles.label}>Review Charts (Optional)</label>
+              <input
+                type="file"
+                name="reviewCharts"
+                onChange={handleReviewFormChange}
+                className={styles.fileInput}
+                multiple
+                accept="image/*"
+              />
+              {reviewForm.reviewCharts.length > 0 && (
+                <div className={styles.fileList}>
+                  {reviewForm.reviewCharts.map((file, index) => (
+                    <div key={index} className={styles.fileItem}>
+                      <span>{file.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeReviewChart(index)}
+                        className={styles.removeFileButton}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div> */}
 
             <div className={styles.buttonGroup}>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => navigate('/')}
                 className={styles.skipButton}
               >
                 Skip Review
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className={styles.submitButton}
                 disabled={submitting}
               >

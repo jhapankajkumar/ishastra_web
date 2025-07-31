@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { getAllJournals, getJournalById, deleteJournal } from "../../api/journalApi";
-import JournalDetailsPopup from "../../components/JournalDetailsPopup";
+import JournalDetailsPopup from "./JournalDetailsPopup";
 import PageHeader from "../../components/PageHeader";
 import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
-import { getTickerBySymbol } from '../../data/tickerData';
 import { useNavigate } from "react-router-dom";
 import styles from "./JournalList.module.css";
 
@@ -23,7 +22,8 @@ export default function JournalList() {
     setLoading(true);
     getAllJournals()
       .then(res => {
-        const sorted = [...res.data].sort((a, b) => new Date(b.date) - new Date(a.date));
+        console.log('Fetched journals:', res.data.data);
+        const sorted = [...res.data.data].sort((a, b) => new Date(b.date) - new Date(a.date));
         setJournals(sorted);
         setError(null);
       })
@@ -76,6 +76,7 @@ export default function JournalList() {
   const handleShowDetails = async (id) => {
     try {
       const res = await getJournalById(id);
+      console.log('Fetched journal details:', res.data);
       setPopupJournal(res.data);
       setShowPopup(true);
     } catch (err) {
@@ -197,13 +198,13 @@ export default function JournalList() {
               >
                 <td className={`${styles.tableCell} ${styles.stockCell}`}>
                   <div className={styles.stockContainer}>
-                    <span className={styles.stockSymbol}>{journal.stock}</span>
-                    {getTickerBySymbol(journal.stock)?.name && (
-                      <span className={styles.companyName}>{getTickerBySymbol(journal.stock).name}</span>
-                    )}
+                    <span className={styles.stockSymbol}>{journal.ticker}</span>
+                    {/* {getTickerBySymbol(journal.ticker)?.name && (
+                      <span className={styles.companyName}>{getTickerBySymbol(journal.ticker).name}</span>
+                    )} */}
                   </div>
                 </td>
-                <td className={`${styles.tableCell} ${styles.dateCell}`}>{formatDate(journal.date)}</td>
+                <td className={`${styles.tableCell} ${styles.dateCell}`}>{formatDate(journal.entryDate)}</td>
                 <td className={styles.tableCell}>
                   <span 
                     className={styles.trendBadge}
@@ -214,18 +215,18 @@ export default function JournalList() {
                 </td>
                 <td className={styles.tableCell}>
                   <div className={styles.signalsContainer}>
-                    {journal.near_support && <span className={styles.signal}>Support</span>}
-                    {journal.near_resistance && <span className={styles.signal}>Resistance</span>}
-                    {journal.ema_touch && <span className={styles.signal}>EMA</span>}
-                    {journal.volume_spike && <span className={styles.signal}>Volume</span>}
-                    {(!journal.near_support && !journal.near_resistance && !journal.ema_touch && !journal.volume_spike) && 
+                    {journal.nearSupport && <span className={styles.signal}>Support</span>}
+                    {journal.nearResistance && <span className={styles.signal}>Resistance</span>}
+                    {journal.emaTouch && <span className={styles.signal}>EMA</span>}
+                    {journal.volumeSpike && <span className={styles.signal}>Volume</span>}
+                    {(!journal.nearSupport && !journal.nearResistance && !journal.emaTouch && !journal.volumeSpike) && 
                       <span className={styles.noSignals}>-</span>
                     }
                   </div>
                 </td>
                 <td className={styles.tableCell}>
-                  <span className={`${styles.entryBadge} ${journal.entry_considered ? styles.entryYes : styles.entryNo}`}>
-                    {journal.entry_considered ? 'Yes' : 'No'}
+                  <span className={`${styles.entryBadge} ${journal.entryConsidered ? styles.entryYes : styles.entryNo}`}>
+                    {journal.entryConsidered ? 'Yes' : 'No'}
                   </span>
                 </td>
                 <td className={styles.tableCell}>
@@ -269,9 +270,12 @@ export default function JournalList() {
                               )}
       {/* Journal Details Popup */}
       {showPopup && popupJournal && (
-        <JournalDetailsPopup 
-          journal={popupJournal} 
-          onClose={handleClosePopup} 
+        console.log('Rendering popup with journal:', popupJournal.analysis),
+        console.log('Rendering popup with charts:', popupJournal.chartImages),
+        <JournalDetailsPopup
+          journal={popupJournal.analysis}
+          charts={popupJournal.chartImages ? popupJournal.chartImages : []}
+          onClose={handleClosePopup}
         />
       )}
 

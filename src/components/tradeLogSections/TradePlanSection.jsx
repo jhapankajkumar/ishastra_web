@@ -1,13 +1,14 @@
-
-
-
-
 import React from "react";
 import TickerSearch from "../TickerSearch";
 import { getCurrentPrice, getATR, getTechnicalIndicators } from '../../api/tickerApi';
 import RiskManagementSection from './RiskManagementSection';
 
 export default function TradePlanSection({ form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades }) {
+  console.log("TradePlanSection Rendered");
+  // --- useRef guards to prevent infinite loops ---
+  const hasSetEntryQty = React.useRef(false);
+  const hasSetStopLoss = React.useRef(false);
+  const hasSetTargets = React.useRef(false);
   // --- ATR fetch state ---
   const [loadingATR, setLoadingATR] = React.useState(false);
   const [currentPrice, setCurrentPrice] = React.useState(null);
@@ -71,6 +72,7 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
     stopLossValue = entryPrice * (parseFloat(fixedPercent) / 100);
   }
 
+  console.log(`Stop Loss Value: ${stopLossValue}, Entry Price: ${entryPrice}, Direction: ${direction}`);
   // Calculate max allowed QTY based on risk per trade
   let maxAllowedQty = 0;
   if (stopLossValue > 0 && entryPrice > 0) {
@@ -79,31 +81,26 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
 
   // Calculate auto QTY if not set or if entryPrice/stopLossValue changes
   let autoQty = maxAllowedQty > 0 ? maxAllowedQty : "";
-
+  // console.log(`Auto QTY: ${autoQty}, Max Allowed QTY: ${maxAllowedQty}, Risk Value: ${riskValue}, Stop Loss Value: ${stopLossValue}`);
   // Use autoQty if user hasn't manually changed QTY, and update as price changes
   // If user manually enters a value, use that, otherwise always use autoQty
   const qtyValue = (form.entryFilledShares === undefined || form.entryFilledShares === null || form.entryFilledShares === "") ? autoQty : form.entryFilledShares;
-
+  let stopLossPrice = "";
   // If the calculated autoQty changes and user hasn't entered a value, update the form value
   React.useEffect(() => {
-    if ((form.entryFilledShares === undefined || form.entryFilledShares === null || form.entryFilledShares === "") && autoQty !== "") {
-      handleChange({ target: { name: "entryFilledShares", value: String(autoQty) } });
-    }
-  }, [autoQty, maxAllowedQty, entryPrice, stopLossValue, riskValue, form.entryFilledShares, handleChange]);
-
-  // Track last calculated autoQty to detect if user has overridden
-  const [lastAutoQty, setLastAutoQty] = React.useState("");
-  React.useEffect(() => {
-    if (!form.entryFilledShares || form.entryFilledShares === "") {
-      setLastAutoQty(autoQty);
-    }
-  }, [autoQty, form.entryFilledShares]);
+    console.log("Auto Qty useEffect triggered", { autoQty });
+    const current = form.entryFilledShares;
+    if (current !== String(autoQty)) {
+        console.log("Auto Qty useEffect triggered after", { autoQty });
+        handleChange({ target: { name: "entryFilledShares", value: String(autoQty) } });
+      }
+  }, [autoQty, stopLossValue]);
 
   // Warn if user QTY > maxAllowedQty
   const qtyWarning = parseFloat(form.entryFilledShares) > maxAllowedQty;
 
   // Calculate stop loss price
-  let stopLossPrice = "";
+  
   if (stopLossMethod === "ATR" && atrValue && entryPrice) {
     // Use ATR * atrMultiplier for stop loss price calculation
     const atrStop = (parseFloat(atrValue) || 0) * atrMultiplier;
@@ -125,6 +122,28 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
     }
   }
 
+  // Reset hasSetStopLoss ref if any dependency changes that affects stopLossPrice calculation
+  React.useEffect(() => {
+    hasSetStopLoss.current = false;
+    hasSetTargets.current = false;
+  }, [atrMultiplier, atrValue, entryPrice, direction, stopLossMethod, fixedPercent, form.stopLossPrice]);
+
+  React.useEffect(() => {
+    console.log("StopLoss useEffect triggered", { stopLossPrice });
+    if (!hasSetStopLoss.current && stopLossPrice && stopLossPrice !== form.stopLossPrice) {
+      if (form.stopLossPrice !== stopLossPrice) {
+        handleChange({
+          target: {
+            name: "stopLossPrice",
+            value: stopLossPrice,
+          },
+        });
+      }
+      hasSetStopLoss.current = true;
+    }
+  }, [stopLossPrice, form.stopLossPrice, handleChange]);
+
+
   // Calculate targets (1:2, 1:3, 1:4)
   const targets = [2, 3, 4].map(mult => {
     if (!stopLossValue || !entryPrice) return "";
@@ -134,6 +153,24 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
       return (entryPrice - stopLossValue * mult).toFixed(2);
     }
   });
+
+  React.useEffect(() => {
+    console.log("Target calculation triggered", { entryPrice, stopLossValue });
+    if (!entryPrice || !stopLossValue || hasSetTargets.current) return;
+
+    const entry = parseFloat(entryPrice);
+    const risk = parseFloat(stopLossValue); // Risk per share
+
+    const t1 = (entry + risk * 2).toFixed(2);
+    const t2 = (entry + risk * 3).toFixed(2);
+    const t3 = (entry + risk * 4).toFixed(2);
+
+    if (form.target1 !== t1) handleChange({ target: { name: "target1", value: t1 } });
+    if (form.target2 !== t2) handleChange({ target: { name: "target2", value: t2 } });
+    if (form.target3 !== t3) handleChange({ target: { name: "target3", value: t3 } });
+
+    hasSetTargets.current = true;
+  }, [entryPrice, stopLossValue, handleChange]);
 
   // Set default entry date as today if not set
   const entryDate = form.entryDate || today;

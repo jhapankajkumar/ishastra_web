@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import TradeContextSection from "../../components/tradeLogSections/TradeContextSection";
 import TradePlanSection from "../../components/tradeLogSections/TradePlanSection";
 import NotesSection from "../../components/tradeLogSections/NotesSection";
-import ExitSection from "../../components/tradeLogSections/ExitSection";
 import PostTradeAnalysisSection from "../../components/tradeLogSections/PostTradeAnalysisSection";
 import TechnicalIndicators from "../../components/TechnicalIndicators";
 import { useNavigate } from "react-router-dom";
@@ -53,12 +52,13 @@ const initialState = {
   exitLessons: "",
   exitConfidence: "",
   exitNotes: "",
-  tradeStatus: "Planned"
+  tradeStatus: "Planned",
+  tradeSetupId: 2001, // Use tradeSetupId directly
 };
 
 function mapTradeDataToForm(tradeData) {
-  // Use trade_setup_id directly since that's what we store and what the dropdown uses
-  const setupValue = tradeData.trade_setup_id || "";
+  // Use tradeSetupId directly since that's what we store and what the dropdown uses
+  const setupValue = tradeData.tradeSetupId || "";
   
   // Helper function to safely format dates for input[type="date"]
   const formatDateForInput = (dateValue) => {
@@ -81,31 +81,31 @@ function mapTradeDataToForm(tradeData) {
     ticker: tradeData.ticker || "",
     companyName: tradeData.ticker ? (getTickerBySymbol(tradeData.ticker)?.name || "") : "",
     direction: tradeData.direction || "Long",
-    reasonForEntry: tradeData.reason_for_entry || "",
-    entryDate: formatDateForInput(tradeData.entry_date),
-    entryOrderPrice: tradeData.entry_price ?? "",
-    entryFilledShares: tradeData.entry_filled_shares ?? tradeData.quantity ?? "",
-    exitDate: formatDateForInput(tradeData.exit_date),
-    exitOrderPrice: tradeData.exit_order_price ?? "",
-    exitFilledShares: tradeData.exit_filled_shares ?? "",
-    reasonForExit: tradeData.reason_for_exit ?? "",
-    exitTactic: tradeData.exit_tactic_id ?? "",
-    postTradeAnalysis: tradeData.post_trade_analysis ?? "",
+    reasonForEntry: tradeData.reasonForEntry || "",
+    entryDate: formatDateForInput(tradeData.entryDate),
+    entryOrderPrice: tradeData.entryOrderPrice ?? "",
+    entryFilledShares: tradeData.entryFilledShares ?? tradeData.quantity ?? "",
+    exitDate: formatDateForInput(tradeData.exitDate),
+    exitOrderPrice: tradeData.exitOrderPrice ?? "",
+    exitFilledShares: tradeData.exitFilledShares ?? "",
+    reasonForExit: tradeData.reasonForExit ?? "",
+    exitTactic: tradeData.exitTacticId ?? "",
+    postTradeAnalysis: tradeData.postTradeAnalysis ?? "",
     entryCharts: [],
     exitCharts: [],
     postTradeFiles: [],
     id: tradeData.id,
     setupType: setupValue,
-    timeframesUsed: tradeData.timeframes_used || [],
-    riskPerTrade: tradeData.risk_per_trade || "",
-    stopLossPrice: tradeData.stop_loss_price || "",
-    stopLossMethod: tradeData.stop_loss_method || "",
+    timeframesUsed: tradeData.timeframesUsed || [],
+    riskPerTrade: tradeData.riskPerTrade || "",
+    stopLossPrice: tradeData.stopLossPrice || "",
+    stopLossMethod: tradeData.stopLossMethod || "",
     target1: tradeData.target1 || "",
     target2: tradeData.target2 || "",
     target3: tradeData.target3 || "",
-    atrValue: tradeData.atr_value || "",
-    setupConfidence: tradeData.setup_confidence || "",
-    tradeStatus: tradeData.trade_status || "Planned"
+    atrValue: tradeData.atrValue || "",
+    setupConfidence: tradeData.setupConfidence || "",
+    tradeStatus: tradeData.tradeStatus || "Planned"
   };
 }
 
@@ -141,6 +141,12 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
     } else if (type === 'file') {
       setForm((prev) => ({ ...prev, [name]: files }));
     } else {
+      console.log(`Updating field: ${name} with value: ${value}`); // Debug log
+      if (name === 'setupType') {
+        // Special handling for setupType to also set setupName
+        setForm((prev) => ({ ...prev, tradeSetupId: e.target.setupId }));
+      }
+      
       setForm((prev) => ({ ...prev, [name]: value }));
     }
   };
@@ -281,7 +287,6 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
           )}
           <NotesSection {...{form, handleChange, entryDisabled, styles}} />
           <div className={styles.sectionDivider} />
-          {!isAdd && <ExitSection {...{form, handleChange, exitDisabled, exitTactics, today, styles}} />}
           {isReview && <PostTradeAnalysisSection {...{form, handleChange, postDisabled, styles}} />}
           <button type="submit" className={styles.submitButton} disabled={loading}>
             {loading 

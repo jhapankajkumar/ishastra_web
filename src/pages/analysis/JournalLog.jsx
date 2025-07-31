@@ -9,6 +9,7 @@ import { getTechnicalIndicators } from '../../api/tickerApi';
 import { useNotification } from '../../components/NotificationProvider';
 import ErrorPage from '../../components/ErrorPage';
 import { getTickerBySymbol } from '../../data/tickerData';
+import CommonAddChart from "../../components/CommonAddChart";
 
 const todayStr = new Date().toISOString().split('T')[0];
 const initialState = {
@@ -16,21 +17,20 @@ const initialState = {
   stock: "",
   companyName: "",
   trend: "",
-  candle_type: "",
-  near_support: false,
-  near_resistance: false,
-  support_level: "",
-  resistance_level: "",
-  ema_touch: false,
-  volume_spike: false,
-  rsi_value: "",
-  entry_considered: false,
-  setup_type: "",
-  setup_confidence: "",
-  action_plan: "",
+  candleType: "",
+  nearSupport: false,
+  nearResistance: false,
+  supportLevel: "",
+  resistanceLevel: "",
+  emaTouch: false,
+  volumeSpike: false,
+  rsiValue: "",
+  entryConsidered: false,
+  setupType: 2002,
+  setupConfidence: "",
+  actionPlan: "",
   notes: "",
-  screenshot: null,
-  reviewScreenshot: null,
+  entryCharts: [],
 };
 
 export default function StockAnalysisAdd({ onSubmit }) {
@@ -40,33 +40,34 @@ export default function StockAnalysisAdd({ onSubmit }) {
   const [initialLoading, setInitialLoading] = useState(false);
   const [setups, setSetups] = useState([]);
   const [setupsLoaded, setSetupsLoaded] = useState(false);
-  
+
   // Get today's date in YYYY-MM-DD format for max date validation
   const today = new Date().toISOString().split('T')[0];
   const navigate = useNavigate();
   const notification = useNotification();
   const { id } = useParams(); // Get ID from URL for edit mode
-  
+
   const isEditMode = !!id;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((prev) => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
   const handleFileChange = (e) => {
-    const { files, name } = e.target;
-    const fieldName = name || 'screenshot'; // Default to screenshot for backward compatibility
-    setForm((prev) => ({ ...prev, [fieldName]: files[0] || null }));
+    const { files } = e.target;
+    if (files) {
+      setForm(prev => ({ ...prev, entryCharts: Array.from(files) }));
+    }
   };
 
   // Handle ticker search change (when user types)
   const handleTickerChange = (value) => {
-    setForm((prev) => ({ 
-      ...prev, 
+    setForm((prev) => ({
+      ...prev,
       stock: value,
       companyName: "" // Clear company name when ticker changes
     }));
@@ -87,13 +88,13 @@ export default function StockAnalysisAdd({ onSubmit }) {
     } catch (e) {
       // fallback to blank
     }
-    setForm((prev) => ({ 
-      ...prev, 
+    setForm((prev) => ({
+      ...prev,
       stock: symbol,
       companyName: name,
-      rsi_value: rsi,
-      support_level: support,
-      resistance_level: resistance
+      rsiValue: rsi,
+      supportLevel: support,
+      resistanceLevel: resistance
     }));
   };
   // Fetch setups on mount
@@ -115,11 +116,11 @@ export default function StockAnalysisAdd({ onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       // Create form data without frontend-only fields
       const { companyName, ...formDataForBackend } = form;
-      
+
       if (isEditMode) {
         await updateJournal(id, formDataForBackend);
         notification.success("Journal entry updated successfully!");
@@ -127,13 +128,13 @@ export default function StockAnalysisAdd({ onSubmit }) {
         await createJournal(formDataForBackend);
         notification.success("Journal entry added successfully!");
       }
-      
+
       navigate("/journal", { replace: true });
       window.location.reload();
     } catch (err) {
       console.error('Operation failed:', err);
       let errorMessage = isEditMode ? "Failed to update journal entry. Please try again." : "Operation failed. Please try again.";
-      
+
       if (err.type === 'NETWORK_ERROR') {
         errorMessage = "Unable to connect to server. Please check your internet connection.";
       } else if (err.type === 'SERVER_ERROR') {
@@ -141,7 +142,7 @@ export default function StockAnalysisAdd({ onSubmit }) {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       notification.error(errorMessage);
     } finally {
       setLoading(false);
@@ -154,45 +155,6 @@ export default function StockAnalysisAdd({ onSubmit }) {
     window.location.reload();
   };
 
-  // Load journal data for edit mode
-  useEffect(() => {
-    if (isEditMode) {
-      setInitialLoading(true);
-      getJournalById(id)
-        .then(res => {
-          const journal = res.data;
-          setForm({
-            date: journal.date ? new Date(journal.date).toISOString().split('T')[0] : "",
-            stock: journal.stock || "",
-            companyName: getTickerBySymbol(journal.stock)?.name || "",
-            trend: journal.trend || "",
-            candle_type: journal.candle_type || "",
-            near_support: journal.near_support || false,
-            near_resistance: journal.near_resistance || false,
-            support_level: journal.support_level?.toString() || "",
-            resistance_level: journal.resistance_level?.toString() || "",
-            ema_touch: journal.ema_touch || false,
-            volume_spike: journal.volume_spike || false,
-            rsi_value: journal.rsi_value?.toString() || "",
-            entry_considered: journal.entry_considered || false,
-            action_plan: journal.action_plan || "",
-            notes: journal.notes || "",
-            screenshot: null, // Reset screenshot for editing
-            reviewScreenshot: null, // Reset review screenshot for editing
-          });
-          setError(null);
-        })
-        .catch(err => {
-          console.error('Failed to load journal:', err);
-          setError(err);
-          notification.error('Failed to load journal for editing');
-        })
-        .finally(() => {
-          setInitialLoading(false);
-        });
-    }
-  }, [id, isEditMode, notification]);
-
   // Show error page if there's a network error during initial load
   if (error && error.type === 'NETWORK_ERROR') {
     return (
@@ -203,32 +165,17 @@ export default function StockAnalysisAdd({ onSubmit }) {
       />
     );
   }
-
-  // Show loading state for edit mode initial load
-  if (isEditMode && initialLoading) {
-    return (
-      <div className={styles.container}>
-        <PageHeader 
-          title="Edit Chart Reading"
-          subtitle="Loading journal data..."
-        />
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '200px',
-          color: '#9CA3AF'
-        }}>
-          Loading journal data for editing...
-        </div>
-      </div>
-    );
-  }
+  const removeEntryChart = (index) => {
+    setForm(prev => ({
+      ...prev,
+      entryCharts: prev.entryCharts.filter((_, i) => i !== index)
+    }));
+  };
 
   return (
     <div className={styles.container}>
       {!onSubmit && (
-        <PageHeader 
+        <PageHeader
           title={isEditMode ? "Edit Chart Reading" : "Add Chart Reading"}
           subtitle={isEditMode ? "Update your chart analysis and observations" : "Log your chart analysis and market observations"}
         />
@@ -241,7 +188,7 @@ export default function StockAnalysisAdd({ onSubmit }) {
             <h3 className={`${styles.cardTitle} ${styles.basicTitle}`}>
               Basic Information
             </h3>
-            
+
             <div className={styles.gridTwoCol}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Date</label>
@@ -267,6 +214,7 @@ export default function StockAnalysisAdd({ onSubmit }) {
                   onSelect={handleTickerSelect}
                   placeholder="Search ticker (e.g. AAPL, RELIANCE)"
                   disabled={isEditMode}
+                  instrumentType={"Stocks"}
                   apiSource="yahoo" // Use the same prop as Add Trade for ticker search API
                 />
               </div>
@@ -304,8 +252,8 @@ export default function StockAnalysisAdd({ onSubmit }) {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Setup Type</label>
                 <select
-                  name="setup_type"
-                  value={form.setup_type}
+                  name="setupType"
+                  value={form.setupType}
                   onChange={handleChange}
                   className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   disabled={isEditMode}
@@ -320,8 +268,8 @@ export default function StockAnalysisAdd({ onSubmit }) {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Setup Confidence</label>
                 <select
-                  name="setup_confidence"
-                  value={form.setup_confidence}
+                  name="setupConfidence"
+                  value={form.setupConfidence}
                   onChange={handleChange}
                   className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   disabled={isEditMode}
@@ -341,13 +289,13 @@ export default function StockAnalysisAdd({ onSubmit }) {
             <h3 className={`${styles.cardTitle} ${styles.technicalTitle}`}>
               Technical Analysis {isEditMode && "(Read-only)"}
             </h3>
-            
+
             <div className={styles.gridTwoCol}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Candle Type</label>
                 <select
-                  name="candle_type"
-                  value={form.candle_type}
+                  name="candleType"
+                  value={form.candleType}
                   onChange={handleChange}
                   className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   disabled={isEditMode}
@@ -367,12 +315,11 @@ export default function StockAnalysisAdd({ onSubmit }) {
                 <label className={styles.label}>RSI Value</label>
                 <input
                   type="number"
-                  name="rsi_value"
-                  value={form.rsi_value}
+                  name="rsiValue"
+                  value={form.rsiValue}
                   onChange={handleChange}
                   className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   placeholder="0-100"
-                  min="0"
                   max="100"
                   disabled={isEditMode}
                 />
@@ -382,8 +329,8 @@ export default function StockAnalysisAdd({ onSubmit }) {
                 <label className={styles.label}>Support Level</label>
                 <input
                   type="number"
-                  name="support_level"
-                  value={form.support_level}
+                  name="supportLevel"
+                  value={form.supportLevel}
                   onChange={handleChange}
                   className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   placeholder="0.00"
@@ -395,8 +342,8 @@ export default function StockAnalysisAdd({ onSubmit }) {
                 <label className={styles.label}>Resistance Level</label>
                 <input
                   type="number"
-                  name="resistance_level"
-                  value={form.resistance_level}
+                  name="resistanceLevel"
+                  value={form.resistanceLevel}
                   onChange={handleChange}
                   className={`${styles.input} ${isEditMode ? styles.inputDisabled : styles.inputEnabled}`}
                   placeholder="0.00"
@@ -410,14 +357,14 @@ export default function StockAnalysisAdd({ onSubmit }) {
               <div className={styles.checkboxGroup}>
                 <input
                   type="checkbox"
-                  id="near_support"
-                  name="near_support"
-                  checked={form.near_support}
+                  id="nearSupport"
+                  name="nearSupport"
+                  checked={form.nearSupport}
                   onChange={handleChange}
                   className={styles.checkbox}
                   disabled={isEditMode}
                 />
-                <label htmlFor="near_support" className={styles.checkboxLabel}>
+                <label htmlFor="nearSupport" className={styles.checkboxLabel}>
                   Near Support
                 </label>
               </div>
@@ -425,14 +372,14 @@ export default function StockAnalysisAdd({ onSubmit }) {
               <div className={styles.checkboxGroup}>
                 <input
                   type="checkbox"
-                  id="near_resistance"
-                  name="near_resistance"
-                  checked={form.near_resistance}
+                  id="nearResistance"
+                  name="nearResistance"
+                  checked={form.nearResistance}
                   onChange={handleChange}
                   className={styles.checkbox}
                   disabled={isEditMode}
                 />
-                <label htmlFor="near_resistance" className={styles.checkboxLabel}>
+                <label htmlFor="nearResistance" className={styles.checkboxLabel}>
                   Near Resistance
                 </label>
               </div>
@@ -440,14 +387,14 @@ export default function StockAnalysisAdd({ onSubmit }) {
               <div className={styles.checkboxGroup}>
                 <input
                   type="checkbox"
-                  id="ema_touch"
-                  name="ema_touch"
-                  checked={form.ema_touch}
+                  id="emaTouch"
+                  name="emaTouch"
+                  checked={form.emaTouch}
                   onChange={handleChange}
                   className={styles.checkbox}
                   disabled={isEditMode}
                 />
-                <label htmlFor="ema_touch" className={styles.checkboxLabel}>
+                <label htmlFor="emaTouch" className={styles.checkboxLabel}>
                   EMA Touch
                 </label>
               </div>
@@ -455,14 +402,14 @@ export default function StockAnalysisAdd({ onSubmit }) {
               <div className={styles.checkboxGroup}>
                 <input
                   type="checkbox"
-                  id="volume_spike"
-                  name="volume_spike"
-                  checked={form.volume_spike}
+                  id="volumeSpike"
+                  name="volumeSpike"
+                  checked={form.volumeSpike}
                   onChange={handleChange}
                   className={styles.checkbox}
                   disabled={isEditMode}
                 />
-                <label htmlFor="volume_spike" className={styles.checkboxLabel}>
+                <label htmlFor="volumeSpike" className={styles.checkboxLabel}>
                   Volume Spike
                 </label>
               </div>
@@ -470,14 +417,14 @@ export default function StockAnalysisAdd({ onSubmit }) {
               <div className={styles.checkboxGroup}>
                 <input
                   type="checkbox"
-                  id="entry_considered"
-                  name="entry_considered"
-                  checked={form.entry_considered}
+                  id="entryConsidered"
+                  name="entryConsidered"
+                  checked={form.entryConsidered}
                   onChange={handleChange}
                   className={styles.checkbox}
                   disabled={isEditMode}
                 />
-                <label htmlFor="entry_considered" className={styles.checkboxLabel}>
+                <label htmlFor="entryConsidered" className={styles.checkboxLabel}>
                   Potential Trade
                 </label>
               </div>
@@ -494,8 +441,8 @@ export default function StockAnalysisAdd({ onSubmit }) {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Action Plan</label>
                 <textarea
-                  name="action_plan"
-                  value={form.action_plan}
+                  name="actionPlan"
+                  value={form.actionPlan}
                   onChange={handleChange}
                   rows={4}
                   className={`${styles.textarea} ${styles.inputEnabled}`}
@@ -516,78 +463,12 @@ export default function StockAnalysisAdd({ onSubmit }) {
                 />
               </div>
 
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Chart Screenshot</label>
-                <div className={styles.fileInputWrapper}>
-                  <input
-                    type="file"
-                    id="screenshot"
-                    name="screenshot"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className={styles.customFileInput}
-                  />
-                  <label 
-                    htmlFor="screenshot" 
-                    className={`${styles.fileInputLabel} ${form.screenshot ? styles.hasFile : ''}`}
-                  >
-                    <svg className={styles.fileInputIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-                    </svg>
-                    {form.screenshot ? form.screenshot.name : 'Choose chart screenshot'}
-                  </label>
-                  {form.screenshot && (
-                    <div className={styles.fileName}>{form.screenshot.name}</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Review Section - Only show in edit mode */}
-          {isEditMode && (
-            <div className={styles.card}>
-              <h3 className={`${styles.cardTitle} ${styles.technicalTitle}`}>
-                Review Analysis
-              </h3>
-              
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Updated Analysis & Notes</label>
-                <textarea
-                  name="notes"
-                  value={form.notes}
-                  onChange={handleChange}
-                  className={`${styles.textarea} ${styles.inputEnabled}`}
-                  placeholder="Add your updated analysis, observations, and learnings..."
-                  rows="6"
-                />
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Review Chart Screenshot</label>
-                <div className={styles.fileInputWrapper}>
-                  <input
-                    type="file"
-                    id="reviewScreenshot"
-                    name="reviewScreenshot"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className={styles.customFileInput}
-                  />
-                  <label 
-                    htmlFor="reviewScreenshot" 
-                    className={`${styles.fileInputLabel} ${form.reviewScreenshot ? styles.hasFile : ''}`}
-                  >
-                    <svg className={styles.fileInputIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-                    </svg>
-                    {form.reviewScreenshot ? form.reviewScreenshot.name : 'Choose review screenshot'}
-                  </label>
-                  {form.reviewScreenshot && (
-                    <div className={styles.fileName}>{form.reviewScreenshot.name}</div>
-                  )}
-                </div>
-              </div>
+              <CommonAddChart
+                addChart={handleFileChange}
+                removeChart={removeEntryChart}
+                charts={form.entryCharts}
+                title="Entry Charts"
+              />
             </div>
           )}
 
