@@ -25,7 +25,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // Tabs: 'trading' or 'investment'
-  const [activeTab, setActiveTab] = useState('trading');
+  const [activeTab, setActiveTab] = useState('investment');
   // Investment tab state
   const [investmentSummary, setInvestmentSummary] = useState(null);
   const [investments, setInvestments] = useState([]);
@@ -37,15 +37,37 @@ const Dashboard = () => {
     setInvestmentLoading(true);
     setInvestmentError(null);
     Promise.all([getInvestmentSummary(), getAllInvestments()])
-      .then(([summary, list]) => {
-        setInvestmentSummary(summary);
+      .then(([summaryResponse, listResponse]) => {
+        let summary = summaryResponse?.data || {};
+        let list = listResponse.data || [];
+        // Calculate values from investments if not present in summary
+        let totalInvested = 0;
+        let totalHoldings = 0;
+        let unrealizedPnL = 0;
+        let avgBuyPrice = 0;
+        if (Array.isArray(list) && list.length > 0) {
+          totalInvested = list.reduce((sum, inv) => sum + ((inv.avgBuyPrice || 0) * (inv.quantity || 0)), 0);
+          totalHoldings = list.reduce((sum, inv) => sum + ((inv.currentPrice || 0) * (inv.quantity || 0)), 0);
+          unrealizedPnL = list.reduce((sum, inv) => sum + ((inv.currentPrice - inv.avgBuyPrice) * (inv.quantity || 0)), 0);
+          avgBuyPrice = totalInvested && list.length ? totalInvested / list.reduce((sum, inv) => sum + (inv.quantity || 0), 0) : 0;
+        }
+
+        let mappedSummary = {
+          totalInvested,
+          totalHoldings,
+          unrealizedPnL,
+          avgBuyPrice,
+        };
+
+        setInvestmentSummary(mappedSummary);
         // Debug log for investment summary
         // eslint-disable-next-line no-console
-        console.log('[Dashboard] investment summary loaded:', summary);
+        // console.log('[Dashboard] investment summary loaded:', mappedSummary);
         setInvestments(list);
+        console.log('Investments:', list);
         // Debug log for investments data
         // eslint-disable-next-line no-console
-        console.log('[Dashboard] investments loaded:', list);
+        // console.log('[Dashboard] investments loaded:', list);
       })
       .catch((err) => {
         setInvestmentError(err);
@@ -303,7 +325,6 @@ const Dashboard = () => {
     );
   }
 
-  if (!stats) return <div>Loading...</div>;
 
   return (
     <div className={styles.dashboardContainer}>
@@ -409,29 +430,8 @@ const Dashboard = () => {
                   <div style={{ fontSize: 36, fontWeight: 800, color: "#F59E0B", letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString() ?? '-'}</div>
                 </div>
                 {/* Card: Avg Buy Price */}
-                <div style={{
-                  background: "linear-gradient(135deg, #1A2332 60%, #2A3441 100%)",
-                  borderRadius: 16,
-                  padding: 28,
-                  border: "1px solid #2A3441",
-                  textAlign: "center",
-                  boxShadow: "0 4px 24px 0 rgba(229,231,235,0.08)",
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}>
-                  <span style={{
-                    position: 'absolute',
-                    top: 18, left: 18,
-                    fontSize: 28,
-                    color: '#E5E7EB',
-                    opacity: 0.18
-                  }}>🏷️</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Avg Buy Price</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: "#E5E7EB", letterSpacing: 1 }}>₹{investmentSummary?.avgBuyPrice?.toLocaleString() ?? '-'}</div>
-                </div>
+                
               </div>
-
-
 
               {/* Investment Analytics Section */}
               <div style={{
@@ -449,6 +449,9 @@ const Dashboard = () => {
                   padding: 36,
                   border: "1px solid #2A3441",
                   minHeight: 260,
+                  maxWidth: 600,
+                  maxHeight: 350,
+                  width: '90%',
                   boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
                   position: 'relative',
                   overflow: 'hidden',
@@ -464,6 +467,9 @@ const Dashboard = () => {
                   padding: 36,
                   border: "1px solid #2A3441",
                   minHeight: 260,
+                  maxWidth: 600,
+                  maxHeight: 350,
+                  width: '90%',
                   boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
                   position: 'relative',
                   overflow: 'hidden',
@@ -490,6 +496,9 @@ const Dashboard = () => {
                   padding: 36,
                   border: "1px solid #2A3441",
                   minHeight: 220,
+                  maxWidth: 600,
+                  maxHeight: 350,
+                  width: '90%',
                   boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
                   position: 'relative',
                   overflow: 'hidden',
@@ -505,6 +514,9 @@ const Dashboard = () => {
                   padding: 36,
                   border: "1px solid #2A3441",
                   minHeight: 220,
+                  maxWidth: 600,
+                  maxHeight: 350,
+                  width: '80%',
                   boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
                   position: 'relative',
                   overflow: 'hidden',
@@ -520,6 +532,9 @@ const Dashboard = () => {
                   padding: 36,
                   border: "1px solid #2A3441",
                   minHeight: 220,
+                  maxWidth: 600,
+                  maxHeight: 350,
+                  width: '80%',
                   boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
                   position: 'relative',
                   overflow: 'hidden',
@@ -583,6 +598,57 @@ const Dashboard = () => {
                 </div>
               </div>
 
+              {/* Top Gainers*/}
+              <div style={{
+                background: "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
+                borderRadius: 16,
+                padding: 28,
+                border: "1px solid #2A3441",
+                marginBottom: 28,
+                boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                color: '#E5E7EB'
+              }}>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 22px 0", letterSpacing: 0.5 }}>Top Gainers <span title="% return = (Current - Buy)/Buy" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></h3>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(21,27,40,0.98)' }}>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Ticker</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'left' }}>Sector</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'right' }}>% Return</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'right' }}>Unrealized P&L</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const arr = Array.isArray(investments) ? investments : [];
+                        if (!arr.length) return <tr><td colSpan={4} style={{ textAlign: 'center', color: '#9CA3AF', padding: 24 }}>No data</td></tr>;
+                        const sorted = [...arr]
+                          .map(inv => {
+                            const ret = inv.avgBuyPrice ? ((inv.currentPrice - inv.avgBuyPrice) / inv.avgBuyPrice) * 100 : 0;
+                            const pnl = (inv.currentPrice - inv.avgBuyPrice) * inv.quantity;
+                            return { ...inv, ret, pnl };
+                          })
+                          .sort((a, b) => b.ret - a.ret);
+                        const top = sorted.slice(0, 3);
+                        const bottom = sorted.slice(-3).reverse();
+                        return [
+                          ...top.map((inv, idx) => (
+                            <tr key={inv.id || `gainer-${idx}`} style={{ background: '#182032' }}>
+                              <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.ticker}</td>
+                              <td style={{ padding: '12px 14px' }}>{inv.sector || '-'}</td>
+                              <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.ret >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.ret >= 0 ? '+' : ''}{inv.ret.toFixed(2)}%</td>
+                              <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.pnl >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.pnl >= 0 ? '+' : ''}₹{isNaN(inv.pnl) ? '-' : inv.pnl.toLocaleString()}</td>
+                            </tr>
+                          )),
+                          <tr key="sep"><td colSpan={4} style={{ height: 8 }}></td></tr>,
+                        ];
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
               {/* Top Gainers/Losers Table */}
               <div style={{
                 background: "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
@@ -618,14 +684,6 @@ const Dashboard = () => {
                         const top = sorted.slice(0, 3);
                         const bottom = sorted.slice(-3).reverse();
                         return [
-                          ...top.map((inv, idx) => (
-                            <tr key={inv.id || `gainer-${idx}`} style={{ background: '#182032' }}>
-                              <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.ticker}</td>
-                              <td style={{ padding: '12px 14px' }}>{inv.sector || '-'}</td>
-                              <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.ret >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.ret >= 0 ? '+' : ''}{inv.ret.toFixed(2)}%</td>
-                              <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.pnl >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.pnl >= 0 ? '+' : ''}₹{isNaN(inv.pnl) ? '-' : inv.pnl.toLocaleString()}</td>
-                            </tr>
-                          )),
                           <tr key="sep"><td colSpan={4} style={{ height: 8 }}></td></tr>,
                           ...bottom.map((inv, idx) => (
                             <tr key={inv.id || `loser-${idx}`} style={{ background: '#2A1A1A' }}>
@@ -641,7 +699,6 @@ const Dashboard = () => {
                   </table>
                 </div>
               </div>
-
 
               {/* Recent Investments Table - Enhanced */}
               <div style={{
@@ -666,7 +723,7 @@ const Dashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {investments && investments.length > 0 ? investments.slice(0, 8).map((inv, idx) => {
+                      {investments && investments.length > 0 ?  investments.slice().sort((a, b) => b.entryDate - a.entryDate).slice(0, 5).map((inv, idx) => {
                         const pnl = (inv.currentPrice - inv.avgBuyPrice) * inv.quantity;
                         return (
                           <tr key={inv.id || idx} style={{

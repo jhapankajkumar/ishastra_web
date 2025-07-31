@@ -12,7 +12,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 function getMarketCapData(investments) {
   const capMap = {};
   investments.forEach(inv => {
-    const cap = inv.marketCap || 'Unknown';
+    const cap = inv.marketCap.toUpperCase() || 'UNKNOWN';
     const value = (inv.currentPrice || 0) * (inv.quantity || 0);
     capMap[cap] = (capMap[cap] || 0) + value;
   });
