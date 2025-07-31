@@ -381,7 +381,7 @@ const Dashboard = () => {
                     opacity: 0.18
                   }}>💰</span>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Invested</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: "#3B82F6", letterSpacing: 1 }}>₹{investmentSummary?.totalInvested?.toLocaleString() ?? '-'}</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: "#3B82F6", letterSpacing: 1 }}>₹{investmentSummary?.totalInvested?.toFixed(0)?.toLocaleString() ?? '-'}</div>
                 </div>
                 {/* Card: Total Holdings */}
                 <div style={{
@@ -402,7 +402,7 @@ const Dashboard = () => {
                     opacity: 0.18
                   }}>📈</span>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Holdings</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: "#10B981", letterSpacing: 1 }}>₹{investmentSummary?.totalHoldings?.toLocaleString() ?? '-'}</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: "#10B981", letterSpacing: 1 }}>₹{investmentSummary?.totalHoldings?.toFixed(0)?.toLocaleString() ?? '-'}</div>
                 </div>
                 {/* Card: Unrealized P&L */}
                 <div style={{
@@ -423,7 +423,7 @@ const Dashboard = () => {
                     opacity: 0.18
                   }}>💹</span>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Unrealized P&L</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: "#F59E0B", letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString() ?? '-'}</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: "#F59E0B", letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toFixed(0)?.toLocaleString() ?? '-'}</div>
                 </div>
                 {/* Card: Avg Buy Price */}
                 
@@ -523,31 +523,52 @@ const Dashboard = () => {
                 </div>
                 {/* Key Stats & CAGR */}
                 <div style={{
-                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
-                  borderRadius: 16,
-                  padding: 36,
-                  border: "1px solid #2A3441",
-                  minHeight: 220,
+                  background: "radial-gradient(ellipse at 80% 0%, #233554 0%, #1A2332 100%)",
+                  borderRadius: 20,
+                  padding: 38,
+                  border: "1.5px solid #2A3441",
+                  minHeight: 240,
                   maxWidth: 600,
-                  maxHeight: 350,
-                  width: '80%',
-                  boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                  maxHeight: 370,
+                  width: '90%',
+                  boxShadow: "0 6px 32px 0 rgba(59,130,246,0.10)",
                   position: 'relative',
                   overflow: 'hidden',
-                  display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#E5E7EB'
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#E5E7EB',
+                  transition: 'box-shadow 0.2s',
+                  backdropFilter: 'blur(2px)'
                 }}>
-                  <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 20, marginBottom: 18, letterSpacing: 0.5 }}>Key Investment Stats <span title="Compound Annual Growth Rate" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></div>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 16 }}>
-                    <li><b>Total Investments:</b> {Array.isArray(investments) ? investments.length : 0}</li>
-                    <li><b>Total Return:</b> {(() => {
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 22 }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 44, height: 44,
+                      background: 'linear-gradient(135deg, #3B82F6 60%, #6366F1 100%)',
+                      borderRadius: '50%',
+                      marginRight: 18,
+                      boxShadow: '0 2px 12px 0 rgba(59,130,246,0.18)',
+                      fontSize: 26,
+                      color: '#fff',
+                      fontWeight: 700
+                    }}>📊</span>
+                    <span style={{ fontWeight: 800, color: '#3B82F6', fontSize: 24, letterSpacing: 0.5 }}>Key Investment Stats</span>
+                    <span title="Compound Annual Growth Rate" style={{cursor:'help',color:'#9CA3AF',fontSize:18,marginLeft:10}}>ℹ️</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 8 }}>
+                    <div style={{ fontSize: 15, color: '#A1A7B3', fontWeight: 600 }}>Total Investments</div>
+                    <div style={{ fontSize: 18, color: '#fff', fontWeight: 800, textAlign: 'right' }}>{Array.isArray(investments) ? investments.length : 0}</div>
+                    <div style={{ fontSize: 15, color: '#A1A7B3', fontWeight: 600 }}>Total Return</div>
+                    <div style={{ fontSize: 18, color: '#10B981', fontWeight: 800, textAlign: 'right' }}>{(() => {
                       const arr = Array.isArray(investments) ? investments : [];
                       const invested = arr.reduce((sum, inv) => sum + (inv.avgBuyPrice || 0) * (inv.quantity || 0), 0);
                       const current = arr.reduce((sum, inv) => sum + (inv.currentPrice || 0) * (inv.quantity || 0), 0);
                       if (!invested) return '-';
                       const ret = ((current - invested) / invested) * 100;
                       return `${ret >= 0 ? '+' : ''}${ret.toFixed(2)}%`;
-                    })()}</li>
-                    <li><b>CAGR:</b> {(() => {
+                    })()}</div>
+                    <div style={{ fontSize: 15, color: '#A1A7B3', fontWeight: 600 }}>CAGR</div>
+                    <div style={{ fontSize: 18, color: '#F59E0B', fontWeight: 800, textAlign: 'right' }}>{(() => {
                       const arr = Array.isArray(investments) ? investments : [];
                       if (!arr.length) return '-';
                       const invested = arr.reduce((sum, inv) => sum + (inv.avgBuyPrice || 0) * (inv.quantity || 0), 0);
@@ -562,8 +583,9 @@ const Dashboard = () => {
                       if (years <= 0) return '-';
                       const cagr = Math.pow(current / invested, 1 / years) - 1;
                       return `${(cagr * 100).toFixed(2)}%`;
-                    })()}</li>
-                    <li><b>Most Invested Sector:</b> {(() => {
+                    })()}</div>
+                    <div style={{ fontSize: 15, color: '#A1A7B3', fontWeight: 600 }}>Most Invested Sector</div>
+                    <div style={{ fontSize: 18, color: '#60A5FA', fontWeight: 800, textAlign: 'right' }}>{(() => {
                       const arr = Array.isArray(investments) ? investments : [];
                       const sectorMap = {};
                       arr.forEach(inv => {
@@ -573,24 +595,58 @@ const Dashboard = () => {
                       });
                       const sorted = Object.entries(sectorMap).sort((a, b) => b[1] - a[1]);
                       return sorted.length ? `${sorted[0][0]} (₹${sorted[0][1].toLocaleString()})` : '-';
-                    })()}</li>
-                    <li><b>Best Performer:</b> {(() => {
-                      const arr = Array.isArray(investments) ? investments : [];
-                      if (!arr.length) return '-';
-                      const best = [...arr].sort((a, b) => ((b.currentPrice - b.avgBuyPrice) * b.quantity) - ((a.currentPrice - a.avgBuyPrice) * a.quantity))[0];
-                      if (!best) return '-';
-                      const pnl = (best.currentPrice - best.avgBuyPrice) * best.quantity;
-                      return `${best.ticker} (${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString()})`;
-                    })()}</li>
-                    <li><b>Worst Performer:</b> {(() => {
-                      const arr = Array.isArray(investments) ? investments : [];
-                      if (!arr.length) return '-';
-                      const worst = [...arr].sort((a, b) => ((a.currentPrice - a.avgBuyPrice) * a.quantity) - ((b.currentPrice - b.avgBuyPrice) * b.quantity))[0];
-                      if (!worst) return '-';
-                      const pnl = (worst.currentPrice - worst.avgBuyPrice) * worst.quantity;
-                      return `${worst.ticker} (${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString()})`;
-                    })()}</li>
-                  </ul>
+                    })()}</div>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: 18,
+                    gap: 12
+                  }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #1A2332 60%, #193C3A 100%)',
+                      borderRadius: 12,
+                      padding: '14px 18px',
+                      flex: 1,
+                      color: '#10B981',
+                      fontWeight: 700,
+                      fontSize: 15,
+                      display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                      boxShadow: '0 2px 8px 0 rgba(16,185,129,0.08)'
+                    }}>
+                      <span style={{ color: '#A1A7B3', fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Best Performer</span>
+                      <span style={{ fontSize: 16, fontWeight: 800 }}>{(() => {
+                        const arr = Array.isArray(investments) ? investments : [];
+                        if (!arr.length) return '-';
+                        const best = [...arr].sort((a, b) => ((b.currentPrice - b.avgBuyPrice) * b.quantity) - ((a.currentPrice - a.avgBuyPrice) * a.quantity))[0];
+                        if (!best) return '-';
+                        const pnl = (best.currentPrice - best.avgBuyPrice) * best.quantity;
+                        return `${best.ticker} (${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString()})`;
+                      })()}</span>
+                    </div>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)',
+                      borderRadius: 12,
+                      padding: '14px 18px',
+                      flex: 1,
+                      color: '#EF4444',
+                      fontWeight: 700,
+                      fontSize: 15,
+                      display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                      boxShadow: '0 2px 8px 0 rgba(245,158,11,0.08)'
+                    }}>
+                      <span style={{ color: '#A1A7B3', fontWeight: 600, fontSize: 13, marginBottom: 2 }}>Worst Performer</span>
+                      <span style={{ fontSize: 16, fontWeight: 800 }}>{(() => {
+                        const arr = Array.isArray(investments) ? investments : [];
+                        if (!arr.length) return '-';
+                        const worst = [...arr].sort((a, b) => ((a.currentPrice - a.avgBuyPrice) * a.quantity) - ((b.currentPrice - b.avgBuyPrice) * b.quantity))[0];
+                        if (!worst) return '-';
+                        const pnl = (worst.currentPrice - worst.avgBuyPrice) * worst.quantity;
+                        return `${worst.ticker} (${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString()})`;
+                      })()}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
