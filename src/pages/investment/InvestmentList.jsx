@@ -21,6 +21,18 @@ export default function InvestmentList() {
   const notification = useNotification();
   const navigate = useNavigate();
 
+  // Sorting state
+  const [sortBy, setSortBy] = useState('ticker');
+  const [sortOrder, setSortOrder] = useState('asc');
+
+  const SORT_OPTIONS = [
+    { label: 'Ticker', value: 'ticker' },
+    { label: 'Current Value', value: 'currentValue' },
+    { label: 'Profit & Loss', value: 'profitLoss' },
+    { label: 'Profit & Loss %', value: 'profitLossPercent' },
+    { label: 'Date', value: 'entryDate' },
+  ];
+
   useEffect(() => {
     loadData();
     // eslint-disable-next-line
@@ -123,7 +135,7 @@ export default function InvestmentList() {
   if (loading) {
     return (
       <div className={styles.container}>
-        <PageHeader 
+        <PageHeader
           title="Long-Term Investments"
           subtitle="Track your investment portfolio"
         />
@@ -132,22 +144,55 @@ export default function InvestmentList() {
     );
   }
 
-  const groupedInvestments = groupInvestments();
+  // Sorting logic
+  const sortedInvestments = [...investments].sort((a, b) => {
+    let aValue, bValue;
+    switch (sortBy) {
+      case 'ticker':
+        aValue = a.ticker || '';
+        bValue = b.ticker || '';
+        return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      case 'currentValue':
+        aValue = (a.currentPrice || 0) * (a.quantity || 0);
+        bValue = (b.currentPrice || 0) * (b.quantity || 0);
+        break;
+      case 'profitLoss':
+        aValue = ((a.currentPrice - a.avgBuyPrice) * a.quantity) || 0;
+        bValue = ((b.currentPrice - b.avgBuyPrice) * b.quantity) || 0;
+        break;
+      case 'profitLossPercent':
+        aValue = a.avgBuyPrice ? ((a.currentPrice - a.avgBuyPrice) / a.avgBuyPrice) * 100 : 0;
+        bValue = b.avgBuyPrice ? ((b.currentPrice - b.avgBuyPrice) / b.avgBuyPrice) * 100 : 0;
+        break;
+      case 'entryDate':
+        aValue = new Date(a.entryDate).getTime() || 0;
+        bValue = new Date(b.entryDate).getTime() || 0;
+        break;
+      default:
+        aValue = 0;
+        bValue = 0;
+    }
+    return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+  });
+
+  // Use sorted investments for grouping
+  const groupedInvestments = groupBy === 'none'
+    ? { all: sortedInvestments }
+    : groupInvestments(sortedInvestments);
 
   return (
     <div className={styles.container}>
-      <PageHeader 
+      <PageHeader
         title="Long-Term Investments"
         subtitle="Track and monitor your investment portfolio"
       />
-
       {/* Action Bar */}
       <div className={styles.actionBar}>
         <div className={styles.filters}>
           <div className={styles.filterGroup}>
             <label>Status:</label>
-            <select 
-              value={filter} 
+            <select
+              value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className={styles.filterSelect}
             >
@@ -158,8 +203,8 @@ export default function InvestmentList() {
           </div>
           <div className={styles.filterGroup}>
             <label>Group By:</label>
-            <select 
-              value={groupBy} 
+            <select
+              value={groupBy}
               onChange={(e) => setGroupBy(e.target.value)}
               className={styles.filterSelect}
             >
@@ -167,8 +212,28 @@ export default function InvestmentList() {
               <option value="ticker">Ticker</option>
             </select>
           </div>
+          <div className={styles.filterGroup}>
+            <label>Sort By:</label>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className={styles.filterSelect}
+              style={{ minWidth: 120 }}
+            >
+              {SORT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <button
+              className={styles.filterSelect}
+              onClick={() => setSortOrder(order => order === 'asc' ? 'desc' : 'asc')}
+              title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+            >
+              {sortOrder === 'asc' ? '▲' : '▼'}
+            </button>
+          </div>
         </div>
-        <button 
+        <button
           className={styles.addButton}
           onClick={() => navigate('/investments/new')}
         >
@@ -205,7 +270,7 @@ export default function InvestmentList() {
                   const metrics = calculateMetrics(investment);
                   return (
                     <tr key={investment.id} className={styles.tableRow}>
-                  <td className={`${styles.tableCell} ${styles.tickerCell}`} colSpan={2} style={{ minWidth: 180 }}>
+                      <td className={`${styles.tableCell} ${styles.tickerCell}`} colSpan={2} style={{ minWidth: 180 }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.2rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <span className={styles.ticker}>{investment.ticker}</span>
@@ -222,24 +287,24 @@ export default function InvestmentList() {
                           </div>
                         </div>
                       </td>
-                  <td className={styles.tableCell} style={{ textAlign: 'center' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <span>₹{investment.buyBelow ? investment.buyBelow.toFixed(2) : '-'}</span>
-                      <span className={investment.differencePercentage >= 0 ? styles.profit : styles.loss}>
-                        {investment.differencePercentage >= 0 ? '+' : ''}
-                        {investment.differencePercentage}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className={styles.tableCell} style={{ textAlign: 'center' }}>
-                    {investment.currentPrice ? (
-                      <span className={styles.currentPrice}>
-                        ₹{metrics.currentPrice.toFixed(2)}
-                      </span>
-                    ) : (
-                      <span className={styles.noPrice}>-</span>
-                    )}
-                  </td>
+                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <span>₹{investment.buyBelow ? investment.buyBelow.toFixed(2) : '-'}</span>
+                          <span className={investment.differencePercentage >= 0 ? styles.profit : styles.loss}>
+                            {investment.differencePercentage >= 0 ? '+' : ''}
+                            {investment.differencePercentage}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>
+                        {investment.currentPrice ? (
+                          <span className={styles.currentPrice}>
+                            ₹{metrics.currentPrice.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className={styles.noPrice}>-</span>
+                        )}
+                      </td>
                       <td className={styles.tableCell} style={{ textAlign: 'center' }}>{investment.quantity}</td>
                       <td className={styles.tableCell} style={{ textAlign: 'center' }}>₹{investment.avgBuyPrice?.toFixed(2)}</td>
                       <td className={styles.tableCell} style={{ textAlign: 'center' }}>₹{metrics.investedAmount.toLocaleString()}</td>
@@ -255,16 +320,16 @@ export default function InvestmentList() {
                         </div>
                       </td>
                       <td className={styles.tableCell} style={{ textAlign: 'center' }}>{formatDate(investment.entryDate)}</td>
-                      
+
                       <td className={styles.tableCell}>
                         <div className={styles.actionButtons}>
                           {investment.status === 'open' && (
-                            <button 
+                            <button
                               onClick={() => {
                                 setSelectedInvestment(investment);
-                                setCloseForm({ 
-                                  close_price: metrics.currentPrice.toString(), 
-                                  close_date: new Date().toISOString().split('T')[0] 
+                                setCloseForm({
+                                  close_price: metrics.currentPrice.toString(),
+                                  close_date: new Date().toISOString().split('T')[0]
                                 });
                                 setShowCloseModal(true);
                               }}
@@ -273,7 +338,7 @@ export default function InvestmentList() {
                               Close
                             </button>
                           )}
-                          <button 
+                          <button
                             onClick={() => {
                               setSelectedInvestment(investment);
                               setShowDeleteConfirm(true);
@@ -297,7 +362,7 @@ export default function InvestmentList() {
         <div className={styles.emptyState}>
           <h3>No investments found</h3>
           <p>Start by adding your first investment to track your portfolio.</p>
-          <button 
+          <button
             className={styles.addButton}
             onClick={() => navigate('/investments/new')}
           >
@@ -333,8 +398,8 @@ export default function InvestmentList() {
                 />
               </div>
               <div className={styles.modalActions}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => {
                     setShowCloseModal(false);
                     setSelectedInvestment(null);
@@ -359,11 +424,11 @@ export default function InvestmentList() {
           <div className={styles.modalContent}>
             <h3>Delete Investment</h3>
             <p>
-              Are you sure you want to delete the investment in <strong>{selectedInvestment.ticker}</strong>? 
+              Are you sure you want to delete the investment in <strong>{selectedInvestment.ticker}</strong>?
               This action cannot be undone.
             </p>
             <div className={styles.modalActions}>
-              <button 
+              <button
                 onClick={() => {
                   setShowDeleteConfirm(false);
                   setSelectedInvestment(null);

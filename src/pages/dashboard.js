@@ -328,10 +328,6 @@ const Dashboard = () => {
 
   return (
     <div className={styles.dashboardContainer}>
-      <PageHeader 
-        title="Dashboard"
-        subtitle="Track your trading and investment analytics"
-      />
       {/* Tabs */}
       <div style={{ display: 'flex', borderBottom: '1px solid #2A3441', marginBottom: 32 }}>
         <button style={tabStyle('trading')} onClick={() => setActiveTab('trading')}>Trading</button>
@@ -606,9 +602,28 @@ const Dashboard = () => {
                 border: "1px solid #2A3441",
                 marginBottom: 28,
                 boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
-                color: '#E5E7EB'
+                color: '#E5E7EB',
+                position: 'relative'
               }}>
-                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 22px 0", letterSpacing: 0.5 }}>Top Gainers <span title="% return = (Current - Buy)/Buy" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Top Gainers <span title="% return = (Current - Buy)/Buy" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></h3>
+                  <button
+                    style={{
+                      background: 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '6px 18px',
+                      fontWeight: 700,
+                      fontSize: 15,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px 0 rgba(59,130,246,0.10)',
+                      transition: 'background 0.2s',
+                      marginLeft: 12
+                    }}
+                    onClick={() => navigate('/investments')}
+                  >View More</button>
+                </div>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
                     <thead>
@@ -631,7 +646,6 @@ const Dashboard = () => {
                           })
                           .sort((a, b) => b.ret - a.ret);
                         const top = sorted.slice(0, 3);
-                        const bottom = sorted.slice(-3).reverse();
                         return [
                           ...top.map((inv, idx) => (
                             <tr key={inv.id || `gainer-${idx}`} style={{ background: '#182032' }}>
@@ -657,9 +671,28 @@ const Dashboard = () => {
                 border: "1px solid #2A3441",
                 marginBottom: 28,
                 boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
-                color: '#E5E7EB'
+                color: '#E5E7EB',
+                position: 'relative'
               }}>
-                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 22px 0", letterSpacing: 0.5 }}>Top Gainers & Losers <span title="% return = (Current - Buy)/Buy" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Top Gainers & Losers <span title="% return = (Current - Buy)/Buy" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></h3>
+                  <button
+                    style={{
+                      background: 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '6px 18px',
+                      fontWeight: 700,
+                      fontSize: 15,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px 0 rgba(59,130,246,0.10)',
+                      transition: 'background 0.2s',
+                      marginLeft: 12
+                    }}
+                    onClick={() => navigate('/investments')}
+                  >View More</button>
+                </div>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
                     <thead>
@@ -681,7 +714,6 @@ const Dashboard = () => {
                             return { ...inv, ret, pnl };
                           })
                           .sort((a, b) => b.ret - a.ret);
-                        const top = sorted.slice(0, 3);
                         const bottom = sorted.slice(-3).reverse();
                         return [
                           <tr key="sep"><td colSpan={4} style={{ height: 8 }}></td></tr>,
@@ -707,9 +739,28 @@ const Dashboard = () => {
                 padding: 28,
                 border: "1px solid #2A3441",
                 marginBottom: 28,
-                boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)"
+                boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                position: 'relative'
               }}>
-                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 22px 0", letterSpacing: 0.5 }}>Recent Investments</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Recent Investments</h3>
+                  <button
+                    style={{
+                      background: 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '6px 18px',
+                      fontWeight: 700,
+                      fontSize: 15,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px 0 rgba(59,130,246,0.10)',
+                      transition: 'background 0.2s',
+                      marginLeft: 12
+                    }}
+                    onClick={() => navigate('/investments')}
+                  >View More</button>
+                </div>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
                     <thead>
