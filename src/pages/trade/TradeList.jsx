@@ -373,9 +373,7 @@ export default function TradeList() {
                   <td className={`${styles.tableCell} ${styles.tickerCell}`}>
                     <div className={styles.tickerContainer}>
                       <span className={styles.tickerSymbol}>{trade.ticker}</span>
-                      {getTickerBySymbol(trade.ticker)?.name && (
-                        <span className={styles.companyName}>{getTickerBySymbol(trade.ticker).name}</span>
-                      )}
+                      <span className={styles.companyName}>{trade.tickerName}</span>
                     </div>
                   </td>
                   <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.entryDate ? formatDate(trade.entryDate) : "-"}</td>

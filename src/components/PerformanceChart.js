@@ -1,5 +1,5 @@
 import React from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, defs, linearGradient, stop } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { getPartialPL } from "../common/Helper";
 
 function formatYAxisTick(value) {
@@ -17,7 +17,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         borderRadius: "10px",
         padding: "14px 18px",
         color: "#fff",
-        boxShadow: "0 2px 8px rgba(16,185,129,0.08)"
+        boxShadow: "0 2px 8px rgba(0, 0, 246, 0)"
       }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{label}</div>
         <div style={{ fontWeight: 600, fontSize: 16, color: value >= 0 ? "#10B981" : "#EF4444" }}>
@@ -38,37 +38,22 @@ const PerformanceChart = (props) => {
   if (!data && Array.isArray(props.trades)) {
     // Defensive: fallback to empty array if not an array
     const trades = props.trades;
-    // Build last 6 months keys
+    // Build last 12 months keys
     const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const now = new Date();
-    const last6Months = [];
-    for (let i = 5; i >= 0; i--) {
+    const last12Months = [];
+    for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      last6Months.push({ month: MONTHS[d.getMonth()], year: d.getFullYear(), key: `${d.getFullYear()}-${d.getMonth()}` });
+      last12Months.push({ month: MONTHS[d.getMonth()], year: d.getFullYear(), key: `${d.getFullYear()}-${d.getMonth()}` });
     }
     // Build a map for last 6 months only
     const monthlyPnlMap = {};
-    last6Months.forEach(({ key }) => {
+    last12Months.forEach(({ key }) => {
       monthlyPnlMap[key] = 0;
     });
-    // // Calculate PnL for each trade
-    // function calculatePnl(trade) {
-    //   if (
-    //     trade.entryPrice == null ||
-    //     trade.exitPrice == null ||
-    //     trade.quantity == null ||
-    //     !trade.direction
-    //   ) return 0;
-    //   const priceDiff =
-    //     trade.direction.toLowerCase() === 'long'
-    //       ? trade.exitPrice - trade.entryPrice
-    //       : trade.entryPrice - trade.exitPrice;
-    //   return priceDiff * trade.quantity;
-    // }
     trades.forEach(trade => {
       const exits = trade.exitTransactions || [];
       if (!exits || exits.length === 0) return; // Skip trades without exits
-      const date = new Date(exits[0].transactionDate);
       exits.forEach(tx => {
         if (!tx.transactionDate) return; // Skip if no transaction date
         const date = typeof tx.transactionDate === 'number' ? new Date(tx.transactionDate) : new Date(tx.transactionDate);
@@ -78,24 +63,16 @@ const PerformanceChart = (props) => {
           let pl = 0;
           if (tx.price !== undefined && tx.quantity !== undefined) {
             const priceDiff = trade.direction.toLowerCase() === 'long'
-                ? Number(tx.price) - Number(trade.entryPrice)
-                : Number(trade.entryPrice) - Number(tx.price);
+              ? Number(tx.price) - Number(trade.entryPrice)
+              : Number(trade.entryPrice) - Number(tx.price);
             pl += priceDiff * Number(tx.quantity);
             monthlyPnlMap[key] += pl;
           }
-          console.log(key, pl);
         }
       });
-      // if (isNaN(date)) return; // Skip if date is invalid
-      // // Use year-month as key
-      // date.setDate(1); // Normalize to first of month
-      // const key = `${date.getFullYear()}-${date.getMonth()}`;
-      // if (monthlyPnlMap.hasOwnProperty(key)) {
-      //   const pnl = Number(getPartialPL(trade));
-      //   monthlyPnlMap[key] += pnl;
-      // }
+
     });
-    data = last6Months.map(({ month, key }) => ({
+    data = last12Months.map(({ month, key }) => ({
       month,
       pnl: monthlyPnlMap[key] || 0
     }));
@@ -104,36 +81,17 @@ const PerformanceChart = (props) => {
   data = Array.isArray(data) ? data : [];
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <LineChart data={data}>
-        <defs>
-          <linearGradient id="pnlGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10B981" stopOpacity={0.7}/>
-            <stop offset="100%" stopColor="#10B981" stopOpacity={0.1}/>
-          </linearGradient>
-          <linearGradient id="pnlGradientNeg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#EF4444" stopOpacity={0.7}/>
-            <stop offset="100%" stopColor="#EF4444" stopOpacity={0.1}/>
-          </linearGradient>
-        </defs>
+      <BarChart data={data}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#232e42" />
         <XAxis dataKey="month" stroke="#9CA3AF" fontSize={12} />
         <YAxis stroke="#9CA3AF" fontSize={12} tickFormatter={formatYAxisTick} />
-        <Tooltip content={<CustomTooltip />} />
-        <Line 
-          type="monotone"
-          dataKey="pnl"
-          stroke="#10B981"
-          strokeWidth={3}
-          dot={{ r: 5, stroke: '#fff', strokeWidth: 2 }}
-          activeDot={{ r: 7 }}
-          fillOpacity={1}
-          fill={
-            data.some(d => d.pnl < 0)
-              ? "url(#pnlGradientNeg)"
-              : "url(#pnlGradient)"
-          }
-        />
-      </LineChart>
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+        <Bar dataKey="pnl" radius={[6, 6, 0, 0]} isAnimationActive={false} >
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? "#10B981" : "#EF4444"} />
+          ))}
+        </Bar>
+      </BarChart>
     </ResponsiveContainer>
   );
 };

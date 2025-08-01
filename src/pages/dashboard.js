@@ -4,6 +4,8 @@ import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from ".
 import { getDashboardSummary } from '../api/dashboardApi';
 import { getAllInvestments, getInvestmentSummary } from '../api/investmentApi';
 import EquityCurve from '../components/EquityCurve';
+import SetupPerformanceChart from '../components/SetupPerformanceChart';
+import TimeframePieChart from '../components/TimeframePieChart';
 import PerformanceChart from '../components/PerformanceChart';
 import DonutChart from '../components/DonutChart';
 
@@ -15,8 +17,9 @@ import TopHoldingsBarChart from '../components/TopHoldingsBarChart';
 import MarketCapPieChart from '../components/MarketCapPieChart';
 // import { useNotification } from '../components/NotificationProvider'; // Reserved for future use
 import styles from './Dashboard.module.css';
-import { getAllTags } from "../api/tagApi";
+
 import { getExitTransactions, getLastExitDate, getAverageExitPrice, getPartialPL, formatDate, getInvested } from '../common/Helper';
+import { fetchSetups } from "../api/firebaseMetaApi";
 
 
 const Dashboard = () => {
@@ -24,6 +27,7 @@ const Dashboard = () => {
   const [trades, setTrades] = useState([]);
   const [stats, setStats] = useState(null);
   const [tags, setTags] = useState([]);
+  const [setups, setSetups] = useState([]); // <-- Add setups state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // Tabs: 'trading' or 'investment'
@@ -81,18 +85,17 @@ const Dashboard = () => {
     const loadDashboardData = async () => {
       setLoading(true);
       let hasNetworkError = false;
-      
       try {
-        const [dashboardRes, tradesRes, tagsRes] = await Promise.allSettled([
+        const [dashboardRes, tradesRes, setupsRes] = await Promise.allSettled([
           getDashboardSummary(),
           getAllTrades(),
-          getAllTags()
+          fetchSetups() // <-- Fetch setups from API
         ]);
 
         if (dashboardRes.status === 'fulfilled') {
           setStats(dashboardRes.value.data);
         } else {
-          console.error('Dashboard summary error:', dashboardRes.reason);
+          
           if (dashboardRes.reason?.type === 'NETWORK_ERROR') {
             hasNetworkError = true;
           }
@@ -100,16 +103,16 @@ const Dashboard = () => {
 
         if (tradesRes.status === 'fulfilled') {
           const tradesWithExits = await Promise.all(tradesRes.value.data.map(async trade => {
-                    try {
-                      const txRes = await getTradeTransactions(trade.id);
-                      // Only keep exit transactions
-                      const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
-                      return { ...trade, exitTransactions: exitTx };
-                    } catch (e) {
-                      return { ...trade, exitTransactions: [] };
-                    }
-                  }));
-                  setTrades(tradesWithExits);
+            try {
+              const txRes = await getTradeTransactions(trade.id);
+              // Only keep exit transactions
+              const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
+              return { ...trade, exitTransactions: exitTx };
+            } catch (e) {
+              return { ...trade, exitTransactions: [] };
+            }
+          }));
+          setTrades(tradesWithExits);
         } else {
           console.error('Trades error:', tradesRes.reason);
           if (tradesRes.reason?.type === 'NETWORK_ERROR') {
@@ -117,13 +120,10 @@ const Dashboard = () => {
           }
         }
 
-        if (tagsRes.status === 'fulfilled') {
-          setTags(tagsRes.value || []);
+        if (setupsRes.status === 'fulfilled') {
+          setSetups(setupsRes.value || []);
         } else {
-          console.error('Tags error:', tagsRes.reason);
-          if (tagsRes.reason?.type === 'NETWORK_ERROR') {
-            hasNetworkError = true;
-          }
+          console.error('Setups error:', setupsRes.reason);
         }
 
         if (hasNetworkError) {
@@ -144,7 +144,6 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-
     loadDashboardData();
   }, []);
 
@@ -508,15 +507,46 @@ const Dashboard = () => {
               padding: 18,
               border: "1px solid #2A3441",
               minHeight: 220,
-              maxHeight: 220,
               width: '95%',
               boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
               position: 'relative',
               overflow: 'hidden',
               display: 'flex', flexDirection: 'column', justifyContent: 'center'
             }}>
-              <div style={{ fontWeight: 700, color: '#F59E0B', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Performance by Setup</div>
+              <div style={{ fontWeight: 700, color: '#F59E0B', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Performance by Month</div>
               <PerformanceChart trades={Array.isArray(trades) ? trades : []} />
+            </div>
+            <div style={{
+              background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+              borderRadius: 10,
+              padding: 18,
+              border: "1px solid #2A3441",
+              minHeight: 220,
+              width: '95%',
+              boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+              position: 'relative',
+              overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center',
+              marginTop: 18
+            }}>
+              <div style={{ fontWeight: 700, color: '#10B981', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Trades by Setup</div>
+              <SetupPerformanceChart trades={Array.isArray(trades) ? trades : []} setups={Array.isArray(setups) ? setups : []} />
+            </div>
+            <div style={{
+              background: "linear-gradient(120deg, #233554 70%, #1A2332 100%)",
+              borderRadius: 10,
+              padding: 18,
+              border: "1px solid #2A3441",
+              minHeight: 220,
+              width: '95%',
+              boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+              position: 'relative',
+              overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center',
+              marginTop: 18
+            }}>
+              <div style={{ fontWeight: 700, color: '#6366F1', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Timeframe Distribution</div>
+              <TimeframePieChart trades={Array.isArray(trades) ? trades : []} />
             </div>
           </div>
 

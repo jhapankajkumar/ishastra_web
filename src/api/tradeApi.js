@@ -99,7 +99,7 @@ export async function createTrade(form) {
 
   // Required fields
   formData.append('ticker', defaultText(form.ticker));
-  formData.append('companyName', defaultText(form.companyName));
+  formData.append('tickerName', defaultText(form.companyName));
   formData.append('instrumentType', defaultDropdown(form.instrumentType, instrumentTypeOptions));
   formData.append('market', defaultDropdown(form.market, marketOptions));
   formData.append('positionType', defaultDropdown(form.positionType, positionTypeOptions));
