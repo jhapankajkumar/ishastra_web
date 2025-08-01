@@ -293,16 +293,23 @@ const Dashboard = () => {
 
   // --- Tab UI ---
   const tabStyle = (tab) => ({
-    padding: '12px 32px',
+    padding: '10px 38px',
     cursor: 'pointer',
-    fontWeight: 600,
+    fontWeight: 700,
     fontSize: 18,
     border: 'none',
-    borderBottom: activeTab === tab ? '3px solid #3B82F6' : '3px solid transparent',
-    background: 'none',
-    color: activeTab === tab ? '#3B82F6' : '#9CA3AF',
+    borderRadius: 24,
+    marginRight: 12,
+    background: activeTab === tab
+      ? 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)'
+      : 'linear-gradient(90deg, #232e42 60%, #1A2332 100%)',
+    color: activeTab === tab ? '#fff' : '#A1A7B3',
+    boxShadow: activeTab === tab ? '0 2px 12px 0 rgba(59,130,246,0.10)' : 'none',
     outline: 'none',
-    transition: 'border 0.2s, color 0.2s'
+    transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
+    borderBottom: 'none',
+    position: 'relative',
+    zIndex: 1
   });
 
   if (error && error.type === 'NETWORK_ERROR') {
@@ -318,10 +325,10 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className={styles.dashboardContainer}>
-        <PageHeader 
+        {/* <PageHeader 
           title="Dashboard"
           subtitle="Track your trading and investment analytics"
-        />
+        /> */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center', 
@@ -339,7 +346,23 @@ const Dashboard = () => {
   return (
     <div className={styles.dashboardContainer}>
       {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #2A3441', marginBottom: 32 }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 0,
+        marginBottom: 36,
+        background: 'linear-gradient(90deg, #181F2A 60%, #1A2332 100%)',
+        borderRadius: 32,
+        padding: '8px 0',
+        boxShadow: '0 2px 12px 0 rgba(59,130,246,0.06)',
+        border: '1px solid #232e42',
+        width: '100%',
+        maxWidth: 480,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        position: 'relative',
+      }}>
         <button style={tabStyle('trading')} onClick={() => setActiveTab('trading')}>Trading</button>
         <button style={tabStyle('investment')} onClick={() => setActiveTab('investment')}>Investment</button>
       </div>
