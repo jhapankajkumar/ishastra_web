@@ -11,7 +11,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-function getTopHoldings(investments, topN = 5) {
+function getTopHoldings(investments, topN = 10) {
   const sorted = [...investments]
     .map(inv => {
       const invested = (inv.avgBuyPrice || 0) * (inv.quantity || 0);

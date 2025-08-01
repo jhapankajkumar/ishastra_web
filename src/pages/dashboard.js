@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAllTrades } from '../api/tradeApi';
+import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from "../api/tradeApi";
 import { getDashboardSummary } from '../api/dashboardApi';
 import { getAllInvestments, getInvestmentSummary } from '../api/investmentApi';
 import EquityCurve from '../components/EquityCurve';
@@ -16,6 +16,8 @@ import MarketCapPieChart from '../components/MarketCapPieChart';
 // import { useNotification } from '../components/NotificationProvider'; // Reserved for future use
 import styles from './Dashboard.module.css';
 import { getAllTags } from "../api/tagApi";
+import { getExitTransactions, getLastExitDate, getAverageExitPrice, getPartialPL, formatDate, getInvested } from '../common/Helper';
+
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -97,7 +99,17 @@ const Dashboard = () => {
         }
 
         if (tradesRes.status === 'fulfilled') {
-          setTrades(tradesRes.value.data);
+          const tradesWithExits = await Promise.all(tradesRes.value.data.map(async trade => {
+                    try {
+                      const txRes = await getTradeTransactions(trade.id);
+                      // Only keep exit transactions
+                      const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
+                      return { ...trade, exitTransactions: exitTx };
+                    } catch (e) {
+                      return { ...trade, exitTransactions: [] };
+                    }
+                  }));
+                  setTrades(tradesWithExits);
         } else {
           console.error('Trades error:', tradesRes.reason);
           if (tradesRes.reason?.type === 'NETWORK_ERROR') {
@@ -138,7 +150,7 @@ const Dashboard = () => {
 
   // Calculate additional metrics
   const totalPnL = React.useMemo(() => {
-    return trades.reduce((total, trade) => total + calculatePnl(trade), 0);
+    return trades.reduce((total, trade) => total + Number(getPartialPL(trade)), 0);
   }, [trades]);
 
   const totalEquity = React.useMemo(() => {
@@ -202,7 +214,6 @@ const Dashboard = () => {
     () => Object.entries(setupCounts).map(([label, value]) => ({ label, value })),
     [setupCounts]
   );
-
   // const pnlBuckets = [ // Reserved for future chart implementation
   //   { label: '< -10K', min: -Infinity, max: -10000 },
   //   { label: '-10K', min: -10000, max: -5000 },
@@ -228,7 +239,7 @@ const Dashboard = () => {
   // --- Recent Trades ---
   const recentTrades = trades
     .slice()
-    .sort((a, b) => new Date(b.exit_date) - new Date(a.exit_date))
+    .sort((a, b) => new Date(b.exitDate) - new Date(a.exitDate))
     .slice(0, 6);
 
   // --- Monthly PnL ---
@@ -252,8 +263,8 @@ const Dashboard = () => {
     monthlyPnlMap[key] = 0;
   });
   trades.forEach(trade => {
-    if (!trade.exit_date) return;
-    const date = new Date(trade.exit_date);
+    if (!trade.exitDate) return;
+    const date = new Date(trade.exitDate);
     const key = `${date.getFullYear()}-${date.getMonth()}`;
     if (monthlyPnlMap.hasOwnProperty(key)) {
       const pnl = calculatePnl(trade);
@@ -268,8 +279,8 @@ const Dashboard = () => {
   // Filter trades for last 6 months for EquityCurve
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
   const tradesLast6Months = trades.filter(trade => {
-    if (!trade.exit_date) return false;
-    const date = new Date(trade.exit_date);
+    if (!trade.exitDate) return false;
+    const date = new Date(trade.exitDate);
     return date >= sixMonthsAgo;
   });
 
@@ -336,9 +347,242 @@ const Dashboard = () => {
       {/* Tab Content */}
       {activeTab === 'trading' ? (
         <>
-          {/* ...existing trading dashboard content... */}
-          {/* Stats Cards */}
-          // ...existing code...
+          {/* Trading Summary Cards */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 28,
+            marginBottom: 40,
+            background: "linear-gradient(90deg, #181F2A 60%, #1A2332 100%)",
+            borderRadius: 18,
+            padding: 16
+          }}>
+            {/* Card: Total Trades */}
+            <div style={{
+              background: "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
+              borderRadius: 16,
+              padding: 28,
+              border: "1px solid #2A3441",
+              textAlign: "center",
+              boxShadow: "0 4px 24px 0 rgba(59,130,246,0.08)",
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <span style={{
+                position: 'absolute',
+                top: 18, left: 18,
+                fontSize: 28,
+                color: '#6366F1',
+                opacity: 0.18
+              }}>🔄</span>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Trades</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: "#6366F1", letterSpacing: 1 }}>{trades.length}</div>
+            </div>
+            {/* Card: Total Trade Value */}
+            <div style={{
+              background: "linear-gradient(135deg, #1A2332 60%, #193C3A 100%)",
+              borderRadius: 16,
+              padding: 28,
+              border: "1px solid #2A3441",
+              textAlign: "center",
+              boxShadow: "0 4px 24px 0 rgba(16,185,129,0.08)",
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <span style={{
+                position: 'absolute',
+                top: 18, left: 18,
+                fontSize: 28,
+                color: '#10B981',
+                opacity: 0.18
+              }}>💰</span>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Invested</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: "#10B981", letterSpacing: 1 }}>
+                ₹{trades && trades.length ? trades.reduce((sum, t) => {
+                  const originalQty = t.quantity !== undefined && t.quantity !== null ? Number(t.quantity) : 0;
+                  return sum + (t.entryPrice ? t.entryPrice * originalQty : 0);
+                }, 0).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'}
+              </div>
+            </div>
+            {/* Card: Current Value of All Investments */}
+            <div style={{
+              background: "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
+              borderRadius: 16,
+              padding: 28,
+              border: "1px solid #2A3441",
+              textAlign: "center",
+              boxShadow: "0 4px 24px 0 rgba(59,130,246,0.08)",
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <span style={{
+                position: 'absolute',
+                top: 18, left: 18,
+                fontSize: 28,
+                color: '#3B82F6',
+                opacity: 0.18
+              }}>📈</span>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Current Value</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: "#3B82F6", letterSpacing: 1 }}>
+                ₹{trades && trades.length ? trades.reduce((sum, t) => {
+                  const originalQty = t.quantity !== undefined && t.quantity !== null ? Number(t.quantity) : 0;
+                  const entryVal = originalQty * (t.entryPrice || 0);
+                  const pnl = Number(getPartialPL(t));
+                  const value = entryVal + pnl;
+                  return sum + value;;
+                }, 0).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'}
+              </div>
+            </div>
+            {/* Card: Total P&L */}
+            <div style={{
+              background: "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
+              borderRadius: 16,
+              padding: 28,
+              border: "1px solid #2A3441",
+              textAlign: "center",
+              boxShadow: "0 4px 24px 0 rgba(245,158,11,0.08)",
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <span style={{
+                position: 'absolute',
+                top: 18, left: 18,
+                fontSize: 28,
+                color: '#F59E0B',
+                opacity: 0.18
+              }}>💹</span>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total P&L</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: totalPnL >= 0 ? "#10B981" : "#EF4444", letterSpacing: 1 }}>{totalPnL >= 0 ? '+' : ''}₹{totalPnL.toLocaleString()}</div>
+            </div>
+            
+          </div>
+
+          {/* Trading Analytics Section */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 18,
+            marginBottom: 20,
+            alignItems: 'stretch',
+            flexWrap: 'wrap'
+          }}>
+            {/* Equity Curve Chart */}
+            {/* <div style={{
+              background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+              borderRadius: 10,
+              padding: 18,
+              border: "1px solid #2A3441",
+              minHeight: 220,
+              maxHeight: 220,
+              width: '95%',
+              boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+              position: 'relative',
+              overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center'
+            }}>
+              <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Equity Curve</div>
+              <EquityCurve trades={trades} />
+            </div> */}
+              
+              <div style={{
+                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  borderRadius: 10,
+                  padding: 18,
+                  border: "1px solid #2A3441",
+                  minHeight: 320,
+                  // maxWidth: 400,
+                  maxHeight: 220,
+                  width: '95%',
+                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center'
+                }}>
+                  <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Trading Value Over Time</div>
+                  <InvestmentValueChart investments={Array.isArray(trades) ? trades : []} isTrade={true} />
+                </div>
+            {/* Performance Chart */}
+            <div style={{
+              background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+              borderRadius: 10,
+              padding: 18,
+              border: "1px solid #2A3441",
+              minHeight: 220,
+              maxHeight: 220,
+              width: '95%',
+              boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+              position: 'relative',
+              overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center'
+            }}>
+              <div style={{ fontWeight: 700, color: '#F59E0B', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Performance by Setup</div>
+              <PerformanceChart trades={Array.isArray(trades) ? trades : []} />
+            </div>
+          </div>
+
+          {/* Recent Trades Table */}
+          <div style={{
+            background: "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
+            borderRadius: 16,
+            padding: 28,
+            border: "1px solid #2A3441",
+            marginBottom: 28,
+            boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+            color: '#E5E7EB',
+            position: 'relative'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Recent Trades</h3>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
+                <thead>
+                  <tr style={{ background: 'rgba(21,27,40,0.98)' }}>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Ticker</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'left' }}>EntryDate</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'left' }}>EntryPrice</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'left' }}>Original Quantity</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'left' }}>Sold Quantity</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Avg Exit Price</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'left' }}>Invested</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#10B981', textAlign: 'left', borderTopRightRadius: 10 }}>P&L</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentTrades && recentTrades.length > 0 ? recentTrades.map((trade, idx) => {
+                    const pnl = calculatePnl(trade);
+                    const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
+                    const remainingQty = trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty;
+                    const soldQty = originalQty - remainingQty;
+                    return (
+                      <tr key={trade.id || idx} style={{
+                        borderBottom: '1px solid #232B3B',
+                        background: idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)',
+                        transition: 'background 0.2s',
+                        borderRadius: 8
+                      }}
+                      onMouseOver={e => e.currentTarget.style.background = '#232B3B'}
+                      onMouseOut={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)'}
+                      >
+                        <td style={{ padding: '12px 14px', fontWeight: 700 }}>{trade.ticker}</td>
+                        <td style={{ padding: '12px 14px', fontWeight: 700 }}>{trade.entryDate ? formatDate(trade.entryDate) : "-"}</td>
+                        <td style={{ padding: '12px 14px', }}>₹{trade.entryPrice?.toFixed(2).toLocaleString() ?? '-'}</td>
+                        <td style={{ padding: '12px 14px',  }}>{trade.quantity}</td>
+                        <td style={{ padding: '12px 14px',  }}>{soldQty}</td>
+                        <td style={{ padding: '12px 14px',  }}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exitPrice !== undefined && trade.exitPrice !== null ? Number(trade.exitPrice).toFixed(2) : "-")) : '-'}</td>
+                        <td style={{ padding: '12px 14px',  }}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
+                        <td style={{ padding: '12px 14px', color: soldQty > 0 && Number(getPartialPL(trade)) > 0 ? '#10B981' : '#EF4444', fontWeight: 800 }}>
+                          {soldQty > 0 && getPartialPL(trade) !== "0" ? `$${getPartialPL(trade)}` : "0"}
+                        </td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', color: '#9CA3AF', padding: 28 }}>No trades found</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </>
       ) : (
         // Investment Tab Content
@@ -731,7 +975,7 @@ const Dashboard = () => {
                 position: 'relative'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Top Gainers & Losers <span title="% return = (Current - Buy)/Buy" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Top Losers <span title="% return = (Current - Buy)/Buy" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></h3>
                   <button
                     style={{
                       background: 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)',
@@ -770,6 +1014,8 @@ const Dashboard = () => {
                             return { ...inv, ret, pnl };
                           })
                           .sort((a, b) => b.ret - a.ret);
+                          sorted.filter(inv => inv.ret < 0);
+                        if (sorted.length < 3) return <tr><td colSpan={4} style={{ textAlign: 'center', color: '#9CA3AF', padding: 24 }}>Not enough data</td></tr>;
                         const bottom = sorted.slice(-3).reverse();
                         return [
                           <tr key="sep"><td colSpan={4} style={{ height: 8 }}></td></tr>,
@@ -869,15 +1115,15 @@ const Dashboard = () => {
 
 function calculatePnl(trade) {
   if (
-    trade.entry_price == null ||
-    trade.exit_price == null ||
+    trade.entryPrice == null ||
+    trade.exitPrice == null ||
     trade.quantity == null ||
     !trade.direction
   ) return 0;
   const priceDiff =
     trade.direction.toLowerCase() === 'long'
-      ? trade.exit_price - trade.entry_price
-      : trade.entry_price - trade.exit_price;
+      ? trade.exitPrice - trade.entryPrice
+      : trade.entryPrice - trade.exitPrice;
   return priceDiff * trade.quantity;
 }
 

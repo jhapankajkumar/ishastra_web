@@ -12,16 +12,16 @@ const getMonthShort = (dateStr) => {
 // Helper to calculate P&L for each trade
 const calculatePnl = (trade) => {
   if (
-    trade.entry_price == null ||
+    trade.entryPrice == null ||
     trade.quantity == null ||
     !trade.direction
   ) return 0;
-  // If exit_price is missing (open trade), use entry_price (P&L = 0)
-  const exit = trade.exit_price != null ? trade.exit_price : trade.entry_price;
+  // If exitPrice is missing (open trade), use entryPrice (P&L = 0)
+  const exit = trade.exitPrice != null ? trade.exitPrice : trade.entryPrice;
   const priceDiff =
     trade.direction.toLowerCase() === 'long'
-      ? exit - trade.entry_price
-      : trade.entry_price - exit;
+      ? exit - trade.entryPrice
+      : trade.entryPrice - exit;
   return priceDiff * trade.quantity;
 };
 
@@ -30,7 +30,7 @@ const INITIAL_CAPITAL = 100000; // Set your starting capital here
 const EquityCurve = ({ trades }) => {
   // Calculate P&L for each trade
   const tradesWithPnl = trades
-    .sort((a, b) => new Date(a.exit_date) - new Date(b.exit_date))
+    .sort((a, b) => new Date(a.exitDate) - new Date(b.exitDate))
     .map(trade => ({
       ...trade,
       pnl: calculatePnl(trade)
@@ -41,8 +41,8 @@ const EquityCurve = ({ trades }) => {
   const data = tradesWithPnl.map(trade => {
     equity += trade.pnl || 0;
     return {
-      date: trade.exit_date?.slice(0, 10),
-      month: getMonthShort(trade.exit_date),
+      date: trade.exitDate?.slice(0, 10),
+      month: getMonthShort(trade.exitDate),
       equity: parseFloat(equity.toFixed(2))
     };
   });

@@ -94,10 +94,10 @@ export default function RecommendationList() {
     if (loading) {
         return (
             <div className={styles.container}>
-                <PageHeader
+                {/* <PageHeader
                     title="Stock Recommendations"
                     subtitle="Track and monitor stock recommendations"
-                />
+                /> */}
                 <div className={styles.loading}>Loading recommendations...</div>
             </div>
         );
@@ -129,10 +129,10 @@ export default function RecommendationList() {
 
     return (
         <div className={styles.container}>
-            <PageHeader
+            {/* <PageHeader
                 title="Stock Recommendations"
                 subtitle="Track and monitor stock recommendations"
-            />
+            /> */}
             {/* Action Bar */}
             <div className={styles.actionBar}>
                 <div className={styles.filters}>

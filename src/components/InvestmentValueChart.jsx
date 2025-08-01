@@ -9,12 +9,15 @@ import {
   Tooltip,
   Legend
 } from "chart.js";
+import { getPartialPL } from "../common/Helper";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
-function getInvestmentValueHistory(investments) {
-  // Generate a time series of investment value over time
-  // For demo: use createdAt or fallback to index, and accumulate value
+function getInvestmentValueHistory(investments, isTrade ) {
+  if (!Array.isArray(investments) || investments.length === 0) {
+    console.log("No investments data available");
+    return { labels: [], invested: [], totalValue: [] };
+  }
   if (!Array.isArray(investments) || investments.length === 0) return { labels: [], invested: [], totalValue: [] };
   // Sort by date (if available)
   const sorted = [...investments].sort((a, b) => {
@@ -27,22 +30,39 @@ function getInvestmentValueHistory(investments) {
   const labels = [];
   const investedArr = [];
   const totalValueArr = [];
-  sorted.forEach((inv, idx) => {
-    const date = inv.createdAt ? new Date(inv.createdAt) : new Date(Date.now() - (sorted.length - idx) * 86400000);
-    const invAmount = (inv.avgBuyPrice || 0) * (inv.quantity || 0);
-    invested += invAmount;
-    // For total value, use currentPrice if available, else avgBuyPrice
-    const currVal = (inv.currentPrice != null ? inv.currentPrice : inv.avgBuyPrice || 0) * (inv.quantity || 0);
-    totalVal += currVal;
-    labels.push(date.toLocaleDateString());
-    investedArr.push(invested);
-    totalValueArr.push(totalVal);
-  });
-  return { labels, invested: investedArr, totalValue: totalValueArr };
+  if (isTrade == true) {
+    sorted.forEach((inv, idx) => {
+      const date = inv.createdAt ? new Date(inv.createdAt) : new Date(Date.now() - (sorted.length - idx) * 86400000);
+      const invAmount = (inv.entryPrice || 0) * (inv.quantity || 0);
+      const profit =  Number(getPartialPL(inv));
+      const currVal = invAmount + profit;
+      invested += invAmount;
+      // For total value, use currentPrice if available, else avgBuyPrice
+      totalVal += currVal;
+      labels.push(date.toLocaleDateString());
+      investedArr.push(invested);
+      totalValueArr.push(totalVal);
+    });
+    return { labels, invested: investedArr, totalValue: totalValueArr };
+  } else {
+    sorted.forEach((inv, idx) => {
+      const date = inv.createdAt ? new Date(inv.createdAt) : new Date(Date.now() - (sorted.length - idx) * 86400000);
+      const invAmount = (inv.avgBuyPrice || 0) * (inv.quantity || 0);
+      invested += invAmount;
+      // For total value, use currentPrice if available, else avgBuyPrice
+      const currVal = (inv.currentPrice != null ? inv.currentPrice : inv.avgBuyPrice || 0) * (inv.quantity || 0);
+      totalVal += currVal;
+      labels.push(date.toLocaleDateString());
+      investedArr.push(invested);
+      totalValueArr.push(totalVal);
+    });
+    return { labels, invested: investedArr, totalValue: totalValueArr };
+  }
+
 }
 
-const InvestmentValueChart = ({ investments }) => {
-  const { labels, invested, totalValue } = getInvestmentValueHistory(investments);
+const InvestmentValueChart = ({ investments, isTrade = false }) => {
+  const { labels, invested, totalValue } = getInvestmentValueHistory(investments, isTrade);
   if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 16 }}>No investment history data</div>;
   return (
     <Line
@@ -68,7 +88,6 @@ const InvestmentValueChart = ({ investments }) => {
             backgroundColor: "#6366F1",
             pointRadius: 2,
             pointBackgroundColor: '#6366F1',
-            borderDash: [6,3],
             borderWidth: 2.5,
             tension: 0.55
           }

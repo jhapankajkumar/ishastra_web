@@ -5,9 +5,9 @@ import styles from "./Header.module.css";
 const navLinks = [
   { to: "/", label: "Dashboard" },
   { to: "/trades", label: "Trades" },
-  { to: "/trades/new", label: "Add Trade" },
+  // { to: "/trades/new", label: "Add Trade" },
   { to: "/journal", label: "Journal" },
-  { to: "/journal/new", label: "Add Journal" },
+  // { to: "/journal/new", label: "Add Journal" },
   { to: "/recommendations", label: "Recommendations" },
   { to: "/investments", label: "Investments" },
   { to: "/risk-management", label: "Risk Management" }

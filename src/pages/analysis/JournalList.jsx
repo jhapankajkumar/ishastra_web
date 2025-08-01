@@ -200,10 +200,10 @@ export default function JournalList() {
 
   return (
     <div className={styles.container}>
-      <PageHeader 
+      {/* <PageHeader 
         title="Chart Reading Journal"
         subtitle="Track your chart analysis and market observations"
-      />
+      /> */}
 
       <div className={styles.actionBar}>
               <div className={styles.filters}>

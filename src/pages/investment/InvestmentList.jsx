@@ -182,10 +182,10 @@ export default function InvestmentList() {
 
   return (
     <div className={styles.container}>
-      <PageHeader
+      {/* <PageHeader
         title="Long-Term Investments"
         subtitle="Track and monitor your investment portfolio"
-      />
+      /> */}
       {/* Action Bar */}
       <div className={styles.actionBar}>
         <div className={styles.filters}>
@@ -287,8 +287,8 @@ export default function InvestmentList() {
                           </div>
                         </div>
                       </td>
-                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <td className={styles.tableCell} >
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'left' }}>
                           <span>₹{investment.buyBelow ? investment.buyBelow.toFixed(2) : '-'}</span>
                           <span className={investment.differencePercentage >= 0 ? styles.profit : styles.loss}>
                             {investment.differencePercentage >= 0 ? '+' : ''}
@@ -296,7 +296,7 @@ export default function InvestmentList() {
                           </span>
                         </div>
                       </td>
-                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>
+                      <td className={styles.tableCell} >
                         {investment.currentPrice ? (
                           <span className={styles.currentPrice}>
                             ₹{metrics.currentPrice.toFixed(2)}
@@ -305,11 +305,11 @@ export default function InvestmentList() {
                           <span className={styles.noPrice}>-</span>
                         )}
                       </td>
-                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>{investment.quantity}</td>
-                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>₹{investment.avgBuyPrice?.toFixed(2)}</td>
-                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>₹{metrics.investedAmount.toLocaleString()}</td>
-                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>₹{metrics.currentValue.toLocaleString()}</td>
-                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>
+                      <td className={styles.tableCell} >{investment.quantity}</td>
+                      <td className={styles.tableCell} >₹{investment.avgBuyPrice?.toFixed(2)}</td>
+                      <td className={styles.tableCell} >₹{metrics.investedAmount.toLocaleString()}</td>
+                      <td className={styles.tableCell} >₹{metrics.currentValue.toLocaleString()}</td>
+                      <td className={styles.tableCell} >
                         <div className={styles.pnlCell}>
                           <span className={metrics.gainLoss >= 0 ? styles.profit : styles.loss}>
                             {metrics.gainLoss >= 0 ? '+' : ''}₹{metrics.gainLoss.toLocaleString()}
@@ -319,7 +319,7 @@ export default function InvestmentList() {
                           </span>
                         </div>
                       </td>
-                      <td className={styles.tableCell} style={{ textAlign: 'center' }}>{formatDate(investment.entryDate)}</td>
+                      <td className={styles.tableCell}>{formatDate(investment.entryDate)}</td>
 
                       <td className={styles.tableCell}>
                         <div className={styles.actionButtons}>
