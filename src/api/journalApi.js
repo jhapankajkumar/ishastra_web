@@ -25,6 +25,7 @@ export async function createJournal(form) {
   console.log('Form data being sent:', form);
   formData.append('entryDate', form.date);
   formData.append('ticker', form.stock);
+  formData.append('tickerName', form.companyName);
   formData.append('trend', form.trend);
   formData.append('candleType', form.candleType);
   formData.append('nearSupport', form.nearSupport);

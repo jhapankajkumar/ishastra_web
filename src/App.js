@@ -15,6 +15,7 @@ import InvestmentForm from './pages/investment/InvestmentForm';
 import Header from './components/Header'; // Import the Header component
 import ErrorBoundary from './components/ErrorBoundary';
 import { NotificationProvider } from './components/NotificationProvider';
+import UpdateInvestmentForm from './pages/investment/UpdateInvestmentForm'; // Import UpdateInvestmentForm
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
             <Route path="/investments" element={<InvestmentList />} />
             <Route path="/investments/new" element={<InvestmentForm />} />
             <Route path="/investments/edit/:id" element={<InvestmentForm />} />
+            <Route path="/investments/update/:id" element={<UpdateInvestmentForm />} />
             {/* Add more routes as needed */}
           </Routes>
         </BrowserRouter>

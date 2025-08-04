@@ -42,7 +42,7 @@ const Dashboard = () => {
     if (activeTab !== 'investment') return;
     setInvestmentLoading(true);
     setInvestmentError(null);
-    Promise.all([getInvestmentSummary(), getAllInvestments()])
+    Promise.all([getInvestmentSummary(), getAllInvestments(true)])
       .then(([summaryResponse, listResponse]) => {
         let summary = summaryResponse?.data || {};
         let list = listResponse.data || [];

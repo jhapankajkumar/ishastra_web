@@ -181,10 +181,10 @@ export default function JournalList() {
   if (loading) {
     return (
       <div className={styles.container}>
-        <PageHeader
+        {/* <PageHeader
           title="Chart Reading Journal"
           subtitle="Track your chart analysis and market observations"
-        />
+        /> */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',

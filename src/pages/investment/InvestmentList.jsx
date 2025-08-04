@@ -10,7 +10,8 @@ import styles from "./InvestmentList.module.css";
 export default function InvestmentList() {
   const [investments, setInvestments] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [showCombined, setShowCombined] = useState(true);
+  const [searchText, setSearchText] = useState("");
   const [groupBy, setGroupBy] = useState('none');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,13 +37,13 @@ export default function InvestmentList() {
   useEffect(() => {
     loadData();
     // eslint-disable-next-line
-  }, [filter]);
+  }, [showCombined]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [investmentsRes] = await Promise.all([
-        getAllInvestments()
+        getAllInvestments(showCombined)
       ]);
       setInvestments(investmentsRes.data);
       setError(null);
@@ -135,10 +136,10 @@ export default function InvestmentList() {
   if (loading) {
     return (
       <div className={styles.container}>
-        <PageHeader
+        {/* <PageHeader
           title="Long-Term Investments"
           subtitle="Track your investment portfolio"
-        />
+        /> */}
         <div className={styles.loading}>Loading investments...</div>
       </div>
     );
@@ -160,13 +161,29 @@ export default function InvestmentList() {
         aValue = ((a.currentPrice - a.avgBuyPrice) * a.quantity) || 0;
         bValue = ((b.currentPrice - b.avgBuyPrice) * b.quantity) || 0;
         break;
-      case 'profitLossPercent':
-        aValue = a.avgBuyPrice ? ((a.currentPrice - a.avgBuyPrice) / a.avgBuyPrice) * 100 : 0;
-        bValue = b.avgBuyPrice ? ((b.currentPrice - b.avgBuyPrice) / b.avgBuyPrice) * 100 : 0;
+      case 'investedAmount':
+        aValue = a.avgBuyPrice * a.quantity || 0;
+        bValue = b.avgBuyPrice * b.quantity || 0;
         break;
       case 'entryDate':
         aValue = new Date(a.entryDate).getTime() || 0;
         bValue = new Date(b.entryDate).getTime() || 0;
+        break;
+      case 'quantity':
+        aValue = a.quantity || 0;
+        bValue = b.quantity || 0;
+        break;
+      case 'currentPrice':
+        aValue = a.currentPrice || 0;
+        bValue = b.currentPrice || 0;
+        break;
+      case 'avgBuyPrice':
+        aValue = a.avgBuyPrice || 0;
+        bValue = b.avgBuyPrice || 0;
+        break;
+      case 'recommendation':
+        aValue = a.differencePercentage || 0;
+        bValue = b.differencePercentage || 0;
         break;
       default:
         aValue = 0;
@@ -175,10 +192,39 @@ export default function InvestmentList() {
     return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
   });
 
-  // Use sorted investments for grouping
+  // Local search filter
+  const filteredInvestments = sortedInvestments.filter(inv => {
+    const text = searchText.trim().toLowerCase();
+    if (!text) return true;
+    return (
+      (inv.ticker && inv.ticker.toLowerCase().includes(text)) ||
+      (inv.notes && inv.notes.toLowerCase().includes(text))
+    );
+  });
+
+  // Use filtered investments for grouping
   const groupedInvestments = groupBy === 'none'
-    ? { all: sortedInvestments }
-    : groupInvestments(sortedInvestments);
+    ? { all: filteredInvestments }
+    : groupInvestments(filteredInvestments);
+
+  // Calculate combined totals for currently displayed investments
+  let summaryTotals = null;
+  const allVisibleInvestments = Object.values(groupedInvestments).flat();
+  if (allVisibleInvestments.length > 0) {
+    let invested = 0, current = 0;
+    allVisibleInvestments.forEach(inv => {
+      invested += (inv.quantity || 0) * (inv.avgBuyPrice || 0);
+      current += (inv.quantity || 0) * ((inv.currentPrice !== undefined && inv.currentPrice !== null) ? inv.currentPrice : inv.avgBuyPrice || 0);
+    });
+    const profit = current - invested;
+    const profitPercent = invested ? ((profit / invested) * 100).toFixed(2) : '0.00';
+    summaryTotals = {
+      invested,
+      current,
+      profit,
+      profitPercent
+    };
+  }
 
   return (
     <div className={styles.container}>
@@ -190,48 +236,26 @@ export default function InvestmentList() {
       <div className={styles.actionBar}>
         <div className={styles.filters}>
           <div className={styles.filterGroup}>
-            <label>Status:</label>
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+            <input
+              type="text"
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              placeholder="Search by Ticker or Notes..."
               className={styles.filterSelect}
-            >
-              <option value="all">All</option>
-              <option value="open">Open</option>
-              <option value="closed">Closed</option>
-            </select>
+              style={{ minWidth: 220 }}
+            />
           </div>
           <div className={styles.filterGroup}>
-            <label>Group By:</label>
-            <select
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="none">None</option>
-              <option value="ticker">Ticker</option>
-            </select>
+            <label htmlFor="showCombinedToggle" style={{ marginRight: 8 }}>Show Combined:</label>
+            <input
+              id="showCombinedToggle"
+              type="checkbox"
+              checked={showCombined}
+              onChange={e => setShowCombined(e.target.checked)}
+              style={{ width: 22, height: 22, accentColor: '#6366F1', cursor: 'pointer' }}
+            />
           </div>
-          <div className={styles.filterGroup}>
-            <label>Sort By:</label>
-            <select
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value)}
-              className={styles.filterSelect}
-              style={{ minWidth: 120 }}
-            >
-              {SORT_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <button
-              className={styles.filterSelect}
-              onClick={() => setSortOrder(order => order === 'asc' ? 'desc' : 'asc')}
-              title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-            >
-              {sortOrder === 'asc' ? '▲' : '▼'}
-            </button>
-          </div>
+          {/* Removed sort selection dropdown and button. Sorting is now only via table headers. */}
         </div>
         <button
           className={styles.addButton}
@@ -241,27 +265,138 @@ export default function InvestmentList() {
         </button>
       </div>
 
+      {/* Show summary row always, calculated from currently displayed investments */}
+      {summaryTotals && (
+        <div style={{
+          background: 'linear-gradient(90deg, #e0e7ff 0%, #f8fafc 100%)',
+          borderRadius: '14px',
+          padding: '18px 24px',
+          marginBottom: '18px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '2.5rem',
+          fontWeight: 600,
+          fontSize: '1.08rem',
+          color: '#222',
+          alignItems: 'center',
+          boxShadow: '0 2px 12px rgba(99,102,241,0.08)',
+          border: '1px solid #c7d2fe',
+          justifyContent: 'center',
+        }}>
+          <span style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+            <span style={{fontSize:'1.3em'}}>💰</span>
+            <span style={{color:'#6366F1'}}>Total Invested:</span>
+            <strong style={{fontSize:'1.1em'}}>₹{summaryTotals.invested.toLocaleString('en-IN', {maximumFractionDigits:2})}</strong>
+          </span>
+          <span style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+            <span style={{fontSize:'1.3em'}}>📈</span>
+            <span style={{color:'#059669'}}>Current Value:</span>
+            <strong style={{fontSize:'1.1em'}}>₹{summaryTotals.current.toLocaleString('en-IN', {maximumFractionDigits:2})}</strong>
+          </span>
+          <span style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+            <span style={{fontSize:'1.3em'}}>{summaryTotals.profit >= 0 ? '🟢' : '🔴'}</span>
+            <span style={{color: summaryTotals.profit >= 0 ? '#059669' : '#dc2626'}}>Profit/Loss:</span>
+            <strong style={{fontSize:'1.1em',color: summaryTotals.profit >= 0 ? '#059669' : '#dc2626'}}>
+              {summaryTotals.profit >= 0 ? '+' : ''}₹{summaryTotals.profit.toLocaleString('en-IN', {maximumFractionDigits:2})}
+              <span style={{fontWeight:400,marginLeft:'0.3em'}}>({summaryTotals.profitPercent}%)</span>
+            </strong>
+          </span>
+        </div>
+      )}
+
       {/* Investments Display */}
       {Object.entries(groupedInvestments).map(([groupKey, groupInvestments]) => (
         <div key={groupKey} className={styles.investmentGroup}>
-          {groupBy === 'ticker' && (
+          {/* {groupBy === 'ticker' && (
             <h3 className={styles.groupHeader}>
               {groupKey} ({groupInvestments.length} position{groupInvestments.length !== 1 ? 's' : ''})
             </h3>
-          )}
+          )} */}
           <div className={styles.tableContainer}>
             <table className={styles.table}>
               <thead className={styles.tableHeader}>
                 <tr>
-                  <th className={styles.tableHeaderCell}>Ticker</th>
-                  <th className={styles.tableHeaderCell}>Recommendation</th>
-                  <th className={styles.tableHeaderCell}>Current Price</th>
-                  <th className={styles.tableHeaderCell}>Qty</th>
-                  <th className={styles.tableHeaderCell}>Buy Avg</th>
-                  <th className={styles.tableHeaderCell}>Invested</th>
-                  <th className={styles.tableHeaderCell}>Current Value</th>
-                  <th className={styles.tableHeaderCell}>P&L</th>
-                  <th className={styles.tableHeaderCell}>Invested On</th>
+                  {/* Ticker */}
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('ticker') || setSortOrder(sortBy==='ticker'&&sortOrder==='asc'?'desc':'asc')}>
+                    Ticker
+                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                      {sortBy==='ticker' ? (
+                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
+                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                    </span>
+                  </th>
+                  {/* Recommendation (not sortable) */}
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('recommendation') || setSortOrder(sortBy==='recommendation'&&sortOrder==='asc'?'desc':'asc')}>Rec
+                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                      {sortBy==='recommendation' ? (
+                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
+                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                    </span>
+                  </th>
+                  {/* Qty */}
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('quantity') || setSortOrder(sortBy==='quantity'&&sortOrder==='asc'?'desc':'asc')}>
+                    Qty
+                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                      {sortBy==='quantity' ? (
+                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
+                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                    </span>
+                  </th>
+                  {/* Buy Avg */}
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('avgBuyPrice') || setSortOrder(sortBy==='avgBuyPrice'&&sortOrder==='asc'?'desc':'asc')}>
+                    Buy Avg
+                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                      {sortBy==='avgBuyPrice' ? (
+                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
+                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                    </span>
+                  </th>
+                  {/* Current Price */}
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('currentPrice') || setSortOrder(sortBy==='currentPrice'&&sortOrder==='asc'?'desc':'asc')}>
+                    LTP
+                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                      {sortBy==='currentPrice' ? (
+                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
+                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                    </span>
+                  </th>
+                  {/* Invested */}
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('investedAmount') || setSortOrder(sortBy==='investedAmount'&&sortOrder==='asc'?'desc':'asc')}>
+                    Invested
+                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                      {sortBy==='investedAmount' ? (
+                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
+                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                    </span>
+                  </th>
+                  {/* Current Value */}
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('currentValue') || setSortOrder(sortBy==='currentValue'&&sortOrder==='asc'?'desc':'asc')}>
+                    Current
+                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                      {sortBy==='currentValue' ? (
+                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
+                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                    </span>
+                  </th>
+                  {/* P&L */}
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('profitLoss') || setSortOrder(sortBy==='profitLoss'&&sortOrder==='asc'?'desc':'asc')}>
+                    P&L
+                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                      {sortBy==='profitLoss' ? (
+                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
+                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                    </span>
+                  </th>
+                  {/* Date */}
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('entryDate') || setSortOrder(sortBy==='entryDate'&&sortOrder==='asc'?'desc':'asc')}>
+                    Date
+                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                      {sortBy==='entryDate' ? (
+                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
+                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                    </span>
+                  </th>
+                  {/* Actions (not sortable) */}
                   <th className={styles.tableHeaderCell}>Actions</th>
                 </tr>
               </thead>
@@ -270,7 +405,7 @@ export default function InvestmentList() {
                   const metrics = calculateMetrics(investment);
                   return (
                     <tr key={investment.id} className={styles.tableRow}>
-                      <td className={`${styles.tableCell} ${styles.tickerCell}`} colSpan={2} style={{ minWidth: 180 }}>
+                      <td className={`${styles.tableCell} ${styles.tickerCell}`}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.2rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <span className={styles.ticker}>{investment.ticker}</span>
@@ -296,6 +431,8 @@ export default function InvestmentList() {
                           </span>
                         </div>
                       </td>
+                      <td className={styles.tableCell} >{investment.quantity}</td>
+                      <td className={styles.tableCell} >₹{investment.avgBuyPrice?.toFixed(2)}</td>
                       <td className={styles.tableCell} >
                         {investment.currentPrice ? (
                           <span className={styles.currentPrice}>
@@ -305,14 +442,13 @@ export default function InvestmentList() {
                           <span className={styles.noPrice}>-</span>
                         )}
                       </td>
-                      <td className={styles.tableCell} >{investment.quantity}</td>
-                      <td className={styles.tableCell} >₹{investment.avgBuyPrice?.toFixed(2)}</td>
-                      <td className={styles.tableCell} >₹{metrics.investedAmount.toLocaleString()}</td>
-                      <td className={styles.tableCell} >₹{metrics.currentValue.toLocaleString()}</td>
+
+                      <td className={styles.tableCell} >₹{metrics.investedAmount.toLocaleString('en-IN', {maximumFractionDigits:2})}</td>
+                      <td className={styles.tableCell} >₹{metrics.currentValue.toLocaleString('en-IN', {maximumFractionDigits:2})}</td>
                       <td className={styles.tableCell} >
                         <div className={styles.pnlCell}>
                           <span className={metrics.gainLoss >= 0 ? styles.profit : styles.loss}>
-                            {metrics.gainLoss >= 0 ? '+' : ''}₹{metrics.gainLoss.toLocaleString()}
+                            {metrics.gainLoss >= 0 ? '+' : ''}₹{metrics.gainLoss.toLocaleString('en-IN', {maximumFractionDigits:2})}
                           </span>
                           <span className={`${styles.pnlPercent} ${metrics.gainLoss >= 0 ? styles.profit : styles.loss}`}>
                             ({metrics.gainLossPercent}%)
@@ -323,7 +459,13 @@ export default function InvestmentList() {
 
                       <td className={styles.tableCell}>
                         <div className={styles.actionButtons}>
-                          {investment.status === 'open' && (
+                          <button
+                            onClick={() => navigate(`/investments/update/${investment.id}`)}
+                            className={`${styles.actionButton} ${styles.editButton}`}
+                          >
+                            Update
+                          </button>
+                          {/* {investment.status === 'open' && (
                             <button
                               onClick={() => {
                                 setSelectedInvestment(investment);
@@ -337,7 +479,7 @@ export default function InvestmentList() {
                             >
                               Close
                             </button>
-                          )}
+                          )} */}
                           <button
                             onClick={() => {
                               setSelectedInvestment(investment);

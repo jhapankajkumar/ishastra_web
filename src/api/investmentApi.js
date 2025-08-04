@@ -10,9 +10,10 @@ const api = axios.create({
 });
 
 // Get all investments
-export const getAllInvestments = async (status = null, ticker = null) => {
+export const getAllInvestments = async (isGroupByTicker = null, status = null, ticker = null) => {
   try {
     const params = {};
+    if (isGroupByTicker) params.isGroupByTicker = isGroupByTicker;
     if (status) params.status = status;
     if (ticker) params.ticker = ticker;
     

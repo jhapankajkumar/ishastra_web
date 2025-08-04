@@ -1,27 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { createInvestment, updateInvestment, getInvestmentById } from '../../api/investmentApi';
-import { getAllRecommendations } from '../../api/recommendationApi';
-import { searchTickers, getCurrentPrice } from '../../api/tickerApi';
+import { updateInvestment, getInvestmentById } from '../../api/investmentApi';
 import { useNotification } from '../../components/NotificationProvider';
 import styles from './InvestmentForm.module.css';
-import TickerSearch from "../../components/TickerSearch";
 
-const InvestmentForm = () => {
+const UpdateInvestmentForm = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const notification = useNotification();
-    const isEditing = Boolean(id);
+    const isEditing = true;
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [currentPrice, setCurrentPrice] = useState(null);
-    const [priceLoading, setPriceLoading] = useState(false);
-    const [recommendations, setRecommendations] = useState([]);
-    const [tickerSuggestions, setTickerSuggestions] = useState([]);
-    const [searchLoading, setSearchLoading] = useState(false);
-    const [searchTimeout, setSearchTimeout] = useState(null);
-
     const [formData, setFormData] = useState({
         ticker: '',
         entryDate: new Date().toISOString().split('T')[0],
@@ -33,15 +24,12 @@ const InvestmentForm = () => {
         buyBelow: '',
         sector: '',
         marketCap: '',
+        status: 'open',
     });
-
-    const [isRecommended, setIsRecommended] = useState(false);
-
     const [errors, setErrors] = useState({});
 
-    // Load investment data for editing
     useEffect(() => {
-        if (isEditing) {
+        if (id) {
             loadInvestment();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,19 +38,23 @@ const InvestmentForm = () => {
     const loadInvestment = async () => {
         try {
             setLoading(true);
-            const investment = await getInvestmentById(id);
+            const investmentResponse = await getInvestmentById(id);
+            const investment = investmentResponse.data;
+            console.log('Loaded investment:', investment);
             setFormData({
                 ticker: investment.ticker || '',
                 quantity: investment.quantity?.toString() || '',
-                avgBuyPrice: investment.avgBuyPrice?.toString() || '',
+                avgBuyPrice: investment.avgBuyPrice?.toFixed(2).toString() || '',
                 entryDate: investment.entryDate ? investment.entryDate.split('T')[0] : '',
                 notes: investment.notes || '',
                 status: investment.status || 'open',
                 sector: investment.sector || '',
                 marketCap: investment.marketCap || 'Large Cap',
                 buyBelow: investment.buyBelow || '',
-                isRecommended: false
+                isRecommended: false,
+                currentPrice: investment.currentPrice || '',
             });
+            setCurrentPrice(investment.currentPrice || null);
         } catch (error) {
             console.error('Error loading investment:', error);
             if (notification) {
@@ -75,84 +67,20 @@ const InvestmentForm = () => {
         }
     };
 
-    const fetchCurrentPrice = async (ticker) => {
-        try {
-            setPriceLoading(true);
-            const response = await getCurrentPrice(ticker);
-            if (response.data && response.data.price) {
-                setCurrentPrice(response.data.price);
-                setFormData(prev => ({ ...prev, currentPrice: response.data.price }));
-            } else {
-                setCurrentPrice(null);
-            }
-        } catch (error) {
-            console.error('Error fetching current price:', error);
-            setCurrentPrice(null);
-        } finally {
-            setPriceLoading(false);
-        }
-    };
-
-    const handleTickerSearch = async (value) => {
-        // Clear previous timeout
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
-        }
-
-        if (value.length < 1) {
-            setTickerSuggestions([]);
-            return;
-        }
-
-        // Set a new timeout for API call
-        const timeoutId = setTimeout(async () => {
-            try {
-                setSearchLoading(true);
-                const response = await searchTickers(value);
-
-                if (response.data && Array.isArray(response.data)) {
-                    // Format the results for display
-                    const formatted = response.data
-                        .filter(item => item.symbol && item.typeDisp)
-                        .slice(0, 8)
-                        .map(item => ({
-                            symbol: item.symbol,
-                            name: item.shortname || item.longname || item.symbol,
-                            type: item.typeDisp,
-                            exchange: item.exchDisp || item.exchange
-                        }));
-                    setTickerSuggestions(formatted);
-                }
-            } catch (error) {
-                console.error('Error searching tickers:', error);
-                setTickerSuggestions([]);
-            } finally {
-                setSearchLoading(false);
-            }
-        }, 300); // 300ms debounce
-
-        setSearchTimeout(timeoutId);
-    };
-
     const validateForm = () => {
         const newErrors = {};
-
         if (!formData.ticker.trim()) {
             newErrors.ticker = 'Ticker symbol is required';
         }
-
         if (!formData.quantity || parseInt(formData.quantity) <= 0) {
             newErrors.quantity = 'Valid quantity is required';
         }
-
         if (!formData.avgBuyPrice || parseFloat(formData.avgBuyPrice) <= 0) {
             newErrors.avgBuyPrice = 'Valid average buy price is required';
         }
-
         if (!formData.entryDate) {
             newErrors.entryDate = 'Investment date is required';
         }
-
         // Check if date is not in the future (allow today)
         const investmentDate = new Date(formData.entryDate);
         const today = new Date();
@@ -161,57 +89,21 @@ const InvestmentForm = () => {
         if (investmentDate > today) {
             newErrors.entryDate = 'Investment date cannot be in the future';
         }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-
-        if (name === 'ticker') {
-            const upperValue = value.toUpperCase();
-            setFormData(prev => ({ ...prev, [name]: upperValue }));
-            handleTickerSearch(upperValue);
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
-
+        setFormData(prev => ({ ...prev, [name]: value }));
         // Clear error when user starts typing
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
     };
-    const handleTickerChange = (ticker) => { }
-    const handleTickerSelect = async (ticker) => {
-        const symbol = typeof ticker === 'string' ? ticker : ticker.symbol;
-        let sector = '';
-        // let marketCap = 'Large Cap';
-        if (typeof ticker === 'object') {
-            sector = ticker.sector || '';
-        }
-        setFormData(prev => ({ ...prev, ticker: symbol, sector }));
-        setTickerSuggestions([]);
-        fetchCurrentPrice(symbol);
-        try {
-            const recs = await getAllRecommendations();
-            const match = (recs.data || []).find(r => r.ticker && r.ticker.toUpperCase() === symbol.toUpperCase());
-            if (match) {
-                setIsRecommended(true);
-                console.log('Recommendation match found:', match.marketCap);
-                setFormData(prev => ({ ...prev, isRecommended: true, buyBelow: match.buyBelow?.toString() || '', marketCap: match.marketCap }));
-            } else {
-                setIsRecommended(false);
-                setFormData(prev => ({ ...prev, isRecommended: false, buyBelow: '', marketCap: 'LARGE CAP' }));
-            }
-        } catch (err) {
-            setFormData(prev => ({ ...prev, isRecommended: false }));
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!validateForm()) {
             if (notification) {
                 notification.error('Please fix form errors');
@@ -220,11 +112,8 @@ const InvestmentForm = () => {
             }
             return;
         }
-
         try {
             setSaving(true);
-
-
             // Map frontend fields to backend expected fields
             const investmentData = {
                 ticker: formData.ticker.toUpperCase(),
@@ -238,23 +127,12 @@ const InvestmentForm = () => {
                 marketCap: formData.marketCap,
                 currentPrice: formData.currentPrice
             };
-
-            if (isEditing) {
-                await updateInvestment(id, investmentData);
-                if (notification) {
-                    notification.success('Investment updated successfully');
-                } else {
-                    console.log('Investment updated successfully');
-                }
+            await updateInvestment(id, investmentData);
+            if (notification) {
+                notification.success('Investment updated successfully');
             } else {
-                await createInvestment(investmentData);
-                if (notification) {
-                    notification.success('Investment created successfully');
-                } else {
-                    console.log('Investment created successfully');
-                }
+                console.log('Investment updated successfully');
             }
-
             navigate('/investments');
         } catch (error) {
             console.error('Error saving investment:', error);
@@ -281,7 +159,7 @@ const InvestmentForm = () => {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <h1>{isEditing ? 'Edit Investment' : 'Add New Investment'}</h1>
+                <h1>Edit Investment</h1>
                 <p>Track your long-term investment positions</p>
             </div>
             <div className={styles.formContainer}>
@@ -291,13 +169,13 @@ const InvestmentForm = () => {
                         <div className={styles.gridTwoCol}>
                             <div className={styles.fieldGroup}>
                                 <label className={styles.label}>Stock Ticker *</label>
-                                <TickerSearch
+                                <input
+                                    type="text"
+                                    id="ticker"
+                                    name="ticker"
                                     value={formData.ticker}
-                                    onChange={handleTickerChange}
-                                    onSelect={handleTickerSelect}
-                                    placeholder="e.g., TCS, RELIANCE"
-                                    apiSource="yahoo"
-                                    instrumentType={"Stocks"}
+                                    className={styles.input}
+                                    disabled
                                 />
                             </div>
                             <div className={styles.fieldGroup}>
@@ -306,7 +184,7 @@ const InvestmentForm = () => {
                                     type="text"
                                     id="currentPrice"
                                     name="currentPrice"
-                                    value={currentPrice !== null && currentPrice !== undefined ? `$${currentPrice.toFixed(2)}` : ''}
+                                    value={currentPrice !== null && currentPrice !== undefined ? `$${Number(currentPrice).toFixed(2)}` : ''}
                                     className={styles.input}
                                     placeholder="Auto-filled after ticker selection"
                                     readOnly
@@ -348,7 +226,6 @@ const InvestmentForm = () => {
                     </div>
                     <div className={styles.card}>
                         <h2 className={styles.cardTitle}>Investment Details</h2>
-                        
                         <div className={styles.gridTwoCol}>
                             <div className={styles.fieldGroup}>
                             <label htmlFor="invested_on" className={styles.label}>Investment Date *</label>
@@ -378,7 +255,6 @@ const InvestmentForm = () => {
                                 />
                                 {errors.quantity && <span className={styles.error}>{errors.quantity}</span>}
                             </div>
-                            
                         </div>
                         <div className={styles.gridTwoCol}>
                             <div className={styles.fieldGroup}>
@@ -410,9 +286,6 @@ const InvestmentForm = () => {
                                     placeholder="Buy below price from recommendation"
                                     disabled={saving}
                                 />
-                                {/* {isRecommended && (
-                                    <span className={styles.info} style={{ color: '#4caf50' }}> Recommended</span>
-                                )} */}
                             </div>
                         </div>
                     </div>
@@ -446,7 +319,7 @@ const InvestmentForm = () => {
                             className={styles.submitButton}
                             disabled={saving}
                         >
-                            {saving ? 'Saving...' : isEditing ? 'Update Investment' : 'Add Investment'}
+                            {saving ? 'Saving...' : 'Update Investment'}
                         </button>
                     </div>
                 </form>
@@ -455,4 +328,4 @@ const InvestmentForm = () => {
     );
 }
 
-export default InvestmentForm;
+export default UpdateInvestmentForm;
