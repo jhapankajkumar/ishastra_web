@@ -31,13 +31,13 @@ function getTopHoldings(investments, topN = 10) {
     labels: sorted.map(x => x.ticker),
     invested: sorted.map(x => x.invested),
     profit: sorted.map(x => x.profit),
-    // loss: sorted.map(x => x.loss), // For future use if you want to show loss in red
+    loss: sorted.map(x => x.loss), // For future use if you want to show loss in red
     currentValue: sorted.map(x => x.currentValue)
   };
 }
 
 const TopHoldingsBarChart = ({ investments }) => {
-  const { labels, invested, profit, currentValue } = getTopHoldings(investments);
+  const { labels, invested, profit, currentValue, loss } = getTopHoldings(investments);
   if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 16 }}>No holdings data</div>;
   return (
     <Bar
@@ -47,7 +47,15 @@ const TopHoldingsBarChart = ({ investments }) => {
           {
             label: "Invested Amount",
             data: invested,
-            backgroundColor: '#F59E42', // Orange
+            backgroundColor: '#f5c242ff', // Orange
+            borderRadius: 8,
+            maxBarThickness: 32,
+            stack: 'stack1',
+          },
+          {
+            label: "Loss",
+            data: loss,
+            backgroundColor: '#ef4444', // Red
             borderRadius: 8,
             maxBarThickness: 32,
             stack: 'stack1',
@@ -55,7 +63,7 @@ const TopHoldingsBarChart = ({ investments }) => {
           {
             label: "Profit",
             data: profit,
-            backgroundColor: '#6366F1', // Indigo
+            backgroundColor: '#0ea35dff', // Indigo
             borderRadius: 8,
             maxBarThickness: 32,
             stack: 'stack1',

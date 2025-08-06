@@ -51,18 +51,23 @@ const Dashboard = () => {
         let totalHoldings = 0;
         let unrealizedPnL = 0;
         let avgBuyPrice = 0;
+        let todaysPnL = 0;
         if (Array.isArray(list) && list.length > 0) {
           totalInvested = list.reduce((sum, inv) => sum + ((inv.avgBuyPrice || 0) * (inv.quantity || 0)), 0);
           totalHoldings = list.reduce((sum, inv) => sum + ((inv.currentPrice || 0) * (inv.quantity || 0)), 0);
           unrealizedPnL = list.reduce((sum, inv) => sum + ((inv.currentPrice - inv.avgBuyPrice) * (inv.quantity || 0)), 0);
           avgBuyPrice = totalInvested && list.length ? totalInvested / list.reduce((sum, inv) => sum + (inv.quantity || 0), 0) : 0;
+          const lastTotalHoldings = list.reduce((sum, inv) => sum + ((inv.lastDayPrice || 0) * (inv.quantity || 0)), 0);
+          todaysPnL = totalHoldings - lastTotalHoldings;
+          console.log('Today\'s P&L:', todaysPnL);
         }
 
         let mappedSummary = {
-          totalInvested,
-          totalHoldings,
-          unrealizedPnL,
-          avgBuyPrice,
+          totalInvested: Math.floor(totalInvested),
+          totalHoldings: Math.floor(totalHoldings),
+          unrealizedPnL: Math.floor(unrealizedPnL),
+          avgBuyPrice: Math.floor(avgBuyPrice),
+          todaysPnL: Math.floor(todaysPnL),
         };
 
         setInvestmentSummary(mappedSummary);
@@ -95,7 +100,7 @@ const Dashboard = () => {
         if (dashboardRes.status === 'fulfilled') {
           setStats(dashboardRes.value.data);
         } else {
-          
+
           if (dashboardRes.reason?.type === 'NETWORK_ERROR') {
             hasNetworkError = true;
           }
@@ -224,15 +229,15 @@ const Dashboard = () => {
   //   { label: '> 10K', min: 10000, max: Infinity }
   // ];
   // const perfData = pnlBuckets.map(bucket => { // Reserved for future chart implementation
-    // const count = trades.filter(t => {
-    //   const pnl = calculatePnl(t);
-    //   return pnl > bucket.min && pnl <= bucket.max;
-    // }).length;
-    // // Invert count for negative buckets
-    // return {
-    //   label: bucket.label,
-    //   count: bucket.max <= 0 ? -count : count
-    // };
+  // const count = trades.filter(t => {
+  //   const pnl = calculatePnl(t);
+  //   return pnl > bucket.min && pnl <= bucket.max;
+  // }).length;
+  // // Invert count for negative buckets
+  // return {
+  //   label: bucket.label,
+  //   count: bucket.max <= 0 ? -count : count
+  // };
   // });
 
   // --- Recent Trades ---
@@ -329,10 +334,10 @@ const Dashboard = () => {
           title="Dashboard"
           subtitle="Track your trading and investment analytics"
         /> */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
           height: '200px',
           color: '#9CA3AF'
         }}>
@@ -476,7 +481,7 @@ const Dashboard = () => {
               <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total P&L</div>
               <div style={{ fontSize: 36, fontWeight: 800, color: totalPnL >= 0 ? "#10B981" : "#EF4444", letterSpacing: 1 }}>{totalPnL >= 0 ? '+' : ''}₹{totalPnL.toLocaleString()}</div>
             </div>
-            
+
           </div>
 
           {/* Trading Analytics Section */}
@@ -505,24 +510,24 @@ const Dashboard = () => {
               <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Equity Curve</div>
               <EquityCurve trades={trades} />
             </div> */}
-              
-              <div style={{
-                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
-                  borderRadius: 10,
-                  padding: 18,
-                  border: "1px solid #2A3441",
-                  minHeight: 320,
-                  // maxWidth: 400,
-                  maxHeight: 220,
-                  width: '95%',
-                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
-                  position: 'relative',
-                  overflow: 'hidden',
-                  display: 'flex', flexDirection: 'column', justifyContent: 'center'
-                }}>
-                  <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Trading Value Over Time</div>
-                  <InvestmentValueChart investments={Array.isArray(trades) ? trades : []} isTrade={true} />
-                </div>
+
+            <div style={{
+              background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+              borderRadius: 10,
+              padding: 18,
+              border: "1px solid #2A3441",
+              minHeight: 320,
+              // maxWidth: 400,
+              maxHeight: 220,
+              width: '95%',
+              boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+              position: 'relative',
+              overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center'
+            }}>
+              <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Trading Value Over Time</div>
+              <InvestmentValueChart investments={Array.isArray(trades) ? trades : []} isTrade={true} />
+            </div>
             {/* Performance Chart */}
             <div style={{
               background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
@@ -614,16 +619,16 @@ const Dashboard = () => {
                         transition: 'background 0.2s',
                         borderRadius: 8
                       }}
-                      onMouseOver={e => e.currentTarget.style.background = '#232B3B'}
-                      onMouseOut={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)'}
+                        onMouseOver={e => e.currentTarget.style.background = '#232B3B'}
+                        onMouseOut={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)'}
                       >
                         <td style={{ padding: '12px 14px', fontWeight: 700 }}>{trade.ticker}</td>
                         <td style={{ padding: '12px 14px', fontWeight: 700 }}>{trade.entryDate ? formatDate(trade.entryDate) : "-"}</td>
                         <td style={{ padding: '12px 14px', }}>₹{trade.entryPrice?.toFixed(2).toLocaleString() ?? '-'}</td>
-                        <td style={{ padding: '12px 14px',  }}>{trade.quantity}</td>
-                        <td style={{ padding: '12px 14px',  }}>{soldQty}</td>
-                        <td style={{ padding: '12px 14px',  }}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exitPrice !== undefined && trade.exitPrice !== null ? Number(trade.exitPrice).toFixed(2) : "-")) : '-'}</td>
-                        <td style={{ padding: '12px 14px',  }}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
+                        <td style={{ padding: '12px 14px', }}>{trade.quantity}</td>
+                        <td style={{ padding: '12px 14px', }}>{soldQty}</td>
+                        <td style={{ padding: '12px 14px', }}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exitPrice !== undefined && trade.exitPrice !== null ? Number(trade.exitPrice).toFixed(2) : "-")) : '-'}</td>
+                        <td style={{ padding: '12px 14px', }}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
                         <td style={{ padding: '12px 14px', color: soldQty > 0 && Number(getPartialPL(trade)) > 0 ? '#10B981' : '#EF4444', fontWeight: 800 }}>
                           {soldQty > 0 && getPartialPL(trade) !== "0" ? `$${getPartialPL(trade)}` : "0"}
                         </td>
@@ -677,8 +682,8 @@ const Dashboard = () => {
                     color: '#3B82F6',
                     opacity: 0.18
                   }}>💰</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Invested</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: "#3B82F6", letterSpacing: 1 }}>₹{investmentSummary?.totalInvested?.toFixed(0)?.toLocaleString() ?? '-'}</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Investment</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: "#3B82F6", letterSpacing: 1 }}>₹{investmentSummary?.totalInvested?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
                 </div>
                 {/* Card: Total Holdings */}
                 <div style={{
@@ -698,8 +703,8 @@ const Dashboard = () => {
                     color: '#10B981',
                     opacity: 0.18
                   }}>📈</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Holdings</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: "#10B981", letterSpacing: 1 }}>₹{investmentSummary?.totalHoldings?.toFixed(0)?.toLocaleString() ?? '-'}</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Current Value</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: "#10B981", letterSpacing: 1 }}>₹{investmentSummary?.totalHoldings?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
                 </div>
                 {/* Card: Unrealized P&L */}
                 <div style={{
@@ -719,11 +724,33 @@ const Dashboard = () => {
                     color: '#F59E0B',
                     opacity: 0.18
                   }}>💹</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Unrealized P&L</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: "#F59E0B", letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toFixed(0)?.toLocaleString() ?? '-'}</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Today's P&L</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: investmentSummary?.todaysPnL >= 0 ? '#09581aff' : '#d60a0aff', letterSpacing: 1 }}>{investmentSummary?.todaysPnL >= 0 ? '+' : ''}₹{investmentSummary?.todaysPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
                 </div>
                 {/* Card: Avg Buy Price */}
-                
+                {/* Card: Unrealized P&L */}
+                <div style={{
+                  background: "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
+                  borderRadius: 16,
+                  padding: 28,
+                  border: "1px solid #2A3441",
+                  textAlign: "center",
+                  boxShadow: "0 4px 24px 0 rgba(245,158,11,0.08)",
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  <span style={{
+                    position: 'absolute',
+                    top: 18, left: 18,
+                    fontSize: 28,
+                    color: '#F59E0B',
+                    opacity: 0.18
+                  }}>💹</span>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Unrealized P&L</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: investmentSummary?.unrealizedPnL >= 0 ? '#098e26ff' : '#eb2828ff', letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                </div>
+                {/* Card: Avg Buy Price */}
+
               </div>
 
               {/* Investment Analytics Section (compact) */}
@@ -771,7 +798,7 @@ const Dashboard = () => {
                   <div style={{ fontWeight: 700, color: '#F59E0B', fontSize: 13, marginBottom: 8, letterSpacing: 0.2 }}>Top Holdings by Value</div>
                   <TopHoldingsBarChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
-                
+
               </div>
 
               {/* Deeper Analytics Section (compact) */}
@@ -851,10 +878,10 @@ const Dashboard = () => {
                       fontWeight: 700
                     }}>📊</span>
                     <span style={{ fontWeight: 800, color: '#3B82F6', fontSize: 14, letterSpacing: 0.2 }}>Key Investment Stats</span>
-                    <span title="Compound Annual Growth Rate" style={{cursor:'help',color:'#9CA3AF',fontSize:12,marginLeft:6}}>ℹ️</span>
+                    <span title="Compound Annual Growth Rate" style={{ cursor: 'help', color: '#9CA3AF', fontSize: 12, marginLeft: 6 }}>ℹ️</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 4 }}>
-              
+
                     <div style={{ fontSize: 11, color: '#A1A7B3', fontWeight: 600 }}>Total Return</div>
                     <div style={{ fontSize: 13, color: '#10B981', fontWeight: 800, textAlign: 'right' }}>{(() => {
                       const arr = Array.isArray(investments) ? investments : [];
@@ -959,7 +986,7 @@ const Dashboard = () => {
                 position: 'relative'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Top Gainers <span title="% return = (Current - Buy)/Buy" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Top Gainers <span title="% return = (Current - Buy)/Buy" style={{ cursor: 'help', color: '#9CA3AF', fontSize: 16, marginLeft: 6 }}>ℹ️</span></h3>
                   <button
                     style={{
                       background: 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)',
@@ -1015,7 +1042,7 @@ const Dashboard = () => {
                   </table>
                 </div>
               </div>
-              
+
               {/* Top Gainers/Losers Table */}
               <div style={{
                 background: "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
@@ -1028,7 +1055,7 @@ const Dashboard = () => {
                 position: 'relative'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Top Losers <span title="% return = (Current - Buy)/Buy" style={{cursor:'help',color:'#9CA3AF',fontSize:16,marginLeft:6}}>ℹ️</span></h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Top Losers <span title="% return = (Current - Buy)/Buy" style={{ cursor: 'help', color: '#9CA3AF', fontSize: 16, marginLeft: 6 }}>ℹ️</span></h3>
                   <button
                     style={{
                       background: 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)',
@@ -1067,7 +1094,7 @@ const Dashboard = () => {
                             return { ...inv, ret, pnl };
                           })
                           .sort((a, b) => b.ret - a.ret);
-                          sorted.filter(inv => inv.ret < 0);
+                        sorted.filter(inv => inv.ret < 0);
                         if (sorted.length < 3) return <tr><td colSpan={4} style={{ textAlign: 'center', color: '#9CA3AF', padding: 24 }}>Not enough data</td></tr>;
                         const bottom = sorted.slice(-3).reverse();
                         return [
@@ -1121,16 +1148,20 @@ const Dashboard = () => {
                     <thead>
                       <tr style={{ background: 'rgba(21,27,40,0.98)' }}>
                         <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Ticker</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'left' }}>Sector</th>
                         <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'right' }}>Quantity</th>
                         <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'right' }}>Avg Buy Price</th>
                         <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'right' }}>Current Price</th>
+                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'right' }}>Today's P&L</th>
                         <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'right', borderTopRightRadius: 10 }}>Unrealized P&L</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {investments && investments.length > 0 ?  investments.slice().sort((a, b) => b.entryDate - a.entryDate).slice(0, 5).map((inv, idx) => {
+                      {investments && investments.length > 0 ? investments.slice().sort((a, b) => b.entryDate - a.entryDate).slice(0, 5).map((inv, idx) => {
                         const pnl = (inv.currentPrice - inv.avgBuyPrice) * inv.quantity;
+                        const currentValue = inv.currentPrice * inv.quantity;
+                        const lastDayValue = inv.lastDayPrice * inv.quantity;
+                        console.log('ticker:', inv.ticker, 'lastDayValue:', lastDayValue, 'currentValue:', currentValue);
+                        const todaysPnL = currentValue - lastDayValue;
                         return (
                           <tr key={inv.id || idx} style={{
                             borderBottom: '1px solid #232B3B',
@@ -1138,14 +1169,16 @@ const Dashboard = () => {
                             transition: 'background 0.2s',
                             borderRadius: 8
                           }}
-                          onMouseOver={e => e.currentTarget.style.background = '#232B3B'}
-                          onMouseOut={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)'}
+                            onMouseOver={e => e.currentTarget.style.background = '#232B3B'}
+                            onMouseOut={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)'}
                           >
                             <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.ticker}</td>
-                            <td style={{ padding: '12px 14px' }}>{inv.sector || '-'}</td>
                             <td style={{ padding: '12px 14px', textAlign: 'right' }}>{inv.quantity}</td>
                             <td style={{ padding: '12px 14px', textAlign: 'right' }}>₹{inv.avgBuyPrice?.toLocaleString() ?? '-'}</td>
                             <td style={{ padding: '12px 14px', textAlign: 'right' }}>₹{inv.currentPrice?.toLocaleString() ?? '-'}</td>
+                            <td style={{ padding: '12px 14px', textAlign: 'right', color: todaysPnL >= 0 ? '#10B981' : '#EF4444', fontWeight: 800 }}>
+                              {todaysPnL >= 0 ? '+' : ''}₹{isNaN(todaysPnL) ? '-' : todaysPnL.toLocaleString()}
+                            </td>
                             <td style={{ padding: '12px 14px', textAlign: 'right', color: pnl >= 0 ? '#10B981' : '#EF4444', fontWeight: 800 }}>
                               {pnl >= 0 ? '+' : ''}₹{isNaN(pnl) ? '-' : pnl.toLocaleString()}
                             </td>

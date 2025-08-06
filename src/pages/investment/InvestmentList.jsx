@@ -25,6 +25,12 @@ export default function InvestmentList() {
   // Sorting state
   const [sortBy, setSortBy] = useState('ticker');
   const [sortOrder, setSortOrder] = useState('asc');
+  
+  // Indices state
+  const [indicesData, setIndicesData] = useState({
+    nifty50: { value: null, change: null, changePercent: null },
+    sensex: { value: null, change: null, changePercent: null }
+  });
 
   const SORT_OPTIONS = [
     { label: 'Ticker', value: 'ticker' },
@@ -94,16 +100,23 @@ export default function InvestmentList() {
 
   const calculateMetrics = (investment) => {
     const currentPrice = investment.currentPrice || investment.avgBuyPrice;
+    const lastPrice = investment.lastDayPrice || currentPrice;
     const investedAmount = investment.quantity * investment.avgBuyPrice;
     const currentValue = investment.quantity * currentPrice;
+    const lastDayValue = investment.quantity * lastPrice;
     const gainLoss = currentValue - investedAmount;
+    const gainLossToday = currentValue - lastDayValue;
     const gainLossPercent = (gainLoss / investedAmount * 100).toFixed(2);
+    const gainLossTodayPercent = ((currentPrice - lastPrice) / lastPrice * 100).toFixed(2);
+
     return {
       investedAmount,
       currentValue,
       gainLoss,
       gainLossPercent,
-      currentPrice
+      currentPrice,
+      gainLossToday,
+      gainLossTodayPercent
     };
   };
 
@@ -185,6 +198,10 @@ export default function InvestmentList() {
         aValue = a.differencePercentage || 0;
         bValue = b.differencePercentage || 0;
         break;
+      case 'gainLossToday':
+        aValue = (a.currentPrice - (a.lastDayPrice || a.avgBuyPrice)) * (a.quantity || 0);
+        bValue = (b.currentPrice - (b.lastDayPrice || b.avgBuyPrice)) * (b.quantity || 0);
+
       default:
         aValue = 0;
         bValue = 0;
@@ -387,6 +404,15 @@ export default function InvestmentList() {
                       ) : <span style={{color:'#bbb'}}>▲</span>}
                     </span>
                   </th>
+
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('gainLossToday') || setSortOrder(sortBy==='gainLossToday'&&sortOrder==='asc'?'desc':'asc')}>
+                    Today's P&L
+                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                      {sortBy==='gainLossToday' ? (
+                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
+                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                    </span>
+                  </th>
                   {/* Date */}
                   <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('entryDate') || setSortOrder(sortBy==='entryDate'&&sortOrder==='asc'?'desc':'asc')}>
                     Date
@@ -452,6 +478,17 @@ export default function InvestmentList() {
                           </span>
                           <span className={`${styles.pnlPercent} ${metrics.gainLoss >= 0 ? styles.profit : styles.loss}`}>
                             ({metrics.gainLossPercent}%)
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className={styles.tableCell} >
+                        <div className={styles.pnlCell}>
+                          <span className={metrics.gainLossToday >= 0 ? styles.profit : styles.loss}>
+                            {metrics.gainLossToday >= 0 ? '+' : ''}₹{metrics.gainLossToday.toLocaleString('en-IN', {maximumFractionDigits:2})}
+                          </span>
+                          <span className={`${styles.pnlPercent} ${metrics.gainLossToday >= 0 ? styles.profit : styles.loss}`}>
+                            ({metrics.gainLossTodayPercent}%)
                           </span>
                         </div>
                       </td>
