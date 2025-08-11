@@ -5,6 +5,7 @@ import styles from "./Header.module.css";
 
 const navLinks = [
   { to: "/", label: "Dashboard" },
+  { to: "/analysis", label: "📊 Analysis", special: true },
   { to: "/trades", label: "Trades" },
   // { to: "/trades/new", label: "Add Trade" },
   { to: "/journal", label: "Journal" },
@@ -103,7 +104,7 @@ export default function Header() {
             <Link
               key={link.to}
               to={link.to}
-              className={`${styles.navLink} ${location.pathname === link.to ? styles.navLinkActive : ''}`}
+              className={`${styles.navLink} ${location.pathname === link.to ? styles.navLinkActive : ''} ${link.special ? styles.aiDashboardLink : ''}`}
             >
               {link.label}
               {location.pathname === link.to && (

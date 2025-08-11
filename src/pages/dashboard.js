@@ -20,6 +20,8 @@ import styles from './Dashboard.module.css';
 
 import { getExitTransactions, getLastExitDate, getAverageExitPrice, getPartialPL, formatDate, getInvested } from '../common/Helper';
 import { fetchSetups } from "../api/firebaseMetaApi";
+import { getNasdaq } from "../data/tickerData";
+import { getUnifiedAnalysis } from '../api/analysisApi';
 
 
 const Dashboard = () => {
@@ -52,6 +54,8 @@ const Dashboard = () => {
         let unrealizedPnL = 0;
         let avgBuyPrice = 0;
         let todaysPnL = 0;
+        let todaysPnLPercent = 0;
+        let pnlPercent = 0;
         if (Array.isArray(list) && list.length > 0) {
           totalInvested = list.reduce((sum, inv) => sum + ((inv.avgBuyPrice || 0) * (inv.quantity || 0)), 0);
           totalHoldings = list.reduce((sum, inv) => sum + ((inv.currentPrice || 0) * (inv.quantity || 0)), 0);
@@ -60,6 +64,9 @@ const Dashboard = () => {
           const lastTotalHoldings = list.reduce((sum, inv) => sum + ((inv.lastDayPrice || 0) * (inv.quantity || 0)), 0);
           todaysPnL = totalHoldings - lastTotalHoldings;
           console.log('Today\'s P&L:', todaysPnL);
+          pnlPercent = totalHoldings > 0 ? (unrealizedPnL / totalHoldings) * 100 : 0;
+          todaysPnLPercent = totalHoldings > 0 ? (todaysPnL / totalHoldings) * 100 : 0;
+
         }
 
         let mappedSummary = {
@@ -68,6 +75,9 @@ const Dashboard = () => {
           unrealizedPnL: Math.floor(unrealizedPnL),
           avgBuyPrice: Math.floor(avgBuyPrice),
           todaysPnL: Math.floor(todaysPnL),
+          pnlPercent: pnlPercent,
+          todaysPnLPercent: todaysPnLPercent
+          
         };
 
         setInvestmentSummary(mappedSummary);
@@ -75,7 +85,6 @@ const Dashboard = () => {
         // eslint-disable-next-line no-console
         // console.log('[Dashboard] investment summary loaded:', mappedSummary);
         setInvestments(list);
-        console.log('Investments:', list);
         // Debug log for investments data
         // eslint-disable-next-line no-console
         // console.log('[Dashboard] investments loaded:', list);
@@ -683,7 +692,7 @@ const Dashboard = () => {
                     opacity: 0.18
                   }}>💰</span>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Investment</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: "#3B82F6", letterSpacing: 1 }}>₹{investmentSummary?.totalInvested?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: "#3B82F6", letterSpacing: 1 }}>₹{investmentSummary?.totalInvested?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
                 </div>
                 {/* Card: Total Holdings */}
                 <div style={{
@@ -704,7 +713,7 @@ const Dashboard = () => {
                     opacity: 0.18
                   }}>📈</span>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Current Value</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: "#10B981", letterSpacing: 1 }}>₹{investmentSummary?.totalHoldings?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: "#10B981", letterSpacing: 1 }}>₹{investmentSummary?.totalHoldings?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
                 </div>
                 {/* Card: Unrealized P&L */}
                 <div style={{
@@ -725,7 +734,8 @@ const Dashboard = () => {
                     opacity: 0.18
                   }}>💹</span>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Today's P&L</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: investmentSummary?.todaysPnL >= 0 ? '#09581aff' : '#d60a0aff', letterSpacing: 1 }}>{investmentSummary?.todaysPnL >= 0 ? '+' : ''}₹{investmentSummary?.todaysPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.todaysPnL >= 0 ? '#09581aff' : '#d60a0aff', letterSpacing: 1 }}>{investmentSummary?.todaysPnL >= 0 ? '+' : ''}₹{investmentSummary?.todaysPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.todaysPnLPercent >= 0 ? '#09581aff' : '#ff2727ff', marginTop: 10 }}>({investmentSummary?.todaysPnLPercent.toFixed(2) ?? '-'}%)</div>
                 </div>
                 {/* Card: Avg Buy Price */}
                 {/* Card: Unrealized P&L */}
@@ -747,7 +757,8 @@ const Dashboard = () => {
                     opacity: 0.18
                   }}>💹</span>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Unrealized P&L</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: investmentSummary?.unrealizedPnL >= 0 ? '#098e26ff' : '#eb2828ff', letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.unrealizedPnL >= 0 ? '#098e26ff' : '#eb2828ff', letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.pnlPercent >= 0 ? '#13e640ff' : '#f03131ff', marginTop: 10 }}>({investmentSummary?.pnlPercent.toFixed(2) ?? '-'}%)</div>
                 </div>
                 {/* Card: Avg Buy Price */}
 
@@ -1160,7 +1171,7 @@ const Dashboard = () => {
                         const pnl = (inv.currentPrice - inv.avgBuyPrice) * inv.quantity;
                         const currentValue = inv.currentPrice * inv.quantity;
                         const lastDayValue = inv.lastDayPrice * inv.quantity;
-                        console.log('ticker:', inv.ticker, 'lastDayValue:', lastDayValue, 'currentValue:', currentValue);
+                        
                         const todaysPnL = currentValue - lastDayValue;
                         return (
                           <tr key={inv.id || idx} style={{

@@ -9,7 +9,7 @@ const quoteTypeMap = {
   Indices: 'INDEX',
 };
 
-const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker...", instrumentType }) => {
+const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker...", instrumentType = "Stocks" }) => {
   const [searchTerm, setSearchTerm] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);

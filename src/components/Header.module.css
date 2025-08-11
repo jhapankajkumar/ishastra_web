@@ -129,6 +129,30 @@
   border-radius: 1px;
 }
 
+/* Special styling for AI Dashboard */
+.aiDashboardLink {
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.1), rgba(138, 43, 226, 0.1));
+  border: 1px solid rgba(79, 140, 255, 0.2);
+  color: #E0E7FF !important;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(79, 140, 255, 0.3);
+}
+
+.aiDashboardLink:hover {
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.2), rgba(138, 43, 226, 0.2));
+  border-color: rgba(79, 140, 255, 0.4);
+  color: #fff !important;
+  text-shadow: 0 0 12px rgba(79, 140, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 140, 255, 0.2);
+}
+
+.aiDashboardLink.navLinkActive {
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.25), rgba(138, 43, 226, 0.25));
+  border-color: #4F8CFF;
+  color: #fff !important;
+}
+
 @media (max-width: 768px) {
   .headerContainer {
     padding: 0 4%;

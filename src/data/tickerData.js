@@ -438,3 +438,12 @@ export const getTickerBySymbol = (symbol) => {
     ticker.symbol.toLowerCase() === symbol.toLowerCase()
   );
 };
+
+export const getNasdaq = (limit = 20) => {
+  return TICKER_DATA
+    .filter(ticker => 
+      ticker.exchange.toLowerCase().includes('nasdaq') ||
+      ticker.exchange.toLowerCase().includes('nyse')
+    )
+    .slice(0, limit);
+};  
