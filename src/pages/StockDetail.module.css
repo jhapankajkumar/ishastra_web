@@ -228,6 +228,73 @@
   font-weight: 600;
 }
 
+/* Position Sizing Section */
+.positionSizing {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.positionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.positionDetailItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #27ae60;
+}
+
+.positionDetailLabel {
+  font-size: 0.9rem;
+  color: #27ae60;
+  font-weight: 500;
+}
+
+.positionDetailValue {
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.positionSummary {
+  background: #e8f5e8;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 2px solid #27ae60;
+}
+
+.summaryItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #d4edda;
+}
+
+.summaryItem:last-child {
+  border-bottom: none;
+}
+
+.summaryLabel {
+  font-size: 0.95rem;
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.summaryValue {
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: 700;
+}
+
 /* Reasoning and Next Step */
 .reasoning, .nextStep {
   padding: 1rem;
@@ -524,6 +591,10 @@
   }
   
   .executionGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .positionGrid {
     grid-template-columns: 1fr;
   }
   

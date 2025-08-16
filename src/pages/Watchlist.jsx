@@ -186,12 +186,33 @@ const Watchlist = () => {
                 <span className={styles.metricLabel}>Agreement</span>
                 <span className={styles.metricValue}>{stock.systemsAgreement}</span>
               </div>
+              <div className={styles.metric}>
+                <span className={styles.metricLabel}>Position Risk</span>
+                <span className={styles.metricValue}>{stock.executionData?.positionSize?.risk || 'N/A'}</span>
+              </div>
             </div>
 
             <div className={styles.nextStep}>
               <span className={styles.nextStepLabel}>Next Step:</span>
               <span className={styles.nextStepText}>{stock.nextStepSummary}</span>
             </div>
+
+            {stock.executionData?.positionSize && (
+              <div className={styles.positionInfo}>
+                <div className={styles.positionItem}>
+                  <span className={styles.positionLabel}>Shares:</span>
+                  <span className={styles.positionValue}>{stock.executionData.positionSize.shares || 0}</span>
+                </div>
+                <div className={styles.positionItem}>
+                  <span className={styles.positionLabel}>Value:</span>
+                  <span className={styles.positionValue}>₹{(stock.executionData.positionSize.value || 0).toLocaleString()}</span>
+                </div>
+                <div className={styles.positionItem}>
+                  <span className={styles.positionLabel}>Risk:</span>
+                  <span className={styles.positionValue}>{stock.executionData.positionSize.risk || 'N/A'}</span>
+                </div>
+              </div>
+            )}
 
             <div className={styles.stockFooter}>
               <span className={styles.lastAnalyzed}>

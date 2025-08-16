@@ -213,12 +213,13 @@
 
 /* Stock Metrics */
 .stockMetrics {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   margin-bottom: 1rem;
   padding: 0.75rem;
   background: #f8f9fa;
   border-radius: 6px;
+  gap: 0.5rem;
 }
 
 .metric {
@@ -264,6 +265,38 @@
   color: #34495e;
   margin-top: 0.25rem;
   line-height: 1.4;
+}
+
+/* Position Info */
+.positionInfo {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #f0f8f0;
+  border-radius: 6px;
+  border-left: 4px solid #27ae60;
+}
+
+.positionItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.positionLabel {
+  font-size: 0.75rem;
+  color: #27ae60;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.positionValue {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
 /* Stock Footer */
@@ -382,11 +415,21 @@
   }
   
   .stockMetrics {
-    flex-direction: column;
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
   }
   
   .metric {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .positionInfo {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .positionItem {
     flex-direction: row;
     justify-content: space-between;
   }

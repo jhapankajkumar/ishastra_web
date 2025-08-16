@@ -178,6 +178,67 @@ const StockDetail = () => {
         </div>
       </div>
 
+      {/* Position Sizing Details */}
+      {stock.executionData?.positionSize && (
+        <div className={styles.section}>
+          <h3>💰 Position Sizing</h3>
+          <div className={styles.positionSizing}>
+            <div className={styles.positionGrid}>
+              <div className={styles.positionDetailItem}>
+                <span className={styles.positionDetailLabel}>Recommended Shares</span>
+                <span className={styles.positionDetailValue}>
+                  {stock.executionData.positionSize.shares || 0} shares
+                </span>
+              </div>
+              <div className={styles.positionDetailItem}>
+                <span className={styles.positionDetailLabel}>Position Value</span>
+                <span className={styles.positionDetailValue}>
+                  {formatCurrency(stock.executionData.positionSize.value || 0)}
+                </span>
+              </div>
+              <div className={styles.positionDetailItem}>
+                <span className={styles.positionDetailLabel}>Portfolio Risk</span>
+                <span className={styles.positionDetailValue}>
+                  {stock.executionData.positionSize.risk || 'N/A'}
+                </span>
+              </div>
+              <div className={styles.positionDetailItem}>
+                <span className={styles.positionDetailLabel}>Risk per Share</span>
+                <span className={styles.positionDetailValue}>
+                  ₹{stock.executionData.entry && stock.executionData.stop ? 
+                    Math.abs(stock.executionData.entry - stock.executionData.stop).toFixed(2) : 'N/A'}
+                </span>
+              </div>
+            </div>
+            
+            {stock.executionData.positionSize.shares > 0 && (
+              <div className={styles.positionSummary}>
+                <div className={styles.summaryItem}>
+                  <span className={styles.summaryLabel}>Total Investment:</span>
+                  <span className={styles.summaryValue}>
+                    {formatCurrency(stock.executionData.positionSize.value)}
+                  </span>
+                </div>
+                <div className={styles.summaryItem}>
+                  <span className={styles.summaryLabel}>Maximum Loss:</span>
+                  <span className={styles.summaryValue}>
+                    ₹{stock.executionData.positionSize.shares && stock.executionData.entry && stock.executionData.stop ?
+                      (stock.executionData.positionSize.shares * Math.abs(stock.executionData.entry - stock.executionData.stop)).toFixed(2) : 'N/A'}
+                  </span>
+                </div>
+                <div className={styles.summaryItem}>
+                  <span className={styles.summaryLabel}>Potential Gain (Target 1):</span>
+                  <span className={styles.summaryValue}>
+                    ₹{stock.executionData.positionSize.shares && stock.executionData.target1 && stock.executionData.entry ?
+                      (stock.executionData.positionSize.shares * (stock.executionData.target1 - stock.executionData.entry)).toFixed(2) : 'N/A'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Decision Reasoning */}
       <div className={styles.section}>
         <h3>🧠 Decision Reasoning</h3>

@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/dashboard';
 import TickerAnalysis from './pages/TickerAnalysisNew'; // Simple Ticker Analysis Interface
-import AnalysedStocks from './pages/AnalysedStocks';
 import TradeList from './pages/trade/TradeList';
 import TradeAdd from './pages/trade/TradeAdd'; // Import your new TradeAdd page
 import TradeUpdate from './pages/trade/TradeUpdate'; // Import TradeUpdate page
@@ -45,7 +44,6 @@ function App() {
             <Route path="/recommendations/new" element={<RecommendationForm />} />
             <Route path="/recommendations/edit/:id" element={<RecommendationForm />} />
             <Route path="/investments" element={<InvestmentList />} />
-            <Route path="/analysed-stocks" element={<AnalysedStocks />} />
             <Route path="/investments/new" element={<InvestmentForm />} />
             <Route path="/investments/edit/:id" element={<InvestmentForm />} />
             <Route path="/investments/update/:id" element={<UpdateInvestmentForm />} />
