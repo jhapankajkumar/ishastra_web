@@ -22,6 +22,7 @@ const TradeUpdate = () => {
   const [submitting, setSubmitting] = useState(false);
   const [exitTactics, setExitTactics] = useState([]);
   const [setups, setSetups] = useState([]);
+  const [currentPrice, setCurrentPrice] = useState(null);
 
   const [trade, setTrade] = useState(null);
   const [exitForm, setExitForm] = useState({
@@ -109,6 +110,7 @@ const TradeUpdate = () => {
           ...prev,
           exitOrderPrice: currentPrice.toString()
         }));
+        setCurrentPrice(currentPrice);
         // Only show notification if showNotification is available
         if (typeof showNotification === 'function') {
           showNotification(`Current price loaded: $${currentPrice}`, 'success');
@@ -271,6 +273,20 @@ const TradeUpdate = () => {
     return priceDiff * quantity;
   };
 
+  const calculateUnrealisedPnL = () => {
+    if (!trade.entryPrice  || !exitForm.exitFilledShares) return 0;
+    const entryPrice = parseFloat(trade.entryPrice);
+    const exitPrice = parseFloat(currentPrice || 0);
+    const quantity = parseFloat(exitForm.exitFilledShares);
+
+    if (isNaN(entryPrice) || isNaN(exitPrice) || isNaN(quantity)) return 0;
+
+    const priceDiff = trade.direction?.toLowerCase() === 'long'
+      ? exitPrice - entryPrice
+      : entryPrice - exitPrice;
+    return priceDiff * quantity;
+  };
+
   const calculatePercentGain = () => {
     if (!trade.entryPrice || !exitForm.exitOrderPrice) return 0;
     const entryPrice = parseFloat(trade.entryPrice);
@@ -337,6 +353,19 @@ const TradeUpdate = () => {
               <span className={styles.summaryLabel}>Status:</span>
               <span className={`${styles.summaryValue} ${styles.statusValue}`}>
                 {trade.tradeStatus || 'Open'}
+              </span>
+            </div>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Invested:</span>
+              <span className={`${styles.summaryValue} ${styles.statusValue}`}>
+                {trade.entryPrice * trade.remainingQuantity}
+              </span>
+            </div>
+
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Current:</span>
+              <span className={`${styles.summaryValue} ${styles.statusValue}`}>
+                {trade.currentPrice * trade.remainingQuantity}
               </span>
             </div>
           </div>

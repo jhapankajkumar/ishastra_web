@@ -5,14 +5,15 @@ import styles from "./Header.module.css";
 
 const navLinks = [
   { to: "/", label: "Dashboard" },
-  { to: "/analysis", label: "📊 Analysis", special: true },
+  { to: "/analysis", label: "Analysis", special: true },
+  { to: "/watchlist", label: "Watchlist", special: true },
   { to: "/trades", label: "Trades" },
-  // { to: "/trades/new", label: "Add Trade" },
   { to: "/journal", label: "Journal" },
-  // { to: "/journal/new", label: "Add Journal" },
+  { to: "/risk-management", label: "Risk Management" },
   { to: "/recommendations", label: "Recommendations" },
   { to: "/investments", label: "Investments" },
-  { to: "/risk-management", label: "Risk Management" }
+  { to: "/analysed-stocks", label: "Analysed Stocks" },
+  // Add more links if you add more routes
   // Add more links if you add more routes
 ];
 

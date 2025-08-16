@@ -16,6 +16,7 @@ import { getTickerBySymbol } from '../../data/tickerData';
 
 const initialState = {
   tradeId: "",
+  currency: "USD",
   entryCommission: 0,
   ticker: "",
   companyName: "",
@@ -105,7 +106,8 @@ function mapTradeDataToForm(tradeData) {
     target3: tradeData.target3 || "",
     atrValue: tradeData.atrValue || "",
     setupConfidence: tradeData.setupConfidence || "",
-    tradeStatus: tradeData.tradeStatus || "Planned"
+    tradeStatus: tradeData.tradeStatus || "Planned",
+    currency: tradeData.currency || "USD"
   };
 }
 
@@ -159,6 +161,11 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
     if (typeof tickerObj === 'object' && tickerObj !== null) {
       symbol = tickerObj.symbol;
       companyName = tickerObj.name || '';
+    }
+    if (symbol.includes('.NS') || symbol.includes('.BSE') || symbol.includes('.BO')) {
+      setForm((prev) => ({ ...prev, currency: "INR" }));
+    } else {
+      setForm((prev) => ({ ...prev, currency: "USD" }));
     }
     setForm((prev) => ({ ...prev, ticker: symbol, companyName, entryFilledShares: "" }));
 

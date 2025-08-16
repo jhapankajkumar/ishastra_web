@@ -152,6 +152,8 @@ export async function createTrade(form) {
   } else {
     formData.append('confidence', 0); // Default to Low
   }
+
+  formData.append('currency', form.currency || 'INR'); // Default to INR if not set
   // Only append entryCharts - handle FileList or Array properly
   if (form.entryCharts) {
     const files = Array.from(form.entryCharts);

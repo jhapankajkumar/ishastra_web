@@ -1,0 +1,549 @@
+/* Stock Detail Component Styles */
+
+.container {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.backButton {
+  padding: 0.5rem 1rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.backButton:hover {
+  background: #2980b9;
+  transform: translateX(-2px);
+}
+
+/* Overview Section */
+.overview {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.overviewMain {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.stockTitle h2 {
+  font-size: 2rem;
+  margin: 0 0 0.75rem 0;
+  color: #2c3e50;
+  font-weight: 700;
+}
+
+.badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.decisionBadge, .gradeBadge, .priorityBadge, .confidenceBadge {
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badgeBuy {
+  background: #27ae60;
+  color: white;
+}
+
+.badgeWatch {
+  background: #f39c12;
+  color: white;
+}
+
+.badgeHold {
+  background: #3498db;
+  color: white;
+}
+
+.badgeAvoid {
+  background: #e74c3c;
+  color: white;
+}
+
+.badgeDefault {
+  background: #95a5a6;
+  color: white;
+}
+
+.gradeA {
+  background: #27ae60;
+  color: white;
+}
+
+.gradeB {
+  background: #2ecc71;
+  color: white;
+}
+
+.gradeC {
+  background: #f39c12;
+  color: white;
+}
+
+.gradeD {
+  background: #e74c3c;
+  color: white;
+}
+
+.priorityBadge {
+  background: #8e44ad;
+  color: white;
+}
+
+.confidenceBadge {
+  background: #34495e;
+  color: white;
+}
+
+.stockPrice {
+  text-align: right;
+}
+
+.price {
+  font-size: 2.25rem;
+  font-weight: bold;
+  color: #27ae60;
+  display: block;
+}
+
+.currency {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  text-transform: uppercase;
+}
+
+.overviewMetrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.metricLabel {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.metricValue {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* Section Styles */
+.section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.section h3 {
+  font-size: 1.25rem;
+  color: #2c3e50;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+/* Execution Grid */
+.executionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.executionItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #3498db;
+}
+
+.label {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.value {
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+/* Reasoning and Next Step */
+.reasoning, .nextStep {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+}
+
+.reasoning p, .nextStep p {
+  margin: 0;
+  line-height: 1.6;
+  color: #34495e;
+}
+
+.nextStep {
+  border-left-color: #f39c12;
+  background: #fef9e7;
+}
+
+/* System Tabs */
+.systemTabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.systemTab {
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border: 2px solid #ecf0f1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 140px;
+}
+
+.systemTab:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.systemTab.active {
+  background: #3498db;
+  border-color: #2980b9;
+  color: white;
+}
+
+.systemName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.systemDecision {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.systemTab.active .systemDecision {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.systemConfidence {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* System Details */
+.systemDetails {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.systemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.systemHeader h4 {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.systemBadges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.systemReasoning {
+  margin-bottom: 1.5rem;
+}
+
+.systemReasoning h5 {
+  font-size: 1rem;
+  color: #34495e;
+  margin: 0 0 0.75rem 0;
+}
+
+.systemReasoning ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.systemReasoning li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+  color: #34495e;
+}
+
+/* System Execution */
+.systemExecution h5 {
+  font-size: 1rem;
+  color: #34495e;
+  margin: 0 0 1rem 0;
+}
+
+.executionPlanContent {
+  background: white;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.planItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.planItem:last-child {
+  border-bottom: none;
+}
+
+.planLabel {
+  font-weight: 600;
+  color: #7f8c8d;
+}
+
+.planValue {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.strategySection {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.strategySection h6 {
+  font-size: 0.9rem;
+  color: #34495e;
+  margin: 0 0 0.75rem 0;
+  font-weight: 600;
+}
+
+.strategySection p {
+  margin: 0.5rem 0;
+  line-height: 1.5;
+  color: #34495e;
+}
+
+.strategySection ul {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.strategySection li {
+  margin-bottom: 0.25rem;
+  color: #34495e;
+}
+
+/* Timestamps */
+.timestamps {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.timestamp {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.timestampLabel {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timestampValue {
+  font-size: 0.9rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+/* Loading and Error States */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #ecf0f1;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading p {
+  color: #7f8c8d;
+  font-size: 1rem;
+}
+
+.error {
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.error h3 {
+  color: #e74c3c;
+  margin-bottom: 1rem;
+}
+
+.error p {
+  color: #7f8c8d;
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 0.5rem;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .overviewMain {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .stockPrice {
+    text-align: left;
+  }
+  
+  .overviewMetrics {
+    grid-template-columns: 1fr;
+  }
+  
+  .executionGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .systemTabs {
+    flex-direction: column;
+  }
+  
+  .systemTab {
+    min-width: auto;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0.75rem;
+  }
+  
+  .systemHeader {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .timestamps {
+    grid-template-columns: 1fr;
+  }
+}

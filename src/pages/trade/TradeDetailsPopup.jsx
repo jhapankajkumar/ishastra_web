@@ -745,6 +745,258 @@ export default function TradeDetailsPopup({ trade, onClose }) {
           </div>
         )}
 
+        {/* Exit Strategy Analysis - Only for Open Trades */}
+        {trade.status?.toLowerCase() === 'open' && trade.impulseAnalysis && (
+          <div style={{
+            backgroundColor: "#1A2332",
+            borderRadius: 12,
+            padding: 24,
+            marginBottom: 24,
+            border: "1px solid #2A3441"
+          }}>
+            <h3 style={{
+              fontSize: "18px",
+              fontWeight: "600",
+              color: "#F59E0B",
+              margin: "0 0 20px 0"
+            }}>
+              Exit Strategy Analysis
+            </h3>
+            
+            {/* Impulse Analysis Card */}
+            <div style={{
+              background: "linear-gradient(135deg, #0F1419 0%, #1A2332 100%)",
+              border: "1px solid #2A3441",
+              borderRadius: 12,
+              padding: 20,
+              marginBottom: 20
+            }}>
+              {/* Impulse Header */}
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+                flexWrap: "wrap",
+                gap: 12
+              }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  flexWrap: "wrap"
+                }}>
+                  <div style={{
+                    padding: "8px 16px",
+                    borderRadius: 24,
+                    fontSize: "14px",
+                    fontWeight: "700",
+                    color: "white",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    backgroundColor: trade.impulseAnalysis.impulseColor?.toLowerCase() === 'green' 
+                      ? '#10B981' 
+                      : trade.impulseAnalysis.impulseColor?.toLowerCase() === 'red' 
+                      ? '#EF4444' 
+                      : '#F59E0B'
+                  }}>
+                    {trade.impulseAnalysis.impulseColor?.toUpperCase()} IMPULSE
+                  </div>
+                  <div style={{
+                    background: "#374151",
+                    padding: "6px 12px",
+                    borderRadius: 20,
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    color: trade.impulseAnalysis.exitRecommended ? "#EF4444" : "#10B981"
+                  }}>
+                    Exit Recommended: {trade.impulseAnalysis.exitRecommended ? 'YES' : 'NO'}
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: "12px",
+                  color: "#9CA3AF",
+                  fontStyle: "italic"
+                }}>
+                  Last Updated: {formatDate(trade.impulseAnalysis.lastUpdated)}
+                </div>
+              </div>
+
+              {/* Analysis Reasoning */}
+              {trade.impulseAnalysis.reasoning && trade.impulseAnalysis.reasoning.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <h4 style={{
+                    margin: "0 0 8px 0",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#E5E7EB"
+                  }}>
+                    Analysis Reasoning:
+                  </h4>
+                  <ul style={{
+                    margin: 0,
+                    paddingLeft: 20,
+                    color: "#D1D5DB"
+                  }}>
+                    {trade.impulseAnalysis.reasoning.map((reason, index) => (
+                      <li key={index} style={{
+                        marginBottom: 4,
+                        lineHeight: 1.5
+                      }}>
+                        {reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Technical Data */}
+              {trade.impulseAnalysis.technicalData && (
+                <div style={{
+                  background: "#0F1419",
+                  borderRadius: 8,
+                  padding: 16,
+                  border: "1px solid #374151"
+                }}>
+                  <h4 style={{
+                    margin: "0 0 12px 0",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#E5E7EB"
+                  }}>
+                    Technical Data:
+                  </h4>
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                    gap: 12
+                  }}>
+                    <div>
+                      <span style={{
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                        color: "#9CA3AF",
+                        letterSpacing: "0.5px",
+                        display: "block"
+                      }}>
+                        Current Price
+                      </span>
+                      <span style={{
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        color: "#3B82F6"
+                      }}>
+                        ${trade.impulseAnalysis.technicalData.currentPrice?.toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <span style={{
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                        color: "#9CA3AF",
+                        letterSpacing: "0.5px",
+                        display: "block"
+                      }}>
+                        EMA 13
+                      </span>
+                      <span style={{
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        color: "#E5E7EB"
+                      }}>
+                        {trade.impulseAnalysis.technicalData.ema13?.toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <span style={{
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                        color: "#9CA3AF",
+                        letterSpacing: "0.5px",
+                        display: "block"
+                      }}>
+                        EMA 21
+                      </span>
+                      <span style={{
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        color: "#E5E7EB"
+                      }}>
+                        {trade.impulseAnalysis.technicalData.ema21?.toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <span style={{
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                        color: "#9CA3AF",
+                        letterSpacing: "0.5px",
+                        display: "block"
+                      }}>
+                        MACD Histogram
+                      </span>
+                      <span style={{
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        color: trade.impulseAnalysis.technicalData.macdHistogram > 0 ? "#10B981" : "#EF4444"
+                      }}>
+                        {trade.impulseAnalysis.technicalData.macdHistogram?.toFixed(4)}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <span style={{
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                        color: "#9CA3AF",
+                        letterSpacing: "0.5px",
+                        display: "block"
+                      }}>
+                        EMA 13 Trend
+                      </span>
+                      <span style={{
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        color: trade.impulseAnalysis.technicalData.ema13Slope === 'rising' ? "#10B981" : "#EF4444"
+                      }}>
+                        {trade.impulseAnalysis.technicalData.ema13Slope}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <span style={{
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        textTransform: "uppercase",
+                        color: "#9CA3AF",
+                        letterSpacing: "0.5px",
+                        display: "block"
+                      }}>
+                        MACD Trend
+                      </span>
+                      <span style={{
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        color: trade.impulseAnalysis.technicalData.macdHistSlope === 'rising' ? "#10B981" : "#EF4444"
+                      }}>
+                        {trade.impulseAnalysis.technicalData.macdHistSlope}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Post Trade Analysis */}
         {(trade.postTradeAnalysis || postImages.length > 0) && (
           <div style={{

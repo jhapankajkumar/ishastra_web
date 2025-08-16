@@ -734,8 +734,8 @@ const Dashboard = () => {
                     opacity: 0.18
                   }}>💹</span>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Today's P&L</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.todaysPnL >= 0 ? '#09581aff' : '#d60a0aff', letterSpacing: 1 }}>{investmentSummary?.todaysPnL >= 0 ? '+' : ''}₹{investmentSummary?.todaysPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.todaysPnLPercent >= 0 ? '#09581aff' : '#ff2727ff', marginTop: 10 }}>({investmentSummary?.todaysPnLPercent.toFixed(2) ?? '-'}%)</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.todaysPnL >= 0 ? '#6fe188ff' : '#d60a0aff', letterSpacing: 1 }}>{investmentSummary?.todaysPnL >= 0 ? '+' : ''}₹{investmentSummary?.todaysPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.todaysPnLPercent >= 0 ? '#64d47dff' : '#ff2727ff', marginTop: 10 }}>({investmentSummary?.todaysPnLPercent.toFixed(2) ?? '-'}%)</div>
                 </div>
                 {/* Card: Avg Buy Price */}
                 {/* Card: Unrealized P&L */}
@@ -757,7 +757,7 @@ const Dashboard = () => {
                     opacity: 0.18
                   }}>💹</span>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Unrealized P&L</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.unrealizedPnL >= 0 ? '#098e26ff' : '#eb2828ff', letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.unrealizedPnL >= 0 ? '#6ae485ff' : '#eb2828ff', letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.pnlPercent >= 0 ? '#13e640ff' : '#f03131ff', marginTop: 10 }}>({investmentSummary?.pnlPercent.toFixed(2) ?? '-'}%)</div>
                 </div>
                 {/* Card: Avg Buy Price */}
@@ -1230,3 +1230,5 @@ function calculatePnl(trade) {
 // }
 
 export default Dashboard;
+
+

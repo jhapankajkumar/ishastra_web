@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import TickerSearch from '../components/TickerSearch';
 import { getUnifiedAnalysis } from '../api/analysisApi';
 import styles from './TickerAnalysis.module.css';
@@ -8,6 +9,19 @@ const TickerAnalysis = () => {
   const [analysisData, setAnalysisData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const RECENT_KEY = 'recentAnalysedStocks';
+  const location = useLocation();
+
+  // Prefill ticker from URL and auto-analyze
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ticker = params.get('ticker');
+    if (ticker && ticker !== selectedTicker) {
+      setSelectedTicker(ticker);
+      handleTickerSelect({ symbol: ticker });
+    }
+    // eslint-disable-next-line
+  }, [location.search]);
 
   const handleTickerChange = (value) => {
     setSelectedTicker(value);
@@ -31,6 +45,28 @@ const TickerAnalysis = () => {
       const response = await getUnifiedAnalysis(tickerData.symbol, '3mo', capital);
       console.log('API Response:', response);
       setAnalysisData(response);
+      // Save to localStorage for recent searches
+      if (response && response.symbol) {
+        let recent = [];
+        try {
+          recent = JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
+        } catch {}
+        // Remove duplicates
+        recent = recent.filter(item => item.symbol !== response.symbol);
+        // Add new at top
+        recent.unshift({
+          symbol: response.symbol,
+          currentPrice: response.currentPrice,
+          timestamp: response.timestamp,
+          decision: response.decision,
+          execution: response.execution,
+          context: response.context,
+          risk: response.risk
+        });
+        // Limit to last 20
+        if (recent.length > 20) recent = recent.slice(0, 20);
+        localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+      }
     } catch (err) {
       setError(err.message || 'Failed to fetch analysis data');
       console.error('Analysis error:', err);
@@ -44,7 +80,9 @@ const TickerAnalysis = () => {
 
     console.log('Rendering analysis data:', analysisData);
 
-    // Updated API response structure
+    // Handle new array-based response structure - use first result
+    const firstResult = analysisData.results ? analysisData.results[0] : analysisData;
+    
     const {
       symbol,
       currentPrice,
@@ -56,8 +94,9 @@ const TickerAnalysis = () => {
       risk,
       nextStepSummary,
       whyAvoid,
-      flipToReady
-    } = analysisData;
+      flipToReady,
+      systems
+    } = firstResult;
 
     const getStatusColor = (status) => {
       switch (status) {
@@ -67,6 +106,8 @@ const TickerAnalysis = () => {
           return 'sell';
         case 'HOLD':
           return 'hold';
+        case 'AVOID':
+          return 'avoid';
         default:
           return 'default';
       }
@@ -80,6 +121,8 @@ const TickerAnalysis = () => {
           return 'SELL';
         case 'HOLD':
           return 'HOLD';
+        case 'AVOID':
+          return 'AVOID';
         default:
           return status?.replace(/_/g, ' ') || 'Unknown';
       }
@@ -184,57 +227,64 @@ const TickerAnalysis = () => {
             <h3>🎯 Trading Decision</h3>
             <div className={styles.tradingDecision}>
               <div className={styles.decisionHeader}>
-                <div className={styles.badgeGroup}>
-                  <div className={styles.badgeLabel}>Status</div>
-                  <div className={`${styles.statusBadge} ${styles[getStatusColor(decision.status)]}`}>
-                    {getStatusDisplayText(decision.status)}
+                <div className={styles.mainDecisionCard}>
+                  <div className={styles.decisionTitle}>Market Action</div>
+                  <div className={`${styles.statusBadge} ${styles[getStatusColor(decision.action)]}`}>
+                    {getStatusDisplayText(decision.action)}
                   </div>
                 </div>
-                <div className={styles.badgeGroup}>
-                  <div className={styles.badgeLabel}>Grade</div>
-                  <div className={styles.gradeBadge}>Grade: {decision.grade}</div>
+              </div>
+                
+              <div className={styles.decisionMetrics}>
+                <div className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Grade</div>
+                  <div className={styles.metricValue}>{decision.grade || 'N/A'}</div>
                 </div>
-                <div className={styles.badgeGroup}>
-                  <div className={styles.badgeLabel}>Confidence</div>
-                  <div className={styles.confidenceBadge}>{decision.confidence}% Confidence</div>
+                <div className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Confidence</div>
+                  <div className={styles.metricValue}>{decision.confidence ? `${decision.confidence}%` : 'N/A'}</div>
+                </div>
+                <div className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Agreement</div>
+                  <div className={styles.metricValue}>{decision.systemsAgreement || 'N/A'}</div>
+                  <div className={styles.metricSubtext}>{decision.systemsAnalyzed || 0} systems</div>
                 </div>
               </div>
 
-              {/* Key Factors List - displayed below badges */}
-              {decision.reasonCodes && decision.reasonCodes.length > 0 && (
-                <div className={styles.keyFactors}>
-                  <h4>📊 Key Analysis Factors:</h4>
-                  <div className={styles.reasonCodesContainer}>
-                    {decision.reasonCodes.map((code, index) => (
-                      <div key={index} className={styles.reasonCodeItem}>
-                        {getReasonCodeMessage(code)}
-                      </div>
-                    ))}
+              {/* Overall Reasoning */}
+              {decision.reasoning && typeof decision.reasoning === 'string' && (
+                <div className={styles.overallReasoning}>
+                  <h4>🎯 Overall Analysis:</h4>
+                  <div className={styles.reasoningText}>
+                    {decision.reasoning}
                   </div>
                 </div>
               )}
 
               {/* Why Avoid & Flip Conditions */}
-              {whyAvoid && whyAvoid.length > 0 && (
+              {whyAvoid && Array.isArray(whyAvoid) && whyAvoid.length > 0 && (
                 <div className={styles.avoidReasons}>
                   <h4>⚠️ Why Avoid:</h4>
                   <div className={styles.reasonsList}>
                     {whyAvoid.map((reason, index) => (
                       <div key={index} className={styles.reasonItem}>
-                        {getReasonCodeMessage(reason)}
+                        {typeof reason === 'string' ? 
+                          (getReasonCodeMessage ? getReasonCodeMessage(reason) : reason) : 
+                          JSON.stringify(reason)
+                        }
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {flipToReady && flipToReady.length > 0 && (
+              {flipToReady && Array.isArray(flipToReady) && flipToReady.length > 0 && (
                 <div className={styles.flipConditions}>
                   <h4>🔄 Conditions to Become Ready:</h4>
                   <div className={styles.conditionsList}>
                     {flipToReady.map((condition, index) => (
                       <div key={index} className={styles.conditionItem}>
-                        {condition}
+                        {typeof condition === 'string' ? condition : JSON.stringify(condition)}
                       </div>
                     ))}
                   </div>
@@ -242,7 +292,7 @@ const TickerAnalysis = () => {
               )}
 
               {/* Next Steps */}
-              {nextStepSummary && (
+              {nextStepSummary && typeof nextStepSummary === 'string' && (
                 <div className={styles.nextSteps} style={{ marginTop: 32 }}>
                   <h4 style={{ marginBottom: 8 }}>🚀 Next Steps</h4>
                   <div className={styles.nextStepSummary}>
@@ -254,55 +304,68 @@ const TickerAnalysis = () => {
           </div>
         )}
 
-
-
         {/* Execution Plan */}
         {execution && (
           <div className={styles.section}>
             <h3>📈 Execution Plan</h3>
             <div className={styles.executionPlan}>
-              <div className={styles.priceActions}>
-                <div className={styles.priceItem}>
-                  <span>Entry Price:</span>
-                  <span className={styles.entryPrice}>${execution.entry}</span>
-                </div>
-                <div className={styles.priceItem}>
-                  <span>Stop Loss:</span>
-                  <span className={styles.stopLoss}>${execution.stop}</span>
-                </div>
-                <div className={styles.priceItem}>
-                  <span>Risk/Reward:</span>
-                  <span className={styles.riskReward}>{execution.riskReward?.toFixed(2)}</span>
-                </div>
-                <div className={styles.priceItem}>
-                    <span>Target 1:</span>
-                    <span className={styles.target1}>${execution.target1}</span>
-                </div>
-                <div className={styles.priceItem}>
-                    <span>Target 2:</span>
-                    <span className={styles.target2}>${execution.target2}</span>
+              {/* Price Levels Card */}
+              <div className={styles.executionCard}>
+                <h4 className={styles.executionCardTitle}>🎯 Price Levels</h4>
+                <div className={styles.priceGrid}>
+                  <div className={styles.priceCard}>
+                    <div className={styles.priceLabel}>Entry Price</div>
+                    <div className={`${styles.priceValue} ${styles.entryPrice}`}>${execution.entry}</div>
+                  </div>
+                  <div className={styles.priceCard}>
+                    <div className={styles.priceLabel}>Stop Loss</div>
+                    <div className={`${styles.priceValue} ${styles.stopLoss}`}>${execution.stop}</div>
+                  </div>
+                  <div className={styles.priceCard}>
+                    <div className={styles.priceLabel}>Target 1</div>
+                    <div className={`${styles.priceValue} ${styles.target1}`}>${execution.target1}</div>
+                  </div>
+                  <div className={styles.priceCard}>
+                    <div className={styles.priceLabel}>Target 2</div>
+                    <div className={`${styles.priceValue} ${styles.target2}`}>${execution.target2}</div>
+                  </div>
+                  <div className={styles.priceCard}>
+                    <div className={styles.priceLabel}>Risk/Reward</div>
+                    <div className={`${styles.priceValue} ${styles.riskReward}`}>{execution.riskReward?.toFixed(2)}</div>
+                  </div>
                 </div>
               </div>
-            </div>
-            {execution.positionSize && (
-                <div className={styles.positionSizing}>
-                  <h4>Position Sizing</h4>
-                  <div className={styles.positionMetrics}>
-                    <div className={styles.metric}>
-                      <span>Shares:</span>
-                      <span>{execution.positionSize.shares}</span>
+
+              {/* Position Sizing Card */}
+              {execution.positionSize && (
+                <div className={styles.executionCard}>
+                  <h4 className={styles.executionCardTitle}>📊 Position Sizing</h4>
+                  <div className={styles.positionGrid}>
+                    <div className={styles.positionCard}>
+                      <div className={styles.positionIcon}>📈</div>
+                      <div className={styles.positionContent}>
+                        <div className={styles.positionLabel}>Shares</div>
+                        <div className={styles.positionValue}>{execution.positionSize.shares.toLocaleString()}</div>
+                      </div>
                     </div>
-                    <div className={styles.metric}>
-                      <span>Value:</span>
-                      <span>${execution.positionSize.value?.toLocaleString()}</span>
+                    <div className={styles.positionCard}>
+                      <div className={styles.positionIcon}>💰</div>
+                      <div className={styles.positionContent}>
+                        <div className={styles.positionLabel}>Total Value</div>
+                        <div className={styles.positionValue}>${execution.positionSize.value?.toLocaleString()}</div>
+                      </div>
                     </div>
-                    <div className={styles.metric}>
-                      <span>Risk:</span>
-                      <span>{execution.positionSize.risk}</span>
+                    <div className={styles.positionCard}>
+                      <div className={styles.positionIcon}>⚖️</div>
+                      <div className={styles.positionContent}>
+                        <div className={styles.positionLabel}>Risk Level</div>
+                        <div className={styles.positionValue}>{execution.positionSize.risk}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
+            </div>
           </div>
         )}
 
@@ -311,23 +374,33 @@ const TickerAnalysis = () => {
           <div className={styles.section}>
             <h3>⚖️ Risk Assessment</h3>
             <div className={styles.riskAssessment}>
-              <div className={styles.riskGrid}>
-                <div className={styles.riskCard}>
+              <div className={styles.riskCard}>
+                <div className={styles.riskHeader}>
+                  <div className={styles.riskIcon}>🛡️</div>
                   <h4>Risk Metrics</h4>
-                  <div className={styles.riskMetrics}>
-                    <div className={styles.metric}>
-                      <span>Risk Level:</span>
-                      <span className={`${styles.riskLevel} ${styles[risk.level?.toLowerCase()]}`}>
+                </div>
+                <div className={styles.riskMetricsGrid}>
+                  <div className={styles.riskMetricCard}>
+                    <div className={styles.riskMetricIcon}>📊</div>
+                    <div className={styles.riskMetricContent}>
+                      <div className={styles.riskMetricLabel}>Risk Level</div>
+                      <div className={`${styles.riskMetricValue} ${styles.riskLevel} ${styles[risk.level?.toLowerCase()]}`}>
                         {risk.level}
-                      </span>
+                      </div>
                     </div>
-                    <div className={styles.metric}>
-                      <span>Tail Risk Score:</span>
-                      <span>{risk.tailRiskScore}</span>
+                  </div>
+                  <div className={styles.riskMetricCard}>
+                    <div className={styles.riskMetricIcon}>⚡</div>
+                    <div className={styles.riskMetricContent}>
+                      <div className={styles.riskMetricLabel}>Tail Risk Score</div>
+                      <div className={styles.riskMetricValue}>{risk.tailRiskScore}</div>
                     </div>
-                    <div className={styles.metric}>
-                      <span>Max Drawdown:</span>
-                      <span>{risk.maxDrawdown}</span>
+                  </div>
+                  <div className={styles.riskMetricCard}>
+                    <div className={styles.riskMetricIcon}>📉</div>
+                    <div className={styles.riskMetricContent}>
+                      <div className={styles.riskMetricLabel}>Max Drawdown</div>
+                      <div className={styles.riskMetricValue}>{risk.maxDrawdown}</div>
                     </div>
                   </div>
                 </div>
@@ -343,55 +416,75 @@ const TickerAnalysis = () => {
             <div className={styles.marketContext}>
               <div className={styles.contextGrid}>
                 <div className={styles.contextCard}>
-                  <h4>Trend Analysis</h4>
-                  <div className={styles.contextItem}>
-                    <span>Trend:</span>
-                    <span className={`${styles.trend} ${styles[context.trend?.toLowerCase()]}`}>
-                      {context.trend}
-                    </span>
+                  <div className={styles.contextCardHeader}>
+                    <div className={styles.contextIcon}>📈</div>
+                    <h4>Trend Analysis</h4>
+                  </div>
+                  <div className={styles.contextContent}>
+                    <div className={styles.contextItem}>
+                      <span className={styles.contextLabel}>Current Trend</span>
+                      <span className={`${styles.contextValue} ${styles.trend} ${styles[context.trend?.toLowerCase()]}`}>
+                        {context.trend}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 <div className={styles.contextCard}>
-                  <h4>Key Levels</h4>
-                  <div className={styles.contextItem}>
-                    <span>Support:</span>
-                    <span className={styles.support}>${context.levels?.support}</span>
+                  <div className={styles.contextCardHeader}>
+                    <div className={styles.contextIcon}>🎯</div>
+                    <h4>Key Levels</h4>
                   </div>
-                  <div className={styles.contextItem}>
-                    <span>Resistance:</span>
-                    <span className={styles.resistance}>${context.levels?.resistance}</span>
+                  <div className={styles.contextContent}>
+                    <div className={styles.contextItem}>
+                      <span className={styles.contextLabel}>Support</span>
+                      <span className={`${styles.contextValue} ${styles.support}`}>${context.levels?.support}</span>
+                    </div>
+                    <div className={styles.contextItem}>
+                      <span className={styles.contextLabel}>Resistance</span>
+                      <span className={`${styles.contextValue} ${styles.resistance}`}>${context.levels?.resistance}</span>
+                    </div>
                   </div>
                 </div>
 
                 {context.volume && (
                   <div className={styles.contextCard}>
-                    <h4>Volume Analysis</h4>
-                    <div className={styles.contextItem}>
-                      <span>Status:</span>
-                      <span className={`${styles.volume} ${styles[context.volume.status?.toLowerCase()]}`}>
-                        {context.volume.status}
-                      </span>
+                    <div className={styles.contextCardHeader}>
+                      <div className={styles.contextIcon}>📊</div>
+                      <h4>Volume Analysis</h4>
                     </div>
-                    <div className={styles.contextItem}>
-                      <span>Multiple:</span>
-                      <span>{context.volume.multiple}x</span>
+                    <div className={styles.contextContent}>
+                      <div className={styles.contextItem}>
+                        <span className={styles.contextLabel}>Status</span>
+                        <span className={`${styles.contextValue} ${styles.volume} ${styles[context.volume.status?.toLowerCase()]}`}>
+                          {context.volume.status}
+                        </span>
+                      </div>
+                      <div className={styles.contextItem}>
+                        <span className={styles.contextLabel}>Multiple</span>
+                        <span className={styles.contextValue}>{context.volume.multiple}x</span>
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {context.earnings && (
                   <div className={styles.contextCard}>
-                    <h4>Earnings</h4>
-                    <div className={styles.contextItem}>
-                      <span>Days Away:</span>
-                      <span>{context.earnings.daysAway || 'N/A'}</span>
+                    <div className={styles.contextCardHeader}>
+                      <div className={styles.contextIcon}>📅</div>
+                      <h4>Earnings</h4>
                     </div>
-                    <div className={styles.contextItem}>
-                      <span>Impact:</span>
-                      <span className={styles.earningsImpact}>
-                        {context.earnings.impact}
-                      </span>
+                    <div className={styles.contextContent}>
+                      <div className={styles.contextItem}>
+                        <span className={styles.contextLabel}>Days Away</span>
+                        <span className={styles.contextValue}>{context.earnings.daysAway || 'N/A'}</span>
+                      </div>
+                      <div className={styles.contextItem}>
+                        <span className={styles.contextLabel}>Impact</span>
+                        <span className={`${styles.contextValue} ${styles.earningsImpact}`}>
+                          {context.earnings.impact}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -399,6 +492,149 @@ const TickerAnalysis = () => {
             </div>
           </div>
         )}
+
+        {/* Individual Systems Analysis */}
+        {systems && (
+          <div className={styles.section}>
+            <h3>🔍 Systems Analysis Breakdown</h3>
+            <div className={styles.systemsAnalysis}>
+              <div className={styles.systemsGrid}>
+                {Object.entries(systems).map(([systemKey, system]) => (
+                  <div key={systemKey} className={styles.systemCard}>
+                    <div className={styles.systemHeader}>
+                      <div className={styles.systemName}>
+                        <span className={styles.systemIcon}>🤖</span>
+                        {system.systemName || systemKey}
+                      </div>
+                      <div className={styles.systemBadges}>
+                        <div className={`${styles.systemDecision} ${styles[getStatusColor(system.decision)]}`}>
+                          {getStatusDisplayText(system.decision)}
+                        </div>
+                        {system.grade && (
+                          <div className={styles.systemGrade}>
+                            Grade: {system.grade}
+                          </div>
+                        )}
+                        {system.confidence && (
+                          <div className={styles.systemConfidence}>
+                            {Math.round((typeof system.confidence === 'number' ? system.confidence : parseFloat(system.confidence)) * 100)}%
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className={styles.systemContent}>
+                      {/* System Reasoning */}
+                      {system.reasoning && Array.isArray(system.reasoning) && system.reasoning.length > 0 && (
+                        <div className={styles.systemReasoning}>
+                          <h5>📋 Analysis:</h5>
+                          <ul className={styles.reasoningList}>
+                            {system.reasoning.map((reason, idx) => (
+                              <li key={idx}>{typeof reason === 'string' ? reason : JSON.stringify(reason)}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Handle string reasoning */}
+                      {system.reasoning && typeof system.reasoning === 'string' && (
+                        <div className={styles.systemReasoning}>
+                          <h5>📋 Analysis:</h5>
+                          <div className={styles.reasoningText}>
+                            {system.reasoning}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Risk/Reward if available */}
+                      {system.riskReward && typeof system.riskReward === 'object' && (system.riskReward.stopLoss || system.riskReward.target1) && (
+                        <div className={styles.systemRiskReward}>
+                          <h5>⚖️ Risk/Reward:</h5>
+                          <div className={styles.riskRewardGrid}>
+                            {system.riskReward.stopLoss && (
+                              <div className={styles.rrItem}>
+                                <span>Stop Loss:</span>
+                                <span>${system.riskReward.stopLoss}</span>
+                              </div>
+                            )}
+                            {system.riskReward.target1 && (
+                              <div className={styles.rrItem}>
+                                <span>Target 1:</span>
+                                <span>${system.riskReward.target1}</span>
+                              </div>
+                            )}
+                            {system.riskReward.riskReward && system.riskReward.riskReward > 0 && (
+                              <div className={styles.rrItem}>
+                                <span>R:R Ratio:</span>
+                                <span>{parseFloat(system.riskReward.riskReward).toFixed(2)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Execution Plan if available */}
+                      {system.executionPlan && typeof system.executionPlan === 'object' && system.executionPlan.action && (
+                        <div className={styles.systemExecution}>
+                          <h5>🎯 Execution Plan:</h5>
+                          <div className={styles.executionDetails}>
+                            <div className={styles.executionItem}>
+                              <span>Action:</span>
+                              <span className={`${styles.executionAction} ${styles[getStatusColor(system.executionPlan.action)]}`}>
+                                {system.executionPlan.action}
+                              </span>
+                            </div>
+                            {system.executionPlan.entryStrategy && (
+                              <div className={styles.executionItem}>
+                                <span>Entry Strategy:</span>
+                                <div>
+                                  {typeof system.executionPlan.entryStrategy === 'string' ? (
+                                    <span>{system.executionPlan.entryStrategy}</span>
+                                  ) : (
+                                    <div>
+                                      {system.executionPlan.entryStrategy.type && (
+                                        <div><strong>Type:</strong> {system.executionPlan.entryStrategy.type}</div>
+                                      )}
+                                      {system.executionPlan.entryStrategy.method && (
+                                        <div><strong>Method:</strong> {system.executionPlan.entryStrategy.method}</div>
+                                      )}
+                                      {system.executionPlan.entryStrategy.conditions && Array.isArray(system.executionPlan.entryStrategy.conditions) && (
+                                        <div>
+                                          <strong>Conditions:</strong>
+                                          <ul>
+                                            {system.executionPlan.entryStrategy.conditions.map((condition, idx) => (
+                                              <li key={idx}>{typeof condition === 'string' ? condition : JSON.stringify(condition)}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {system.executionPlan.exitStrategy && (
+                              <div className={styles.executionItem}>
+                                <span>Exit Strategy:</span>
+                                <span>
+                                  {typeof system.executionPlan.exitStrategy === 'string' 
+                                    ? system.executionPlan.exitStrategy 
+                                    : JSON.stringify(system.executionPlan.exitStrategy)
+                                  }
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Scenario Planning */}
         {scenarios && (
           <div className={styles.section}>
