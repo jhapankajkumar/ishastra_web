@@ -295,6 +295,70 @@ export default function TradeList() {
     }
   });
 
+  // Check if trade is open using API status field
+  const isTradeOpen = (trade) => {
+    // Use API status field if available, otherwise fallback to quantity calculation
+    if (trade.status) {
+      return trade.status.toLowerCase() === 'open';
+    }
+    // Fallback to quantity calculation
+    const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
+    const remainingQty = trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty;
+    return remainingQty > 0;
+  };
+
+  // Sort trades with open trades first, then closed trades
+  const openTrades = sortedTrades.filter(trade => isTradeOpen(trade));
+  const closedTrades = sortedTrades.filter(trade => !isTradeOpen(trade));
+  const combinedTrades = [...openTrades, ...closedTrades];
+
+  // Get current price from API, fallback to entry price
+  const getCurrentPrice = (trade) => {
+    // Use API currentPrice field if available, otherwise fallback to entryPrice
+    if (trade.currentPrice !== undefined && trade.currentPrice !== null) {
+      return Number(trade.currentPrice).toFixed(2);
+    }
+    if (trade.entryPrice !== undefined && trade.entryPrice !== null) {
+      return Number(trade.entryPrice).toFixed(2);
+    }
+    return null;
+  };
+
+  // Calculate unrealized P&L for open trades using API current price
+  const getUnrealizedPL = (trade) => {
+    if (!isTradeOpen(trade)) return null;
+    
+    const currentPrice = getCurrentPrice(trade);
+    if (!currentPrice || !trade.entryPrice || !trade.remainingQuantity) return null;
+    
+    const originalQty = Number(trade.quantity || 0);
+    const remainingQty = Number(trade.remainingQuantity || originalQty);
+    const entryPrice = Number(trade.entryPrice);
+    const currentPriceNum = Number(currentPrice);
+    
+    const unrealizedPL = (currentPriceNum - entryPrice) * remainingQty;
+    return trade.direction === 'SHORT' ? -unrealizedPL : unrealizedPL;
+  };
+
+  // Get trade status from API or determine based on P&L
+  const getTradeStatus = (trade) => {
+    // Use API status if available
+    if (trade.status) {
+      return trade.status.toUpperCase();
+    }
+    
+    // Fallback to calculated status
+    if (isTradeOpen(trade)) {
+      const unrealizedPL = getUnrealizedPL(trade);
+      if (unrealizedPL === null) return 'OPEN';
+      return unrealizedPL > 0 ? 'OPEN_PROFIT' : unrealizedPL < 0 ? 'OPEN_LOSS' : 'OPEN';
+    }
+    
+    const realizedPL = getPartialPL(trade);
+    if (realizedPL === "-") return 'CLOSED';
+    return Number(realizedPL) > 0 ? 'CLOSED_PROFIT' : Number(realizedPL) < 0 ? 'CLOSED_LOSS' : 'CLOSED';
+  };
+
   // --- Sorting UI ---
   const sortOptions = [
     { value: 'ticker', label: 'Ticker (A-Z)' },
@@ -340,85 +404,138 @@ export default function TradeList() {
         </button>
       </div>
       {/* Sorting Controls */}
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead className={styles.tableHeader}>
-            <tr>
-              <th className={styles.tableHeaderCell}>Ticker</th>
-              <th className={styles.tableHeaderCell}>Entry Date</th>
-              <th className={styles.tableHeaderCell}>Last Exit Date</th>
-              <th className={styles.tableHeaderCell}>Entry Price</th>
-              <th className={styles.tableHeaderCell}>Original Qty</th>
-              <th className={styles.tableHeaderCell}>Sold Qty</th>
-              <th className={styles.tableHeaderCell}>Remaining Qty</th>
-              <th className={styles.tableHeaderCell}>Avg Exit Price</th>
-              <th className={styles.tableHeaderCell}>Invested</th>
-              <th className={styles.tableHeaderCell}>P&L</th>
-              <th className={styles.tableHeaderCell}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedTrades.map(trade => {
-              const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
-              const remainingQty = trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty;
-              const soldQty = originalQty - remainingQty;
-              // Debug logs for exit/PL/avg price
-              // console.log('[TradeList] Ticker:', trade.ticker, { ... });
-              return (
-                <tr
-                  key={trade.tradeId}
-                  className={styles.tableRow}
-                  onClick={() => handleShowDetails(trade.id)}
-                >
-                  <td className={`${styles.tableCell} ${styles.tickerCell}`}>
-                    <div className={styles.tickerContainer}>
-                      <span className={styles.tickerSymbol}>{trade.ticker}</span>
-                      <span className={styles.companyName}>{trade.tickerName}</span>
-                    </div>
-                  </td>
-                  <td className={`${styles.tableCell} ${styles.dateCell}`}>{trade.entryDate ? formatDate(trade.entryDate) : "-"}</td>
-                  <td className={`${styles.tableCell} ${styles.dateCell}`}>{getExitTransactions(trade).length > 0 ? getLastExitDate(trade) : '-'}</td>
-                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{trade.entryPrice !== undefined && trade.entryPrice !== null ? Number(trade.entryPrice).toFixed(2) : "-"}</td>
-                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{originalQty.toLocaleString()}</td>
-                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{soldQty > 0 ? soldQty.toLocaleString() : 0}</td>
-                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{remainingQty.toLocaleString()}</td>
-                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exitPrice !== undefined && trade.exitPrice !== null ? Number(trade.exitPrice).toFixed(2) : "-")) : '-'}</td>
-                  <td className={`${styles.tableCell} ${styles.priceCell}`}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
-                  <td className={`${styles.tableCell} ${styles.profitCell} ${soldQty > 0 && getPartialPL(trade) !== "-" ? (getPartialPL(trade) > 0 ? styles.profitPositive : styles.profitNegative) : ''}`}>
-                    {soldQty > 0 && getPartialPL(trade) !== "-" ? `$${getPartialPL(trade)}` : "-"}
-                  </td>
-                  <td className={styles.tableCell}>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <button
-                        onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
-                        className={`${styles.actionButton} ${styles.viewButton}`}
-                      >
-                        View
-                      </button>
-                      {getExitTransactions(trade).length > 0 && remainingQty === 0
-                        ? <button
-                          onClick={e => { e.stopPropagation(); handleReview(trade.id); }}
-                          className={`${styles.actionButton} ${styles.reviewButton}`}
-                        >Review</button>
-                        : <button
-                          onClick={e => { e.stopPropagation(); handleEdit(trade.id); }}
-                          className={`${styles.actionButton} ${styles.editButton}`}
-                        >Update</button>
-                      }
-                      <button
-                        onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}
-                        className={`${styles.actionButton} ${styles.deleteButton}`}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+      
+      {/* Combined Trades Section */}
+      {combinedTrades.length > 0 && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            � All Trades ({combinedTrades.length}) - Open: {openTrades.length}, Closed: {closedTrades.length}
+          </h2>
+          <div className={styles.tableContainer}>
+            <table className={styles.tradesTable}>
+              <thead>
+                <tr>
+                  <th>Ticker</th>
+                  <th>Entry Date</th>
+                  <th>BUY AVG</th>
+                  <th>LTP</th>
+                  <th>QTY</th>
+                  <th>Invested</th>
+                  <th>Current</th>
+                  <th>P&L</th>
+                  <th>Exit Strategy</th>
+                  <th>Actions</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {combinedTrades.map(trade => {
+                  const isOpen = isTradeOpen(trade);
+                  const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
+                  const remainingQty = isOpen ? (trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty) : originalQty;
+                  const currentPrice = getCurrentPrice(trade);
+                  const entryPrice = Number(trade.entryPrice || 0);
+                  const isExitRecommended = trade.impulseAnalysis?.exitRecommended || false;
+                  
+                  // For open trades: use remaining quantity calculations
+                  // For closed trades: use original quantity and realized P&L
+                  const displayQuantity = remainingQty;
+                  const invested = isOpen ? (entryPrice * remainingQty).toFixed(2) : getInvested(trade);
+                  const marketValue = isOpen ? (currentPrice ? Number(currentPrice) * remainingQty : 0).toFixed(2) : "0.00";
+                  
+                  // Always calculate unrealized P&L
+                  let unrealizedPL;
+                  if (isOpen) {
+                    unrealizedPL = getUnrealizedPL(trade);
+                  } else {
+                    // For closed trades, show realized P&L as "unrealized" (actual profit/loss)
+                    const realizedPL = getPartialPL(trade);
+                    unrealizedPL = realizedPL !== "-" ? Number(realizedPL) : 0;
+                  }
+                  
+                  const status = getTradeStatus(trade);
+                  const direction = trade.direction || "N/A";
+                  
+                  return (
+                    <tr 
+                      key={trade.tradeId}
+                      className={`${styles.tradeRow} ${styles[status.toLowerCase()]}`}
+                      onClick={() => handleShowDetails(trade.id)}
+                    >
+                      <td className={styles.tickerCell}>
+                        <div className={styles.tickerInfo}>
+                          <span className={styles.ticker}>{trade.ticker}</span>
+                          <span className={styles.companyName}>
+                            {(trade.tickerName || trade.companyName || "").substring(0, 15)}
+                            {(trade.tickerName || trade.companyName || "").length > 15 ? "..." : ""}
+                          </span>
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                            <span className={`${styles.direction} ${styles[direction.toLowerCase()]}`}>
+                              {direction}
+                            </span>
+                            <span className={`${styles.statusBadge} ${styles[status.toLowerCase()]}`}>
+                              {isOpen ? 'OPEN' : 'CLOSED'}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{trade.entryDate ? formatDate(trade.entryDate) : "N/A"}</td>
+                      <td>${entryPrice.toFixed(2)}</td>
+                      <td>
+                        <div className={styles.priceWithChange}>
+                          <span>${currentPrice || 'N/A'}</span>
+                          {currentPrice && trade.entryPrice && isOpen && (
+                            <span className={`${styles.priceChange} ${Number(currentPrice) > Number(trade.entryPrice) ? styles.positive : styles.negative}`}>
+                              {((Number(currentPrice) - Number(trade.entryPrice)) / Number(trade.entryPrice) * 100).toFixed(2)}%
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>{displayQuantity.toLocaleString()}</td>
+                      <td>${invested}</td>
+                      <td>${isOpen ? marketValue : "0.00"}</td>
+                      <td className={unrealizedPL && unrealizedPL > 0 ? styles.profit : unrealizedPL && unrealizedPL < 0 ? styles.loss : ''}>
+                        {unrealizedPL !== null && unrealizedPL !== undefined ? `$${unrealizedPL.toFixed(2)}` : 'N/A'}
+                      </td>
+                      <td className={styles.strategyCell}>
+                        {isOpen ? (
+                          isExitRecommended ? 'YES' : 'NO'
+                        ) : (
+                          'DONE'
+                        )}
+                      </td>
+                      <td className={styles.actionsCell}>
+                        <div className={styles.actionButtons}>
+                          <button
+                            onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
+                            className={`${styles.actionBtn} ${styles.viewBtn}`}
+                            title="View Details"
+                          >
+                            👁️
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); isOpen ? handleEdit(trade.id) : handleReview(trade.id); }}
+                            className={`${styles.actionBtn} ${isOpen ? styles.editBtn : styles.reviewBtn}`}
+                            title={isOpen ? "Edit Trade" : "Add Review"}
+                          >
+                            {isOpen ? '✏️' : '📝'}
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}
+                            className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                            title="Delete Trade"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {trades.length === 0 && (
         <div className={styles.emptyState}>
@@ -494,18 +611,18 @@ export default function TradeList() {
                   padding: '12px 24px',
                   fontSize: '16px',
                   fontWeight: '500',
-                  borderRadius: 8,
-                  border: '1px solid #2A3441',
                   backgroundColor: 'transparent',
                   color: '#9CA3AF',
+                  border: '1px solid #374151',
+                  borderRadius: 8,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
-                onMouseOver={(e) => {
-                  e.target.style.backgroundColor = '#2A3441';
+                onMouseOver={e => {
+                  e.target.style.backgroundColor = '#374151';
                   e.target.style.color = '#fff';
                 }}
-                onMouseOut={(e) => {
+                onMouseOut={e => {
                   e.target.style.backgroundColor = 'transparent';
                   e.target.style.color = '#9CA3AF';
                 }}
@@ -517,21 +634,19 @@ export default function TradeList() {
                 style={{
                   padding: '12px 24px',
                   fontSize: '16px',
-                  fontWeight: '600',
-                  borderRadius: 8,
-                  border: 'none',
-                  backgroundColor: '#EF4444',
+                  fontWeight: '500',
+                  backgroundColor: '#DC2626',
                   color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
-                onMouseOver={(e) => {
-                  e.target.style.backgroundColor = '#DC2626';
-                  e.target.style.transform = 'translateY(-1px)';
+                onMouseOver={e => {
+                  e.target.style.backgroundColor = '#B91C1C';
                 }}
-                onMouseOut={(e) => {
-                  e.target.style.backgroundColor = '#EF4444';
-                  e.target.style.transform = 'translateY(0)';
+                onMouseOut={e => {
+                  e.target.style.backgroundColor = '#DC2626';
                 }}
               >
                 Delete Trade

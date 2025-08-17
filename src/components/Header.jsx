@@ -8,10 +8,12 @@ const navLinks = [
   { to: "/analysis", label: "Analysis", special: true, icon: "🔍" },
   { to: "/watchlist", label: "Watchlist", special: true, icon: "👀" },
   { to: "/trades", label: "Trades", icon: "💼" },
+  { to: "/investments", label: "Investments", icon: "💰" },
+  { to: "/recommendations", label: "Recommendations", icon: "💡" },
   { to: "/journal", label: "Journal", icon: "📝" },
   { to: "/risk-management", label: "Risk Management", icon: "⚖️" },
-  { to: "/recommendations", label: "Recommendations", icon: "💡" },
-  { to: "/investments", label: "Investments", icon: "💰" },
+  
+  
 ];
 
 export default function Header() {
