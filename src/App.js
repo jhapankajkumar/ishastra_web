@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import config from './config/environment';
 import Dashboard from './pages/dashboard';
 import TickerAnalysis from './pages/TickerAnalysisNew'; // Simple Ticker Analysis Interface
 import TradeList from './pages/trade/TradeList';

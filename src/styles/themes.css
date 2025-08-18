@@ -96,7 +96,7 @@
   
   /* Text Colors */
   --text-primary: #1e293b;
-  --text-secondary: #334155;
+  --text-secondary: #475569;
   --text-muted: #64748b;
   --text-disabled: #94a3b8;
   --text-white: #ffffff;
@@ -109,8 +109,8 @@
   /* Button Colors */
   --btn-primary-bg: #3B82F6;
   --btn-primary-hover: #2563EB;
-  --btn-secondary-bg: #e2e8f0;
-  --btn-secondary-hover: #cbd5e1;
+  --btn-secondary-bg: #f1f5f9;
+  --btn-secondary-hover: #e2e8f0;
   --btn-danger-bg: #EF4444;
   --btn-danger-hover: #DC2626;
   --btn-success-bg: #10B981;
@@ -118,13 +118,13 @@
   
   /* Status Colors */
   --success-color: #059669;
-  --success-bg: #d1fae5;
+  --success-bg: #ecfdf5;
   --error-color: #DC2626;
-  --error-bg: #fee2e2;
-  --warning-color: #d97706;
-  --warning-bg: #fed7aa;
+  --error-bg: #fef2f2;
+  --warning-color: #D97706;
+  --warning-bg: #fef3c7;
   --info-color: #2563EB;
-  --info-bg: #dbeafe;
+  --info-bg: #eff6ff;
   
   /* Profit/Loss Colors */
   --profit-color: #059669;

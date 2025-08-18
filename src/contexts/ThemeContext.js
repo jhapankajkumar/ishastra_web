@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import config from '../config/environment';
 
 const ThemeContext = createContext();
 
@@ -12,9 +13,9 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    // Get theme from localStorage or default to 'dark'
+    // Get theme from localStorage or default to configured theme
     const savedTheme = localStorage.getItem('ishastra-theme');
-    return savedTheme || 'dark';
+    return savedTheme || config.DEFAULT_THEME;
   });
 
   useEffect(() => {

@@ -10,6 +10,10 @@ const config = {
   // Environment
   ENV: process.env.NODE_ENV || 'development',
   
+  // Browser Configuration
+  FORCE_IN_APP_BROWSER: process.env.REACT_APP_FORCE_IN_APP_BROWSER !== 'false', // Default true
+  DEFAULT_THEME: process.env.REACT_APP_DEFAULT_THEME || 'light',
+  
   // Helper methods
   getImageUrl: (imagePath) => {
     const baseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
@@ -37,7 +41,9 @@ if (config.isDevelopment()) {
     NODE_ENV: process.env.NODE_ENV,
     API_BASE_URL: config.API_BASE_URL,
     FRONTEND_URL: config.FRONTEND_URL,
-    API_ENDPOINT: config.API_ENDPOINT
+    API_ENDPOINT: config.API_ENDPOINT,
+    FORCE_IN_APP_BROWSER: config.FORCE_IN_APP_BROWSER,
+    DEFAULT_THEME: config.DEFAULT_THEME
   });
 }
 

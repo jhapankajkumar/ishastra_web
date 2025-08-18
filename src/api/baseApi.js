@@ -3,7 +3,7 @@ import config from '../config/environment';
 
 export const API = axios.create({
   baseURL: config.API_ENDPOINT,
-  timeout: 10000, // 10 second timeout
+  timeout: 60000, // 60 second timeout for longer analysis operations
 });
 
 // Request interceptor
