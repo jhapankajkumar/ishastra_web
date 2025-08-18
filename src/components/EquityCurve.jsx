@@ -1,6 +1,7 @@
 // src/components/EquityCurve.jsx
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { useTheme } from '../contexts/ThemeContext';
 import styles from './EquityCurve.module.css';
 
 // Helper to format month from date string
@@ -28,6 +29,8 @@ const calculatePnl = (trade) => {
 const INITIAL_CAPITAL = 100000; // Set your starting capital here
 
 const EquityCurve = ({ trades }) => {
+  const { theme } = useTheme();
+  
   // Calculate P&L for each trade
   const tradesWithPnl = trades
     .sort((a, b) => new Date(a.exitDate) - new Date(b.exitDate))
@@ -125,24 +128,39 @@ const EquityCurve = ({ trades }) => {
     <div className={styles.chartContainer}>
       <ResponsiveContainer width="100%" height={250}>
         <LineChart data={monthlyData}>
-          <CartesianGrid stroke="#22304a" strokeDasharray="3 3" />
+          <CartesianGrid 
+            stroke={theme === 'light' ? '#e2e8f0' : "#22304a"} 
+            strokeDasharray="3 3" 
+          />
           <XAxis
             dataKey="month"
-            stroke="#b3b8c7"
-            tick={{ fontSize: 13 }}
+            stroke={theme === 'light' ? '#64748b' : "#b3b8c7"}
+            tick={{ fontSize: 13, fill: theme === 'light' ? '#64748b' : "#b3b8c7" }}
           />
           <YAxis
-            stroke="#b3b8c7"
-            tick={{ fontSize: 13 }}
+            stroke={theme === 'light' ? '#64748b' : "#b3b8c7"}
+            tick={{ fontSize: 13, fill: theme === 'light' ? '#64748b' : "#b3b8c7" }}
             tickFormatter={formatYAxisTick}
             domain={[minEquity, maxEquity]}
             ticks={yTicks}
-            label={{ value: 'Equity ($)', angle: -90, position: 'insideLeft', fill: '#b3b8c7', fontSize: 13 }}
+            label={{ 
+              value: 'Equity ($)', 
+              angle: -90, 
+              position: 'insideLeft', 
+              fill: theme === 'light' ? '#64748b' : '#b3b8c7', 
+              fontSize: 13 
+            }}
           />
           <Tooltip
-            contentStyle={{ background: "#1a2233", border: "none", color: "#fff" }}
-            labelStyle={{ color: "#fff" }}
-            itemStyle={{ color: "#fff" }}
+            contentStyle={{ 
+              background: theme === 'light' ? "#ffffff" : "#1a2233", 
+              border: theme === 'light' ? "1px solid #e2e8f0" : "none", 
+              color: theme === 'light' ? "#1e293b" : "#fff",
+              borderRadius: 8,
+              boxShadow: theme === 'light' ? "0 4px 6px -1px rgba(0, 0, 0, 0.1)" : "0 4px 6px -1px rgba(0, 0, 0, 0.4)"
+            }}
+            labelStyle={{ color: theme === 'light' ? "#1e293b" : "#fff" }}
+            itemStyle={{ color: theme === 'light' ? "#1e293b" : "#fff" }}
             formatter={(value, name) =>
               name === "equity"
                 ? [formatTooltipValue(value), "Equity"]

@@ -15,6 +15,7 @@ import InvestmentValueChart from '../components/InvestmentValueChart';
 import SectorDonutChart from '../components/SectorDonutChart';
 import TopHoldingsBarChart from '../components/TopHoldingsBarChart';
 import MarketCapPieChart from '../components/MarketCapPieChart';
+import { useTheme } from '../contexts/ThemeContext';
 // import { useNotification } from '../components/NotificationProvider'; // Reserved for future use
 import styles from './Dashboard.module.css';
 
@@ -26,6 +27,7 @@ import { getUnifiedAnalysis } from '../api/analysisApi';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [trades, setTrades] = useState([]);
   const [stats, setStats] = useState(null);
   const [tags, setTags] = useState([]);
@@ -307,7 +309,7 @@ const Dashboard = () => {
 
   // --- Tab UI ---
   const tabStyle = (tab) => ({
-    padding: '10px 38px',
+    padding: '12px 40px',
     cursor: 'pointer',
     fontWeight: 700,
     fontSize: 18,
@@ -315,12 +317,18 @@ const Dashboard = () => {
     borderRadius: 24,
     marginRight: 12,
     background: activeTab === tab
-      ? 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)'
-      : 'linear-gradient(90deg, #232e42 60%, #1A2332 100%)',
-    color: activeTab === tab ? '#fff' : '#A1A7B3',
-    boxShadow: activeTab === tab ? '0 2px 12px 0 rgba(59,130,246,0.10)' : 'none',
+      ? 'var(--gradient-primary)'
+      : theme === 'light' 
+        ? 'var(--bg-tertiary)'
+        : 'linear-gradient(90deg, #232e42 60%, #1A2332 100%)',
+    color: activeTab === tab 
+      ? '#fff' 
+      : theme === 'light'
+        ? 'var(--text-secondary)'
+        : '#A1A7B3',
+    boxShadow: activeTab === tab ? 'var(--shadow-primary-btn)' : 'none',
     outline: 'none',
-    transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
+    transition: 'all 0.2s ease',
     borderBottom: 'none',
     position: 'relative',
     zIndex: 1
@@ -348,7 +356,7 @@ const Dashboard = () => {
           justifyContent: 'center',
           alignItems: 'center',
           height: '200px',
-          color: '#9CA3AF'
+          color: 'var(--text-muted)'
         }}>
           Loading dashboard...
         </div>
@@ -366,11 +374,15 @@ const Dashboard = () => {
         alignItems: 'center',
         gap: 0,
         marginBottom: 36,
-        background: 'linear-gradient(90deg, #181F2A 60%, #1A2332 100%)',
+        background: theme === 'light' 
+          ? 'var(--bg-secondary)'
+          : 'linear-gradient(90deg, #181F2A 60%, #1A2332 100%)',
         borderRadius: 32,
         padding: '8px 0',
-        boxShadow: '0 2px 12px 0 rgba(59,130,246,0.06)',
-        border: '1px solid #232e42',
+        boxShadow: 'var(--shadow-md)',
+        border: theme === 'light' 
+          ? '1px solid var(--border-primary)'
+          : '1px solid #232e42',
         width: '100%',
         maxWidth: 480,
         marginLeft: 'auto',
@@ -389,18 +401,25 @@ const Dashboard = () => {
             gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
             gap: 28,
             marginBottom: 40,
-            background: "linear-gradient(90deg, #181F2A 60%, #1A2332 100%)",
+            background: theme === 'light' 
+              ? 'var(--bg-secondary)'
+              : "linear-gradient(90deg, #181F2A 60%, #1A2332 100%)",
             borderRadius: 18,
-            padding: 16
+            padding: 16,
+            border: theme === 'light' ? '1px solid var(--border-primary)' : 'none'
           }}>
             {/* Card: Total Trades */}
             <div style={{
-              background: "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
+              background: theme === 'light' 
+                ? 'var(--bg-primary)'
+                : "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
               borderRadius: 16,
               padding: 28,
-              border: "1px solid #2A3441",
+              border: theme === 'light' 
+                ? '1px solid var(--border-primary)'
+                : "1px solid #2A3441",
               textAlign: "center",
-              boxShadow: "0 4px 24px 0 rgba(59,130,246,0.08)",
+              boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden'
             }}>
@@ -408,20 +427,24 @@ const Dashboard = () => {
                 position: 'absolute',
                 top: 18, left: 18,
                 fontSize: 28,
-                color: '#6366F1',
+                color: 'var(--accent-secondary)',
                 opacity: 0.18
               }}>🔄</span>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Trades</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: "#6366F1", letterSpacing: 1 }}>{trades.length}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Total Trades</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: "var(--accent-secondary)", letterSpacing: 1 }}>{trades.length}</div>
             </div>
             {/* Card: Total Trade Value */}
             <div style={{
-              background: "linear-gradient(135deg, #1A2332 60%, #193C3A 100%)",
+              background: theme === 'light' 
+                ? 'var(--bg-primary)'
+                : "linear-gradient(135deg, #1A2332 60%, #193C3A 100%)",
               borderRadius: 16,
               padding: 28,
-              border: "1px solid #2A3441",
+              border: theme === 'light' 
+                ? '1px solid var(--border-primary)'
+                : "1px solid #2A3441",
               textAlign: "center",
-              boxShadow: "0 4px 24px 0 rgba(16,185,129,0.08)",
+              boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden'
             }}>
@@ -429,11 +452,11 @@ const Dashboard = () => {
                 position: 'absolute',
                 top: 18, left: 18,
                 fontSize: 28,
-                color: '#10B981',
+                color: 'var(--success-color)',
                 opacity: 0.18
               }}>💰</span>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Invested</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: "#10B981", letterSpacing: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Total Invested</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: "var(--success-color)", letterSpacing: 1 }}>
                 ₹{trades && trades.length ? trades.reduce((sum, t) => {
                   const originalQty = t.quantity !== undefined && t.quantity !== null ? Number(t.quantity) : 0;
                   return sum + (t.entryPrice ? t.entryPrice * originalQty : 0);
@@ -442,12 +465,16 @@ const Dashboard = () => {
             </div>
             {/* Card: Current Value of All Investments */}
             <div style={{
-              background: "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
+              background: theme === 'light' 
+                ? 'var(--bg-primary)'
+                : "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
               borderRadius: 16,
               padding: 28,
-              border: "1px solid #2A3441",
+              border: theme === 'light' 
+                ? '1px solid var(--border-primary)'
+                : "1px solid #2A3441",
               textAlign: "center",
-              boxShadow: "0 4px 24px 0 rgba(59,130,246,0.08)",
+              boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden'
             }}>
@@ -455,11 +482,11 @@ const Dashboard = () => {
                 position: 'absolute',
                 top: 18, left: 18,
                 fontSize: 28,
-                color: '#3B82F6',
+                color: 'var(--accent-primary)',
                 opacity: 0.18
               }}>📈</span>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Current Value</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: "#3B82F6", letterSpacing: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Current Value</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: "var(--accent-primary)", letterSpacing: 1 }}>
                 ₹{trades && trades.length ? trades.reduce((sum, t) => {
                   const originalQty = t.quantity !== undefined && t.quantity !== null ? Number(t.quantity) : 0;
                   const entryVal = originalQty * (t.entryPrice || 0);
@@ -471,12 +498,16 @@ const Dashboard = () => {
             </div>
             {/* Card: Total P&L */}
             <div style={{
-              background: "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
+              background: theme === 'light' 
+                ? 'var(--bg-primary)'
+                : "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
               borderRadius: 16,
               padding: 28,
-              border: "1px solid #2A3441",
+              border: theme === 'light' 
+                ? '1px solid var(--border-primary)'
+                : "1px solid #2A3441",
               textAlign: "center",
-              boxShadow: "0 4px 24px 0 rgba(245,158,11,0.08)",
+              boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden'
             }}>
@@ -484,11 +515,11 @@ const Dashboard = () => {
                 position: 'absolute',
                 top: 18, left: 18,
                 fontSize: 28,
-                color: '#F59E0B',
+                color: 'var(--warning-color)',
                 opacity: 0.18
               }}>💹</span>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total P&L</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: totalPnL >= 0 ? "#10B981" : "#EF4444", letterSpacing: 1 }}>{totalPnL >= 0 ? '+' : ''}₹{totalPnL.toLocaleString()}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Total P&L</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: totalPnL >= 0 ? "var(--profit-color)" : "var(--loss-color)", letterSpacing: 1 }}>{totalPnL >= 0 ? '+' : ''}₹{totalPnL.toLocaleString()}</div>
             </div>
 
           </div>
@@ -504,115 +535,149 @@ const Dashboard = () => {
           }}>
             {/* Equity Curve Chart */}
             {/* <div style={{
-              background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+              background: theme === 'light' 
+                ? 'var(--bg-primary)'
+                : "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
               borderRadius: 10,
               padding: 18,
-              border: "1px solid #2A3441",
+              border: theme === 'light' 
+                ? '1px solid var(--border-primary)'
+                : "1px solid #2A3441",
               minHeight: 220,
               maxHeight: 220,
               width: '95%',
-              boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+              boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden',
               display: 'flex', flexDirection: 'column', justifyContent: 'center'
             }}>
-              <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Equity Curve</div>
+              <div style={{ fontWeight: 700, color: 'var(--accent-primary)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Equity Curve</div>
               <EquityCurve trades={trades} />
             </div> */}
 
             <div style={{
-              background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+              background: theme === 'light' 
+                ? 'var(--bg-primary)'
+                : "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
               borderRadius: 10,
               padding: 18,
-              border: "1px solid #2A3441",
+              border: theme === 'light' 
+                ? '1px solid var(--border-primary)'
+                : "1px solid #2A3441",
               minHeight: 320,
               // maxWidth: 400,
               maxHeight: 220,
               width: '95%',
-              boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+              boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden',
               display: 'flex', flexDirection: 'column', justifyContent: 'center'
             }}>
-              <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Trading Value Over Time</div>
+              <div style={{ fontWeight: 700, color: 'var(--accent-primary)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Trading Value Over Time</div>
               <InvestmentValueChart investments={Array.isArray(trades) ? trades : []} isTrade={true} />
             </div>
             {/* Performance Chart */}
             <div style={{
-              background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+              background: theme === 'light' 
+                ? 'var(--bg-primary)'
+                : "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
               borderRadius: 10,
               padding: 18,
-              border: "1px solid #2A3441",
+              border: theme === 'light' 
+                ? '1px solid var(--border-primary)'
+                : "1px solid #2A3441",
               minHeight: 220,
               width: '95%',
-              boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+              boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden',
               display: 'flex', flexDirection: 'column', justifyContent: 'center'
             }}>
-              <div style={{ fontWeight: 700, color: '#F59E0B', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Performance by Month</div>
+              <div style={{ fontWeight: 700, color: 'var(--warning-color)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Performance by Month</div>
               <PerformanceChart trades={Array.isArray(trades) ? trades : []} />
             </div>
             <div style={{
-              background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+              background: theme === 'light' 
+                ? 'var(--bg-primary)'
+                : "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
               borderRadius: 10,
               padding: 18,
-              border: "1px solid #2A3441",
+              border: theme === 'light' 
+                ? '1px solid var(--border-primary)'
+                : "1px solid #2A3441",
               minHeight: 220,
               width: '95%',
-              boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+              boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden',
               display: 'flex', flexDirection: 'column', justifyContent: 'center',
               marginTop: 18
             }}>
-              <div style={{ fontWeight: 700, color: '#10B981', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Trades by Setup</div>
+              <div style={{ fontWeight: 700, color: 'var(--success-color)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Trades by Setup</div>
               <SetupPerformanceChart trades={Array.isArray(trades) ? trades : []} setups={Array.isArray(setups) ? setups : []} />
             </div>
             <div style={{
-              background: "linear-gradient(120deg, #233554 70%, #1A2332 100%)",
+              background: theme === 'light' 
+                ? 'var(--bg-primary)'
+                : "linear-gradient(120deg, #233554 70%, #1A2332 100%)",
               borderRadius: 10,
               padding: 18,
-              border: "1px solid #2A3441",
+              border: theme === 'light' 
+                ? '1px solid var(--border-primary)'
+                : "1px solid #2A3441",
               minHeight: 220,
               width: '95%',
-              boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+              boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden',
               display: 'flex', flexDirection: 'column', justifyContent: 'center',
               marginTop: 18
             }}>
-              <div style={{ fontWeight: 700, color: '#6366F1', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Timeframe Distribution</div>
+              <div style={{ fontWeight: 700, color: 'var(--accent-secondary)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Timeframe Distribution</div>
               <TimeframePieChart trades={Array.isArray(trades) ? trades : []} />
             </div>
           </div>
 
           {/* Recent Trades Table */}
           <div style={{
-            background: "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
+            background: theme === 'light' 
+              ? 'var(--bg-primary)'
+              : "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
             borderRadius: 16,
             padding: 28,
-            border: "1px solid #2A3441",
+            border: theme === 'light' 
+              ? '1px solid var(--border-primary)'
+              : "1px solid #2A3441",
             marginBottom: 28,
-            boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
-            color: '#E5E7EB',
+            boxShadow: "var(--shadow-lg)",
+            color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB',
             position: 'relative'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-              <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Recent Trades</h3>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: theme === 'light' ? 'var(--text-primary)' : "#fff", margin: 0, letterSpacing: 0.5 }}>Recent Trades</h3>
             </div>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
+              <table style={{ 
+                width: '100%', 
+                borderCollapse: 'separate', 
+                borderSpacing: 0, 
+                color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB', 
+                fontSize: 15 
+              }}>
                 <thead>
-                  <tr style={{ background: 'rgba(21,27,40,0.98)' }}>
-                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Ticker</th>
-                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'left' }}>EntryDate</th>
-                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'left' }}>EntryPrice</th>
-                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'left' }}>Original Quantity</th>
-                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'left' }}>Sold Quantity</th>
-                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Avg Exit Price</th>
-                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'left' }}>Invested</th>
-                    <th style={{ padding: '12px 14px', fontWeight: 700, color: '#10B981', textAlign: 'left', borderTopRightRadius: 10 }}>P&L</th>
+                  <tr style={{ 
+                    background: theme === 'light' 
+                      ? 'var(--bg-tertiary)' 
+                      : 'rgba(21,27,40,0.98)' 
+                  }}>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--accent-primary)', textAlign: 'left', borderTopLeftRadius: 10 }}>Ticker</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--warning-color)', textAlign: 'left' }}>EntryDate</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--success-color)', textAlign: 'left' }}>EntryPrice</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--warning-color)', textAlign: 'left' }}>Original Quantity</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--text-secondary)', textAlign: 'left' }}>Sold Quantity</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--accent-primary)', textAlign: 'left' }}>Avg Exit Price</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--success-color)', textAlign: 'left' }}>Invested</th>
+                    <th style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--success-color)', textAlign: 'left', borderTopRightRadius: 10 }}>P&L</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -621,15 +686,28 @@ const Dashboard = () => {
                     const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
                     const remainingQty = trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty;
                     const soldQty = originalQty - remainingQty;
+                    
+                    const evenRowBg = theme === 'light' 
+                      ? 'var(--bg-primary)' 
+                      : 'rgba(26,35,50,0.98)';
+                    const oddRowBg = theme === 'light' 
+                      ? 'var(--bg-secondary)' 
+                      : 'rgba(21,27,40,0.98)';
+                    const hoverBg = theme === 'light' 
+                      ? 'var(--bg-tertiary)' 
+                      : '#232B3B';
+                    
                     return (
                       <tr key={trade.id || idx} style={{
-                        borderBottom: '1px solid #232B3B',
-                        background: idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)',
+                        borderBottom: theme === 'light' 
+                          ? '1px solid var(--border-primary)' 
+                          : '1px solid #232B3B',
+                        background: idx % 2 === 0 ? evenRowBg : oddRowBg,
                         transition: 'background 0.2s',
                         borderRadius: 8
                       }}
-                        onMouseOver={e => e.currentTarget.style.background = '#232B3B'}
-                        onMouseOut={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)'}
+                        onMouseOver={e => e.currentTarget.style.background = hoverBg}
+                        onMouseOut={e => e.currentTarget.style.background = idx % 2 === 0 ? evenRowBg : oddRowBg}
                       >
                         <td style={{ padding: '12px 14px', fontWeight: 700 }}>{trade.ticker}</td>
                         <td style={{ padding: '12px 14px', fontWeight: 700 }}>{trade.entryDate ? formatDate(trade.entryDate) : "-"}</td>
@@ -638,13 +716,17 @@ const Dashboard = () => {
                         <td style={{ padding: '12px 14px', }}>{soldQty}</td>
                         <td style={{ padding: '12px 14px', }}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exitPrice !== undefined && trade.exitPrice !== null ? Number(trade.exitPrice).toFixed(2) : "-")) : '-'}</td>
                         <td style={{ padding: '12px 14px', }}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
-                        <td style={{ padding: '12px 14px', color: soldQty > 0 && Number(getPartialPL(trade)) > 0 ? '#10B981' : '#EF4444', fontWeight: 800 }}>
+                        <td style={{ 
+                          padding: '12px 14px', 
+                          color: soldQty > 0 && Number(getPartialPL(trade)) > 0 ? 'var(--profit-color)' : 'var(--loss-color)', 
+                          fontWeight: 800 
+                        }}>
                           {soldQty > 0 && getPartialPL(trade) !== "0" ? `$${getPartialPL(trade)}` : "0"}
                         </td>
                       </tr>
                     );
                   }) : (
-                    <tr><td colSpan={6} style={{ textAlign: 'center', color: '#9CA3AF', padding: 28 }}>No trades found</td></tr>
+                    <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 28 }}>No trades found</td></tr>
                   )}
                 </tbody>
               </table>
@@ -656,9 +738,9 @@ const Dashboard = () => {
         <>
           {/* Investment Loading/Error States */}
           {investmentLoading ? (
-            <div style={{ color: '#9CA3AF', textAlign: 'center', padding: 40 }}>Loading investment dashboard...</div>
+            <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 40 }}>Loading investment dashboard...</div>
           ) : investmentError ? (
-            <div style={{ color: '#EF4444', textAlign: 'center', padding: 40 }}>Failed to load investment data.</div>
+            <div style={{ color: 'var(--error-color)', textAlign: 'center', padding: 40 }}>Failed to load investment data.</div>
           ) : (
             <>
               {/* Investment Summary Cards */}
@@ -669,18 +751,25 @@ const Dashboard = () => {
                 gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
                 gap: 28,
                 marginBottom: 40,
-                background: "linear-gradient(90deg, #181F2A 60%, #1A2332 100%)",
+                background: theme === 'light' 
+                  ? 'var(--bg-secondary)'
+                  : "linear-gradient(90deg, #181F2A 60%, #1A2332 100%)",
                 borderRadius: 18,
-                padding: 16
+                padding: 16,
+                border: theme === 'light' ? '1px solid var(--border-primary)' : 'none'
               }}>
                 {/* Card: Total Invested */}
                 <div style={{
-                  background: "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
+                  background: theme === 'light' 
+                    ? 'var(--bg-primary)'
+                    : "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
                   borderRadius: 16,
                   padding: 28,
-                  border: "1px solid #2A3441",
+                  border: theme === 'light' 
+                    ? '1px solid var(--border-primary)'
+                    : "1px solid #2A3441",
                   textAlign: "center",
-                  boxShadow: "0 4px 24px 0 rgba(59,130,246,0.08)",
+                  boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden'
                 }}>
@@ -688,20 +777,24 @@ const Dashboard = () => {
                     position: 'absolute',
                     top: 18, left: 18,
                     fontSize: 28,
-                    color: '#3B82F6',
+                    color: 'var(--accent-primary)',
                     opacity: 0.18
                   }}>💰</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Total Investment</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: "#3B82F6", letterSpacing: 1 }}>₹{investmentSummary?.totalInvested?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Total Investment</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: "var(--accent-primary)", letterSpacing: 1 }}>₹{investmentSummary?.totalInvested?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
                 </div>
                 {/* Card: Total Holdings */}
                 <div style={{
-                  background: "linear-gradient(135deg, #1A2332 60%, #193C3A 100%)",
+                  background: theme === 'light' 
+                    ? 'var(--bg-primary)'
+                    : "linear-gradient(135deg, #1A2332 60%, #193C3A 100%)",
                   borderRadius: 16,
                   padding: 28,
-                  border: "1px solid #2A3441",
+                  border: theme === 'light' 
+                    ? '1px solid var(--border-primary)'
+                    : "1px solid #2A3441",
                   textAlign: "center",
-                  boxShadow: "0 4px 24px 0 rgba(16,185,129,0.08)",
+                  boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden'
                 }}>
@@ -709,20 +802,24 @@ const Dashboard = () => {
                     position: 'absolute',
                     top: 18, left: 18,
                     fontSize: 28,
-                    color: '#10B981',
+                    color: 'var(--success-color)',
                     opacity: 0.18
                   }}>📈</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Current Value</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: "#10B981", letterSpacing: 1 }}>₹{investmentSummary?.totalHoldings?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Current Value</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: "var(--success-color)", letterSpacing: 1 }}>₹{investmentSummary?.totalHoldings?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
                 </div>
                 {/* Card: Unrealized P&L */}
                 <div style={{
-                  background: "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
+                  background: theme === 'light' 
+                    ? 'var(--bg-primary)'
+                    : "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
                   borderRadius: 16,
                   padding: 28,
-                  border: "1px solid #2A3441",
+                  border: theme === 'light' 
+                    ? '1px solid var(--border-primary)'
+                    : "1px solid #2A3441",
                   textAlign: "center",
-                  boxShadow: "0 4px 24px 0 rgba(245,158,11,0.08)",
+                  boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden'
                 }}>
@@ -730,22 +827,26 @@ const Dashboard = () => {
                     position: 'absolute',
                     top: 18, left: 18,
                     fontSize: 28,
-                    color: '#F59E0B',
+                    color: 'var(--warning-color)',
                     opacity: 0.18
                   }}>💹</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Today's P&L</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.todaysPnL >= 0 ? '#6fe188ff' : '#d60a0aff', letterSpacing: 1 }}>{investmentSummary?.todaysPnL >= 0 ? '+' : ''}₹{investmentSummary?.todaysPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.todaysPnLPercent >= 0 ? '#64d47dff' : '#ff2727ff', marginTop: 10 }}>({investmentSummary?.todaysPnLPercent.toFixed(2) ?? '-'}%)</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Today's P&L</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.todaysPnL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', letterSpacing: 1 }}>{investmentSummary?.todaysPnL >= 0 ? '+' : ''}₹{investmentSummary?.todaysPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.todaysPnLPercent >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', marginTop: 10 }}>({investmentSummary?.todaysPnLPercent?.toFixed(2) ?? '-'}%)</div>
                 </div>
                 {/* Card: Avg Buy Price */}
                 {/* Card: Unrealized P&L */}
                 <div style={{
-                  background: "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
+                  background: theme === 'light' 
+                    ? 'var(--bg-primary)'
+                    : "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
                   borderRadius: 16,
                   padding: 28,
-                  border: "1px solid #2A3441",
+                  border: theme === 'light' 
+                    ? '1px solid var(--border-primary)'
+                    : "1px solid #2A3441",
                   textAlign: "center",
-                  boxShadow: "0 4px 24px 0 rgba(245,158,11,0.08)",
+                  boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden'
                 }}>
@@ -753,12 +854,12 @@ const Dashboard = () => {
                     position: 'absolute',
                     top: 18, left: 18,
                     fontSize: 28,
-                    color: '#F59E0B',
+                    color: 'var(--warning-color)',
                     opacity: 0.18
                   }}>💹</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A1A7B3", marginBottom: 10 }}>Unrealized P&L</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.unrealizedPnL >= 0 ? '#6ae485ff' : '#eb2828ff', letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.pnlPercent >= 0 ? '#13e640ff' : '#f03131ff', marginTop: 10 }}>({investmentSummary?.pnlPercent.toFixed(2) ?? '-'}%)</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Unrealized P&L</div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.unrealizedPnL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.pnlPercent >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', marginTop: 10 }}>({investmentSummary?.pnlPercent?.toFixed(2) ?? '-'}%)</div>
                 </div>
                 {/* Card: Avg Buy Price */}
 
@@ -775,38 +876,46 @@ const Dashboard = () => {
               }}>
                 {/* Investment Value Over Time Chart */}
                 <div style={{
-                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  background: theme === 'light' 
+                    ? 'var(--bg-primary)'
+                    : "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
                   borderRadius: 10,
                   padding: 18,
-                  border: "1px solid #2A3441",
+                  border: theme === 'light' 
+                    ? '1px solid var(--border-primary)'
+                    : "1px solid #2A3441",
                   minHeight: 320,
                   // maxWidth: 400,
                   maxHeight: 220,
                   width: '95%',
-                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+                  boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
-                  <div style={{ fontWeight: 700, color: '#3B82F6', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Investment Value Over Time</div>
+                  <div style={{ fontWeight: 700, color: 'var(--accent-primary)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Investment Value Over Time</div>
                   <InvestmentValueChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
                 {/* Top Holdings Bar Chart */}
                 <div style={{
-                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  background: theme === 'light' 
+                    ? 'var(--bg-primary)'
+                    : "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
                   borderRadius: 10,
                   padding: 16,
-                  border: "1px solid #2A3441",
+                  border: theme === 'light' 
+                    ? '1px solid var(--border-primary)'
+                    : "1px solid #2A3441",
                   minHeight: 320,
                   // maxWidth: 320,
                   maxHeight: 180,
                   width: '95%',
-                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+                  boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
-                  <div style={{ fontWeight: 700, color: '#F59E0B', fontSize: 13, marginBottom: 8, letterSpacing: 0.2 }}>Top Holdings by Value</div>
+                  <div style={{ fontWeight: 700, color: 'var(--warning-color)', fontSize: 13, marginBottom: 8, letterSpacing: 0.2 }}>Top Holdings by Value</div>
                   <TopHoldingsBarChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
 
@@ -823,54 +932,67 @@ const Dashboard = () => {
               }}>
                 {/* Sector Allocation Donut Chart */}
                 <div style={{
-                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  background: theme === 'light' 
+                    ? 'var(--bg-primary)'
+                    : "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
                   borderRadius: 10,
                   padding: 18,
-                  border: "1px solid #2A3441",
+                  border: theme === 'light' 
+                    ? '1px solid var(--border-primary)'
+                    : "1px solid #2A3441",
                   minHeight: 120,
                   // maxWidth: 400,
                   maxHeight: 200,
                   width: '95%',
-                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+                  boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
-                  <div style={{ fontWeight: 700, color: '#10B981', fontSize: 13, marginBottom: 10, letterSpacing: 0.3 }}>Sector Allocation</div>
+                  <div style={{ fontWeight: 700, color: 'var(--success-color)', fontSize: 13, marginBottom: 10, letterSpacing: 0.3 }}>Sector Allocation</div>
                   <SectorDonutChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
                 {/* Market Cap Pie Chart */}
                 <div style={{
-                  background: "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
+                  background: theme === 'light' 
+                    ? 'var(--bg-primary)'
+                    : "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
                   borderRadius: 10,
                   padding: 16,
-                  border: "1px solid #2A3441",
+                  border: theme === 'light' 
+                    ? '1px solid var(--border-primary)'
+                    : "1px solid #2A3441",
                   minHeight: 120,
                   // maxWidth: 320,
                   maxHeight: 200,
                   width: '90%',
-                  boxShadow: "0 1px 8px 0 rgba(59,130,246,0.06)",
+                  boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
-                  <div style={{ fontWeight: 700, color: '#6366F1', fontSize: 13, marginBottom: 8, letterSpacing: 0.2 }}>Market Cap Allocation</div>
+                  <div style={{ fontWeight: 700, color: 'var(--accent-secondary)', fontSize: 13, marginBottom: 8, letterSpacing: 0.2 }}>Market Cap Allocation</div>
                   <MarketCapPieChart investments={Array.isArray(investments) ? investments : []} />
                 </div>
                 {/* Key Stats & CAGR (compact) */}
                 <div style={{
-                  background: "radial-gradient(ellipse at 80% 0%, #233554 0%, #1A2332 100%)",
+                  background: theme === 'light' 
+                    ? 'var(--bg-primary)'
+                    : "radial-gradient(ellipse at 80% 0%, #233554 0%, #1A2332 100%)",
                   borderRadius: 14,
                   padding: 16,
-                  border: "1.5px solid #2A3441",
+                  border: theme === 'light' 
+                    ? '1px solid var(--border-primary)'
+                    : "1.5px solid #2A3441",
                   minHeight: 120,
                   // maxWidth: 320,
                   maxHeight: 200,
                   width: '90%',
-                  boxShadow: "0 2px 12px 0 rgba(59,130,246,0.10)",
+                  boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden',
-                  display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#E5E7EB',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center', 
+                  color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB',
                   transition: 'box-shadow 0.2s',
                   backdropFilter: 'blur(2px)'
                 }}>
@@ -880,10 +1002,10 @@ const Dashboard = () => {
                       alignItems: 'center',
                       justifyContent: 'center',
                       width: 28, height: 28,
-                      background: 'linear-gradient(135deg, #3B82F6 60%, #6366F1 100%)',
+                      background: 'var(--gradient-primary)',
                       borderRadius: '50%',
                       marginRight: 8,
-                      boxShadow: '0 1px 6px 0 rgba(59,130,246,0.18)',
+                      boxShadow: 'var(--shadow-primary-btn)',
                       fontSize: 15,
                       color: '#fff',
                       fontWeight: 700
@@ -940,7 +1062,9 @@ const Dashboard = () => {
                     gap: 6
                   }}>
                     <div style={{
-                      background: 'linear-gradient(135deg, #1A2332 60%, #193C3A 100%)',
+                      background: theme === 'light' 
+                        ? 'linear-gradient(135deg, #F0FDF4 60%, #DCFCE7 100%)'
+                        : 'linear-gradient(135deg, #1A2332 60%, #193C3A 100%)',
                       borderRadius: 8,
                       padding: '6px 8px',
                       flex: 1,
@@ -950,7 +1074,12 @@ const Dashboard = () => {
                       display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
                       boxShadow: '0 1px 4px 0 rgba(16,185,129,0.08)'
                     }}>
-                      <span style={{ color: '#A1A7B3', fontWeight: 600, fontSize: 10, marginBottom: 1 }}>Best Performer</span>
+                      <span style={{ 
+                        color: theme === 'light' ? '#6B7280' : '#A1A7B3', 
+                        fontWeight: 600, 
+                        fontSize: 10, 
+                        marginBottom: 1 
+                      }}>Best Performer</span>
                       <span style={{ fontSize: 12, fontWeight: 800 }}>{(() => {
                         const arr = Array.isArray(investments) ? investments : [];
                         if (!arr.length) return '-';
@@ -961,7 +1090,9 @@ const Dashboard = () => {
                       })()}</span>
                     </div>
                     <div style={{
-                      background: 'linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)',
+                      background: theme === 'light' 
+                        ? 'linear-gradient(135deg, #FEF2F2 60%, #FEE2E2 100%)'
+                        : 'linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)',
                       borderRadius: 8,
                       padding: '6px 8px',
                       flex: 1,
@@ -971,7 +1102,12 @@ const Dashboard = () => {
                       display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
                       boxShadow: '0 1px 4px 0 rgba(245,158,11,0.08)'
                     }}>
-                      <span style={{ color: '#A1A7B3', fontWeight: 600, fontSize: 10, marginBottom: 1 }}>Worst Performer</span>
+                      <span style={{ 
+                        color: theme === 'light' ? '#6B7280' : '#A1A7B3', 
+                        fontWeight: 600, 
+                        fontSize: 10, 
+                        marginBottom: 1 
+                      }}>Worst Performer</span>
                       <span style={{ fontSize: 12, fontWeight: 800 }}>{(() => {
                         const arr = Array.isArray(investments) ? investments : [];
                         if (!arr.length) return '-';
@@ -987,17 +1123,29 @@ const Dashboard = () => {
 
               {/* Top Gainers*/}
               <div style={{
-                background: "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
+                background: theme === 'light' 
+                  ? 'var(--bg-secondary)' 
+                  : "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
                 borderRadius: 16,
                 padding: 28,
-                border: "1px solid #2A3441",
+                border: theme === 'light' 
+                  ? "1px solid var(--border-color)" 
+                  : "1px solid #2A3441",
                 marginBottom: 28,
-                boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
-                color: '#E5E7EB',
+                boxShadow: theme === 'light' 
+                  ? "var(--shadow-card)" 
+                  : "0 2px 16px 0 rgba(59,130,246,0.06)",
+                color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB',
                 position: 'relative'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Top Gainers <span title="% return = (Current - Buy)/Buy" style={{ cursor: 'help', color: '#9CA3AF', fontSize: 16, marginLeft: 6 }}>ℹ️</span></h3>
+                  <h3 style={{ 
+                    fontSize: 20, 
+                    fontWeight: 700, 
+                    color: theme === 'light' ? 'var(--text-primary)' : "#fff", 
+                    margin: 0, 
+                    letterSpacing: 0.5 
+                  }}>Top Gainers <span title="% return = (Current - Buy)/Buy" style={{ cursor: 'help', color: '#9CA3AF', fontSize: 16, marginLeft: 6 }}>ℹ️</span></h3>
                   <button
                     style={{
                       background: 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)',
@@ -1018,11 +1166,36 @@ const Dashboard = () => {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
                     <thead>
-                      <tr style={{ background: 'rgba(21,27,40,0.98)' }}>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Ticker</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'left' }}>Sector</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'right' }}>% Return</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'right' }}>Unrealized P&L</th>
+                      <tr style={{ 
+                        background: theme === 'light' 
+                          ? 'var(--bg-tertiary)' 
+                          : 'rgba(21,27,40,0.98)' 
+                      }}>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? '#2563EB' : '#60A5FA', 
+                          textAlign: 'left', 
+                          borderTopLeftRadius: 10 
+                        }}>Ticker</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? '#059669' : '#A7F3D0', 
+                          textAlign: 'left' 
+                        }}>Sector</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? '#D97706' : '#F59E0B', 
+                          textAlign: 'right' 
+                        }}>% Return</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB', 
+                          textAlign: 'right' 
+                        }}>Unrealized P&L</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1039,9 +1212,18 @@ const Dashboard = () => {
                         const top = sorted.slice(0, 3);
                         return [
                           ...top.map((inv, idx) => (
-                            <tr key={inv.id || `gainer-${idx}`} style={{ background: '#182032' }}>
-                              <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.ticker}</td>
-                              <td style={{ padding: '12px 14px' }}>{inv.sector || '-'}</td>
+                            <tr key={inv.id || `gainer-${idx}`} style={{ 
+                              background: theme === 'light' ? 'var(--bg-tertiary)' : '#182032' 
+                            }}>
+                              <td style={{ 
+                                padding: '12px 14px', 
+                                fontWeight: 700, 
+                                color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB' 
+                              }}>{inv.ticker}</td>
+                              <td style={{ 
+                                padding: '12px 14px', 
+                                color: theme === 'light' ? 'var(--text-secondary)' : '#9CA3AF' 
+                              }}>{inv.sector || '-'}</td>
                               <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.ret >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.ret >= 0 ? '+' : ''}{inv.ret.toFixed(2)}%</td>
                               <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.pnl >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.pnl >= 0 ? '+' : ''}₹{isNaN(inv.pnl) ? '-' : inv.pnl.toLocaleString()}</td>
                             </tr>
@@ -1056,17 +1238,29 @@ const Dashboard = () => {
 
               {/* Top Gainers/Losers Table */}
               <div style={{
-                background: "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
+                background: theme === 'light' 
+                  ? 'var(--bg-secondary)' 
+                  : "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
                 borderRadius: 16,
                 padding: 28,
-                border: "1px solid #2A3441",
+                border: theme === 'light' 
+                  ? "1px solid var(--border-color)" 
+                  : "1px solid #2A3441",
                 marginBottom: 28,
-                boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
-                color: '#E5E7EB',
+                boxShadow: theme === 'light' 
+                  ? "var(--shadow-card)" 
+                  : "0 2px 16px 0 rgba(59,130,246,0.06)",
+                color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB',
                 position: 'relative'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Top Losers <span title="% return = (Current - Buy)/Buy" style={{ cursor: 'help', color: '#9CA3AF', fontSize: 16, marginLeft: 6 }}>ℹ️</span></h3>
+                  <h3 style={{ 
+                    fontSize: 20, 
+                    fontWeight: 700, 
+                    color: theme === 'light' ? 'var(--text-primary)' : "#fff", 
+                    margin: 0, 
+                    letterSpacing: 0.5 
+                  }}>Top Losers <span title="% return = (Current - Buy)/Buy" style={{ cursor: 'help', color: '#9CA3AF', fontSize: 16, marginLeft: 6 }}>ℹ️</span></h3>
                   <button
                     style={{
                       background: 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)',
@@ -1087,11 +1281,36 @@ const Dashboard = () => {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
                     <thead>
-                      <tr style={{ background: 'rgba(21,27,40,0.98)' }}>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Ticker</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'left' }}>Sector</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'right' }}>% Return</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'right' }}>Unrealized P&L</th>
+                      <tr style={{ 
+                        background: theme === 'light' 
+                          ? 'var(--bg-tertiary)' 
+                          : 'rgba(21,27,40,0.98)' 
+                      }}>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? '#2563EB' : '#60A5FA', 
+                          textAlign: 'left', 
+                          borderTopLeftRadius: 10 
+                        }}>Ticker</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? '#059669' : '#A7F3D0', 
+                          textAlign: 'left' 
+                        }}>Sector</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? '#D97706' : '#F59E0B', 
+                          textAlign: 'right' 
+                        }}>% Return</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB', 
+                          textAlign: 'right' 
+                        }}>Unrealized P&L</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1111,9 +1330,18 @@ const Dashboard = () => {
                         return [
                           <tr key="sep"><td colSpan={4} style={{ height: 8 }}></td></tr>,
                           ...bottom.map((inv, idx) => (
-                            <tr key={inv.id || `loser-${idx}`} style={{ background: '#2A1A1A' }}>
-                              <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.ticker}</td>
-                              <td style={{ padding: '12px 14px' }}>{inv.sector || '-'}</td>
+                            <tr key={inv.id || `loser-${idx}`} style={{ 
+                              background: theme === 'light' ? 'var(--bg-tertiary)' : '#2A1A1A' 
+                            }}>
+                              <td style={{ 
+                                padding: '12px 14px', 
+                                fontWeight: 700, 
+                                color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB' 
+                              }}>{inv.ticker}</td>
+                              <td style={{ 
+                                padding: '12px 14px', 
+                                color: theme === 'light' ? 'var(--text-secondary)' : '#9CA3AF' 
+                              }}>{inv.sector || '-'}</td>
                               <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.ret >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.ret >= 0 ? '+' : ''}{inv.ret.toFixed(2)}%</td>
                               <td style={{ padding: '12px 14px', textAlign: 'right', color: inv.pnl >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{inv.pnl >= 0 ? '+' : ''}₹{isNaN(inv.pnl) ? '-' : inv.pnl.toLocaleString()}</td>
                             </tr>
@@ -1127,16 +1355,28 @@ const Dashboard = () => {
 
               {/* Recent Investments Table - Enhanced */}
               <div style={{
-                background: "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
+                background: theme === 'light' 
+                  ? 'var(--bg-secondary)' 
+                  : "linear-gradient(120deg, #1A2332 80%, #233554 100%)",
                 borderRadius: 16,
                 padding: 28,
-                border: "1px solid #2A3441",
+                border: theme === 'light' 
+                  ? "1px solid var(--border-color)" 
+                  : "1px solid #2A3441",
                 marginBottom: 28,
-                boxShadow: "0 2px 16px 0 rgba(59,130,246,0.06)",
+                boxShadow: theme === 'light' 
+                  ? "var(--shadow-card)" 
+                  : "0 2px 16px 0 rgba(59,130,246,0.06)",
                 position: 'relative'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: 0.5 }}>Recent Investments</h3>
+                  <h3 style={{ 
+                    fontSize: 20, 
+                    fontWeight: 700, 
+                    color: theme === 'light' ? 'var(--text-primary)' : "#fff", 
+                    margin: 0, 
+                    letterSpacing: 0.5 
+                  }}>Recent Investments</h3>
                   <button
                     style={{
                       background: 'linear-gradient(90deg, #3B82F6 60%, #6366F1 100%)',
@@ -1155,15 +1395,57 @@ const Dashboard = () => {
                   >View More</button>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, color: '#E5E7EB', fontSize: 15 }}>
+                  <table style={{ 
+                    width: '100%', 
+                    borderCollapse: 'separate', 
+                    borderSpacing: 0, 
+                    color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB', 
+                    fontSize: 15 
+                  }}>
                     <thead>
-                      <tr style={{ background: 'rgba(21,27,40,0.98)' }}>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#60A5FA', textAlign: 'left', borderTopLeftRadius: 10 }}>Ticker</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'right' }}>Quantity</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'right' }}>Avg Buy Price</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#E5E7EB', textAlign: 'right' }}>Current Price</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#A7F3D0', textAlign: 'right' }}>Today's P&L</th>
-                        <th style={{ padding: '12px 14px', fontWeight: 700, color: '#F59E0B', textAlign: 'right', borderTopRightRadius: 10 }}>Unrealized P&L</th>
+                      <tr style={{ 
+                        background: theme === 'light' 
+                          ? 'var(--bg-tertiary)' 
+                          : 'rgba(21,27,40,0.98)' 
+                      }}>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? '#2563EB' : '#60A5FA', 
+                          textAlign: 'left', 
+                          borderTopLeftRadius: 10 
+                        }}>Ticker</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? '#D97706' : '#F59E0B', 
+                          textAlign: 'right' 
+                        }}>Quantity</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB', 
+                          textAlign: 'right' 
+                        }}>Avg Buy Price</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB', 
+                          textAlign: 'right' 
+                        }}>Current Price</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? '#059669' : '#A7F3D0', 
+                          textAlign: 'right' 
+                        }}>Today's P&L</th>
+                        <th style={{ 
+                          padding: '12px 14px', 
+                          fontWeight: 700, 
+                          color: theme === 'light' ? '#D97706' : '#F59E0B', 
+                          textAlign: 'right', 
+                          borderTopRightRadius: 10 
+                        }}>Unrealized P&L</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1175,18 +1457,41 @@ const Dashboard = () => {
                         const todaysPnL = currentValue - lastDayValue;
                         return (
                           <tr key={inv.id || idx} style={{
-                            borderBottom: '1px solid #232B3B',
-                            background: idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)',
+                            borderBottom: theme === 'light' 
+                              ? '1px solid var(--border-color)' 
+                              : '1px solid #232B3B',
+                            background: theme === 'light' 
+                              ? (idx % 2 === 0 ? 'var(--bg-secondary)' : 'var(--bg-tertiary)')
+                              : (idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)'),
                             transition: 'background 0.2s',
                             borderRadius: 8
                           }}
-                            onMouseOver={e => e.currentTarget.style.background = '#232B3B'}
-                            onMouseOut={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)'}
+                            onMouseOver={e => e.currentTarget.style.background = theme === 'light' ? 'var(--bg-tertiary)' : '#232B3B'}
+                            onMouseOut={e => e.currentTarget.style.background = theme === 'light' 
+                              ? (idx % 2 === 0 ? 'var(--bg-secondary)' : 'var(--bg-tertiary)')
+                              : (idx % 2 === 0 ? 'rgba(26,35,50,0.98)' : 'rgba(21,27,40,0.98)')
+                            }
                           >
-                            <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inv.ticker}</td>
-                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>{inv.quantity}</td>
-                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>₹{inv.avgBuyPrice?.toLocaleString() ?? '-'}</td>
-                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>₹{inv.currentPrice?.toLocaleString() ?? '-'}</td>
+                            <td style={{ 
+                              padding: '12px 14px', 
+                              fontWeight: 700, 
+                              color: theme === 'light' ? 'var(--text-primary)' : '#E5E7EB' 
+                            }}>{inv.ticker}</td>
+                            <td style={{ 
+                              padding: '12px 14px', 
+                              textAlign: 'right', 
+                              color: theme === 'light' ? 'var(--text-secondary)' : '#9CA3AF' 
+                            }}>{inv.quantity}</td>
+                            <td style={{ 
+                              padding: '12px 14px', 
+                              textAlign: 'right', 
+                              color: theme === 'light' ? 'var(--text-secondary)' : '#9CA3AF' 
+                            }}>₹{inv.avgBuyPrice?.toLocaleString() ?? '-'}</td>
+                            <td style={{ 
+                              padding: '12px 14px', 
+                              textAlign: 'right', 
+                              color: theme === 'light' ? 'var(--text-secondary)' : '#9CA3AF' 
+                            }}>₹{inv.currentPrice?.toLocaleString() ?? '-'}</td>
                             <td style={{ padding: '12px 14px', textAlign: 'right', color: todaysPnL >= 0 ? '#10B981' : '#EF4444', fontWeight: 800 }}>
                               {todaysPnL >= 0 ? '+' : ''}₹{isNaN(todaysPnL) ? '-' : todaysPnL.toLocaleString()}
                             </td>
@@ -1196,7 +1501,11 @@ const Dashboard = () => {
                           </tr>
                         );
                       }) : (
-                        <tr><td colSpan={6} style={{ textAlign: 'center', color: '#9CA3AF', padding: 28 }}>No investments found</td></tr>
+                        <tr><td colSpan={6} style={{ 
+                          textAlign: 'center', 
+                          color: theme === 'light' ? 'var(--text-muted)' : '#9CA3AF', 
+                          padding: 28 
+                        }}>No investments found</td></tr>
                       )}
                     </tbody>
                   </table>

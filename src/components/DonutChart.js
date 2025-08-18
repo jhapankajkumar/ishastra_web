@@ -31,12 +31,13 @@ const CustomTooltip = ({ active, payload, total }) => {
     const { label, value } = payload[0].payload;
     return (
       <div style={{
-        background: "#222b3a",
-        color: "#fff",
+        background: "var(--bg-tertiary)",
+        color: "var(--text-primary)",
         padding: "8px 12px",
         borderRadius: 6,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-        fontSize: 14
+        boxShadow: "var(--shadow-lg)",
+        fontSize: 14,
+        border: "1px solid var(--border-primary)"
       }}>
         <div><strong>{label}</strong></div>
         <div>Count: {value}</div>

@@ -31,9 +31,9 @@ const MarketCapPieChart = ({ investments }) => {
   const { labels, data } = getMarketCapData(investments);
   
   // Get colors based on theme
-  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
-  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim();
-  const mutedTextColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim();
+  const textColor = theme === 'light' ? '#6B7280' : '#9CA3AF';
+  const borderColor = theme === 'light' ? '#FFFFFF' : '#1F2937';
+  const mutedTextColor = theme === 'light' ? '#9CA3AF' : '#6B7280';
   
   if (!labels.length) return <div style={{ color: mutedTextColor, fontSize: 13 }}>No market cap data</div>;
   

@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend
 } from "chart.js";
+import { useTheme } from '../contexts/ThemeContext';
 import { getPartialPL } from "../common/Helper";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
@@ -62,8 +63,18 @@ function getInvestmentValueHistory(investments, isTrade ) {
 }
 
 const InvestmentValueChart = ({ investments, isTrade = false }) => {
+  const { theme } = useTheme();
   const { labels, invested, totalValue } = getInvestmentValueHistory(investments, isTrade);
-  if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 16 }}>No investment history data</div>;
+  
+  if (!labels.length) return (
+    <div style={{ 
+      color: theme === 'light' ? '#64748b' : '#9CA3AF', 
+      fontSize: 16 
+    }}>
+      No investment history data
+    </div>
+  );
+  
   return (
     <Line
       data={{
@@ -96,17 +107,45 @@ const InvestmentValueChart = ({ investments, isTrade = false }) => {
       options={{
         responsive: true,
         plugins: {
-          legend: { display: true, labels: { color: '#E5E7EB', font: { size: 11 } } },
-          tooltip: { mode: 'index', intersect: false }
+          legend: { 
+            display: true, 
+            labels: { 
+              color: theme === 'light' ? '#475569' : '#E5E7EB', 
+              font: { size: 11 } 
+            } 
+          },
+          tooltip: { 
+            mode: 'index', 
+            intersect: false,
+            backgroundColor: theme === 'light' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(26, 34, 51, 0.95)',
+            titleColor: theme === 'light' ? '#1e293b' : '#fff',
+            bodyColor: theme === 'light' ? '#475569' : '#E5E7EB',
+            borderColor: theme === 'light' ? '#e2e8f0' : '#374151',
+            borderWidth: 1
+          }
         },
         scales: {
           x: {
-            grid: { color: "rgba(156,163,175,0.08)" },
-            ticks: { color: "#9CA3AF", font: { size: 10 } }
+            grid: { 
+              color: theme === 'light' 
+                ? "rgba(226, 232, 240, 0.5)" 
+                : "rgba(156,163,175,0.08)" 
+            },
+            ticks: { 
+              color: theme === 'light' ? '#64748b' : "#9CA3AF", 
+              font: { size: 10 } 
+            }
           },
           y: {
-            grid: { color: "rgba(156,163,175,0.08)" },
-            ticks: { color: "#9CA3AF", font: { size: 10 } }
+            grid: { 
+              color: theme === 'light' 
+                ? "rgba(226, 232, 240, 0.5)" 
+                : "rgba(156,163,175,0.08)" 
+            },
+            ticks: { 
+              color: theme === 'light' ? '#64748b' : "#9CA3AF", 
+              font: { size: 10 } 
+            }
           }
         }
       }}
