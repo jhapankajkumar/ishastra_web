@@ -1,9 +1,10 @@
 /* Risk Management Calculator Styles */
 .container {
   min-height: 100vh;
-  background: #101828;
-  color: #fff;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .content {
@@ -17,37 +18,39 @@
 }
 
 .inputSection {
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 24px;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .resultsSection {
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 24px;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-primary);
   position: sticky;
   top: 88px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .sectionTitle {
   font-size: 24px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0 0 24px 0;
   padding-bottom: 12px;
-  border-bottom: 2px solid #4F8CFF;
+  border-bottom: 2px solid var(--btn-primary-bg);
 }
 
 .subSectionTitle {
   font-size: 18px;
   font-weight: 600;
-  color: #E5E7EB;
+  color: var(--text-secondary);
   margin: 32px 0 16px 0;
   padding-bottom: 8px;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .formGrid {
@@ -72,7 +75,7 @@
 .label {
   font-size: 14px;
   font-weight: 500;
-  color: #D1D5DB;
+  color: var(--text-muted);
   margin-bottom: 8px;
   letter-spacing: 0.025em;
 }
@@ -80,10 +83,10 @@
 .input,
 .select {
   padding: 12px 16px;
-  background: #374151;
-  border: 1px solid #4B5563;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 14px;
   transition: all 0.2s ease;
   outline: none;
@@ -91,9 +94,9 @@
 
 .input:focus,
 .select:focus {
-  border-color: #4F8CFF;
-  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.1);
-  background: #475569;
+  border-color: var(--btn-primary-bg);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: var(--bg-accent);
 }
 
 .input::placeholder {
@@ -144,46 +147,41 @@
   margin-bottom: 32px;
 }
 
+/* Results Display */
 .resultCard {
-  background: #374151;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
-  padding: 20px;
-  border: 1px solid #4B5563;
-  transition: all 0.2s ease;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .resultCard:hover {
-  border-color: #4F8CFF;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(79, 140, 255, 0.1);
+  border-color: var(--btn-primary-bg);
 }
 
 .resultLabel {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
-  color: #9CA3AF;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--text-muted);
   margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .resultValue {
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
-  color: #fff;
-  margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
-.resultProfit {
-  font-size: 12px;
-  color: #10B981;
-  font-weight: 500;
+.resultPositive {
+  color: var(--profit-color) !important;
 }
 
-.resultNote {
-  font-size: 11px;
-  color: #6B7280;
-  font-style: italic;
+.resultNegative {
+  color: var(--loss-color) !important;
 }
 
 .summarySection {

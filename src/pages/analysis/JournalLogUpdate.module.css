@@ -4,26 +4,27 @@
   margin: 0;
   padding: 24px 5%;
   box-sizing: border-box;
-  background: #101828;
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #fff;
+  color: var(--text-inverse);
   font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .journalUpdateContainer {
   max-width: 800px;
   margin: 0 auto;
-  background: #0F1419;
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 32px;
-  border: 1px solid #2A3441;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-modal);
 }
 
 .journalHeader {
   margin-bottom: 32px;
   margin-right: 60px;
-  border-bottom: 1px solid #2A3441;
+  border-bottom: 1px solid var(--border-primary);
   padding-bottom: 20px;
 }
 .journalHeaderRow {
@@ -40,44 +41,44 @@
 .journalTitle {
   font-size: 32px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-inverse);
   margin: 0;
   letter-spacing: -0.5px;
 }
 .journalSubtitle {
   font-size: 16px;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   margin: 0;
 }
 .journalTicker {
   font-size: 14px;
-  color: #6B7280;
+  color: var(--text-muted);
   margin: 4px 0 0 0;
 }
 
 .journalCard {
-  background-color: #1A2332;
+  background-color: var(--bg-tertiary);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-primary);
 }
 .journalCardTitle {
   font-size: 18px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-inverse);
   margin: 0 0 20px 0;
 }
 .journalCardTitleTech {
   font-size: 18px;
   font-weight: 600;
-  color: #4F46E5;
+  color: var(--accent-primary);
   margin: 0 0 20px 0;
 }
 .journalCardTitleReview {
   font-size: 18px;
   font-weight: 600;
-  color: #8B5CF6;
+  color: var(--accent-secondary);
   margin: 0 0 20px 0;
 }
 .journalGridInfo {
@@ -89,13 +90,13 @@
 .journalLabel {
   font-size: 14px;
   font-weight: 500;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   display: block;
   margin-bottom: 6px;
 }
 .journalValue {
   font-size: 16px;
-  color: #E5E7EB;
+  color: var(--text-primary);
   font-weight: 500;
 }
 .journalTrendValue {
@@ -107,12 +108,12 @@
 }
 .journalYes {
   font-size: 16px;
-  color: #10B981;
+  color: var(--status-success);
   font-weight: 600;
 }
 .journalNo {
   font-size: 16px;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
@@ -127,18 +128,18 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background-color: #10B98120;
+  background-color: var(--status-success-bg);
   border-radius: 8px;
-  border: 1px solid #10B981;
+  border: 1px solid var(--status-success);
 }
 .journalIndicatorInactive {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background-color: #6B728020;
+  background-color: var(--bg-disabled-light);
   border-radius: 8px;
-  border: 1px solid #6B7280;
+  border: 1px solid var(--text-muted);
 }
 .journalIndicatorDot {
   width: 8px;
@@ -147,12 +148,12 @@
 }
 .journalIndicatorLabelActive {
   font-size: 14px;
-  color: #10B981;
+  color: var(--status-success);
   font-weight: 500;
 }
 .journalIndicatorLabelInactive {
   font-size: 14px;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -160,11 +161,11 @@
   margin-bottom: 20px;
 }
 .journalReadOnlyValue {
-  background-color: #0F1419;
-  border: 1px solid #2A3441;
+  background-color: var(--bg-disabled);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
   padding: 16px;
-  color: #E5E7EB;
+  color: var(--text-primary);
   font-size: 15px;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -177,9 +178,9 @@
   width: 100%;
   min-height: 120px;
   border-radius: 8px;
-  border: 1px solid #2A3441;
-  background: #181F2A;
-  color: #E5E7EB;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
   font-size: 15px;
   padding: 12px;
   resize: vertical;
@@ -189,7 +190,7 @@
   margin-bottom: 8px;
 }
 .journalFileName {
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 .journalSubmitButton {
@@ -198,14 +199,27 @@
   font-weight: 600;
   border-radius: 8px;
   border: none;
-  background-color: #4F46E5;
-  color: #fff;
+  background-color: var(--accent-primary);
+  color: var(--text-inverse);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 .journalSubmitButton:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.cancelButton {
+  padding: 12px 24px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
 }
 
 /* Responsive: reduce horizontal padding on small screens */

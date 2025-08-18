@@ -4,10 +4,11 @@
   margin: 0;
   padding: 24px 5%;
   box-sizing: border-box;
-  background: #101828;
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #fff;
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .actionBar {
@@ -32,50 +33,51 @@
 
 .filterGroup label {
   font-size: 14px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .filterSelect {
   padding: 8px 12px;
-  border: 1px solid #2A3441;
-  background: #1A2332;
-  color: #E5E7EB;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  transition: border-color 0.2s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 
 .filterButton:hover {
-  background: #232B3D;
-  color: #E5E7EB;
-  border-color: #4F46E5;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
 }
 
 .filterButton.active {
-  background: #4F46E5;
-  color: #fff;
-  border-color: #4F46E5;
+  background: var(--accent-primary);
+  color: #ffffff;
+  border-color: var(--accent-primary);
 }
 
 .emptyState {
   margin-top: 20px;
   text-align: center;
   padding: 60px 20px;
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-primary);
 }
 
 .emptyState h3 {
   font-size: 24px;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
 .emptyState p {
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 16px;
   margin-bottom: 24px;
 }
@@ -83,20 +85,21 @@
 .addButton {
   display: inline-block;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-  color: #fff;
+  background: var(--btn-primary-bg);
+  color: white;
   text-decoration: none;
   border-radius: 8px;
   font-weight: 600;
   font-size: 16px;
-  margin-bottom: 24px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-md);
+  border: none;
+  cursor: pointer;
 }
 
 .addButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+  box-shadow: var(--shadow-primary-btn-hover);
 }
 /* Responsive: reduce horizontal padding on small screens */
 @media (max-width: 768px) {
@@ -112,10 +115,10 @@
 }
 
 .tableContainer {
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 24px;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-primary);
   overflow-x: auto;
 }
 
@@ -126,16 +129,16 @@
 }
 
 .tableHeader {
-  background: #0F1419;
+  background: var(--bg-tertiary);
 }
 
 .tableHeaderCell {
   padding: 16px 12px;
   text-align: left;
   font-weight: 600;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 14px;
-  border-bottom: 1px solid #2A3441;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .tableRow {
@@ -144,18 +147,18 @@
 }
 
 .tableRow:hover {
-  background: #0F1419;
+  background: var(--bg-tertiary);
 }
 
 .tableCell {
   padding: 16px 12px;
   font-size: 14px;
-  border-bottom: 1px solid #2A3441;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .stockCell {
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .stockContainer {
@@ -166,19 +169,19 @@
 
 .stockSymbol {
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .companyName {
   font-weight: 400;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.2;
 }
 
 .dateCell {
-  color: #9CA3AF;
+  color: var(--text-secondary);
 }
 
 .trendBadge {
@@ -186,7 +189,7 @@
   border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
-  color: #fff;
+  color: #ffffff;
   text-transform: capitalize;
 }
 
@@ -198,15 +201,15 @@
 
 .signal {
   padding: 2px 6px;
-  background: #4F46E5;
-  color: #fff;
+  background: var(--accent-primary);
+  color: #ffffff;
   font-size: 10px;
   border-radius: 3px;
   font-weight: 500;
 }
 
 .noSignals {
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -218,13 +221,13 @@
 }
 
 .entryYes {
-  background: #10B981;
-  color: #fff;
+  background: var(--status-success);
+  color: #ffffff;
 }
 
 .entryNo {
-  background: #6B7280;
-  color: #fff;
+  background: var(--text-muted);
+  color: #ffffff;
 }
 
 .actionButton {
@@ -240,32 +243,32 @@
 }
 
 .viewButton {
-  background: #1E40AF;
-  color: #fff;
+  background: var(--accent-info);
+  color: #ffffff;
 }
 
 .viewButton:hover {
-  background: #1D4ED8;
+  background: var(--accent-info-hover);
   transform: translateY(-1px);
 }
 
 .editButton {
-  background: #F59E0B;
-  color: #fff;
+  background: var(--status-warning);
+  color: #ffffff;
 }
 
 .editButton:hover {
-  background: #D97706;
+  background: var(--status-warning-hover);
   transform: translateY(-1px);
 }
 
 .deleteButton {
-  background: #EF4444;
-  color: #fff;
+  background: var(--status-danger);
+  color: #ffffff;
 }
 
 .deleteButton:hover {
-  background: #DC2626;
+  background: var(--status-danger-hover);
   transform: translateY(-1px);
 }
 

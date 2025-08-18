@@ -4,10 +4,11 @@
   margin: 0;
   padding: 24px 5%;
   box-sizing: border-box;
-  background: #101828;
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #fff;
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Responsive: reduce horizontal padding on small screens */
@@ -25,19 +26,21 @@
 
 .loading {
   text-align: center;
-  color: #b0b8c9;
+  color: var(--text-muted);
   font-size: 1.1rem;
   padding: 40px;
+  transition: color 0.3s ease;
 }
 
 .formContainer {
-  background: #181f2a;
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--bg-secondary);
   border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
-  padding: 32px 40px;
-  max-width: 1000px;
-  width: 100%;
-  margin: 24px auto 0 auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 @media (max-width: 768px) {
@@ -49,26 +52,39 @@
 
 /* Trade Summary */
 .tradeSummary {
-  background: #0f1419;
-  border: 2px solid #374151;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
   position: relative;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
-.tradeSummary::before {
+.tradeSummary::after {
   content: "READ-ONLY";
   position: absolute;
   top: 8px;
   right: 16px;
-  background: #374151;
-  color: #9ca3af;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.tradeSummary h3 {
+  color: var(--accent-primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.3s ease;
 }
 
 .tradeSummary h3 {
@@ -94,48 +110,54 @@
 }
 
 .summaryLabel {
-  color: #b0b8c9;
+  color: var(--text-muted);
   font-size: 0.9rem;
   font-weight: 500;
+  transition: color 0.3s ease;
 }
 
 .summaryValue {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 1rem;
   font-weight: 600;
+  transition: color 0.3s ease;
 }
 
 .statusValue {
-  color: #00c851;
+  color: var(--status-success);
 }
 
 .profitValue {
-  color: #10b981 !important;
+  color: var(--status-success) !important;
   font-weight: 700;
+  transition: color 0.3s ease;
 }
 
 .lossValue {
-  color: #ef4444 !important;
+  color: var(--status-error) !important;
   font-weight: 700;
+  transition: color 0.3s ease;
 }
 
 /* Calculated Metrics */
 .calculatedMetrics {
   margin-top: 20px;
   padding: 16px;
-  background: #0a0f14;
+  background: var(--bg-primary);
   border-radius: 8px;
-  border: 1px solid #10b981;
+  border: 1px solid var(--status-success);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .calculatedMetrics h4 {
-  color: #10b981;
+  color: var(--status-success);
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: color 0.3s ease;
 }
 
 /* Price Input Group */
@@ -150,7 +172,7 @@
 }
 
 .refreshPriceButton {
-  background: #3b82f6;
+  background: var(--accent-primary);
   border: none;
   border-radius: 6px;
   color: white;
@@ -166,23 +188,25 @@
 }
 
 .refreshPriceButton:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--accent-primary-hover);
   transform: translateY(-1px);
 }
 
 .refreshPriceButton:disabled {
-  background: #6b7280;
+  background: var(--bg-disabled);
   cursor: not-allowed;
   transform: none;
+  transition: background-color 0.3s ease;
 }
 
 .priceError {
-  color: #ef4444;
+  color: var(--status-error);
   font-size: 0.8rem;
   margin-top: 4px;
   display: flex;
   align-items: center;
   gap: 4px;
+  transition: color 0.3s ease;
 }
 
 /* Quantity Input Group */
@@ -198,10 +222,10 @@
 }
 
 .quantityButton {
-  background: #374151;
-  border: 1px solid #4b5563;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  color: #d1d5db;
+  color: var(--text-secondary);
   padding: 6px 12px;
   font-size: 0.8rem;
   cursor: pointer;
@@ -210,22 +234,25 @@
 }
 
 .quantityButton:hover {
-  background: #4b5563;
-  border-color: #6b7280;
+  background: var(--bg-secondary);
+  border-color: var(--border-hover);
+  transition: all 0.2s ease;
 }
 
 .quantityError {
-  color: #ef4444;
+  color: var(--status-error);
   font-size: 0.8rem;
   margin-top: 4px;
+  transition: color 0.3s ease;
 }
 
 .statusHint {
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 0.8rem;
   margin-top: 4px;
+  transition: color 0.3s ease;
   padding: 4px 8px;
-  background: #0f1419;
+  background: var(--bg-primary);
   border-radius: 4px;
 }
 
@@ -233,35 +260,39 @@
 .additionalDetails {
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid #222b3a;
+  border-top: 1px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 .additionalDetails h4 {
-  color: #3b82f6;
+  color: var(--accent-primary);
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 12px;
+  transition: color 0.3s ease;
 }
 
 .readOnlyNotice {
   margin-top: 16px;
   padding: 12px 16px;
-  background: #1a2233;
-  border: 1px solid #374151;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #b0b8c9;
+  color: var(--text-muted);
   font-size: 0.9rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   text-align: center;
 }
 
 /* Tab Navigation */
 .tabNavigation {
   display: flex;
-  background: #101828;
+  background: var(--bg-primary);
   border-radius: 12px;
   padding: 8px;
   margin-bottom: 24px;
   gap: 8px;
+  transition: background-color 0.3s ease;
 }
 
 .tabButton {
@@ -270,7 +301,7 @@
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: #b0b8c9;
+  color: var(--text-muted);
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -278,13 +309,14 @@
 }
 
 .tabButton:hover {
-  background: #1a2233;
-  color: #fff;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
 }
 
 .activeTab {
-  background: #3b82f6 !important;
-  color: #fff !important;
+  background: var(--accent-primary) !important;
+  color: var(--text-primary) !important;
 }
 
 .tabContent {
@@ -298,19 +330,21 @@
 
 /* Card Section */
 .cardSection {
-  background: #101828;
+  background: var(--bg-primary);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   padding: 24px;
   margin-bottom: 18px;
+  transition: background-color 0.3s ease;
 }
 
 .sectionTitle {
-  color: #3b82f6;
+  color: var(--accent-primary);
   font-size: 1.35rem;
   font-weight: 600;
   margin-bottom: 24px;
   letter-spacing: 0.02em;
+  transition: color 0.3s ease;
 }
 
 /* Form Elements */
@@ -335,18 +369,19 @@
 }
 
 .label {
-  color: #e5e7eb;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   font-weight: 500;
   letter-spacing: 0.01em;
+  transition: color 0.3s ease;
 }
 
 .input, .select, .textarea {
   padding: 12px 16px;
-  border: 1px solid #374151;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #1f2937;
-  color: #fff;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   font-size: 1rem;
   font-family: inherit;
   transition: all 0.2s ease;
@@ -354,12 +389,14 @@
 
 .input:focus, .select:focus, .textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--shadow-primary);
+  transition: all 0.2s ease;
 }
 
 .input::placeholder, .textarea::placeholder {
-  color: #9ca3af;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
 }
 
 .textarea {
@@ -369,18 +406,20 @@
 
 .fileInput {
   padding: 8px;
-  border: 2px dashed #374151;
+  border: 2px dashed var(--border-color);
   border-radius: 8px;
-  background: #1f2937;
-  color: #e5e7eb;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .fileInput:hover {
-  border-color: #3b82f6;
-  background: #233040;
+  border-color: var(--accent-primary);
+  background: var(--bg-tertiary);
+  transition: all 0.2s ease;
 }
 
 /* File List */
@@ -396,18 +435,20 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #1f2937;
+  background: var(--bg-secondary);
   border-radius: 6px;
-  border: 1px solid #374151;
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .fileItem span {
-  color: #e5e7eb;
+  color: var(--text-secondary);
   font-size: 0.9rem;
+  transition: color 0.3s ease;
 }
 
 .removeFileButton {
-  background: #ef4444;
+  background: var(--status-error);
   border: none;
   border-radius: 4px;
   color: white;
@@ -423,7 +464,8 @@
 }
 
 .removeFileButton:hover {
-  background: #dc2626;
+  background: var(--status-error-hover);
+  transition: background 0.2s ease;
 }
 
 /* Button Group */
@@ -433,7 +475,8 @@
   justify-content: flex-end;
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid #374151;
+  border-top: 1px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 @media (max-width: 768px) {
@@ -446,9 +489,9 @@
 .cancelButton {
   padding: 12px 24px;
   background: transparent;
-  border: 1px solid #374151;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -457,14 +500,15 @@
 }
 
 .cancelButton:hover {
-  background: #1f2937;
-  border-color: #4b5563;
-  color: #e5e7eb;
+  background: var(--bg-secondary);
+  border-color: var(--border-hover);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
 }
 
 .submitButton {
   padding: 12px 24px;
-  background: #3b82f6;
+  background: var(--accent-primary);
   border: none;
   border-radius: 8px;
   color: white;
@@ -476,8 +520,9 @@
 }
 
 .submitButton:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--accent-primary-hover);
   transform: translateY(-1px);
+  transition: all 0.2s ease;
 }
 
 .submitButton:disabled {

@@ -4,10 +4,11 @@
   margin: 0;
   padding: 24px 5%;
   box-sizing: border-box;
-  background: #101828;
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #fff;
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .loading {
@@ -15,7 +16,7 @@
   justify-content: center;
   align-items: center;
   height: 200px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-size: 16px;
 }
 
@@ -43,31 +44,34 @@
 
 .filterGroup label {
   font-size: 14px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .filterSelect {
   padding: 8px 12px;
-  border: 1px solid #2A3441;
-  background: #1A2332;
-  color: #E5E7EB;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  transition: all 0.2s ease;
 }
 
 .addButton {
+  display: inline-block;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  color: #fff;
-  border: none;
+  background: var(--btn-primary-bg);
+  color: white;
+  text-decoration: none;
   border-radius: 8px;
-  cursor: pointer;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: var(--shadow-md);
+  border: none;
+  cursor: pointer;
 }
 
 .addButton:hover {
@@ -82,20 +86,22 @@
 .groupHeader {
   font-size: 20px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #4F46E5;
+  border-bottom: 2px solid var(--accent-primary);
+  transition: color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Table Styles */
 .tableContainer {
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
   margin-bottom: 16px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .table {
@@ -105,34 +111,37 @@
 }
 
 .tableHeader {
-  background: #232B3D;
+  background: var(--bg-tertiary);
+  transition: background-color 0.3s ease;
 }
 
 .tableHeaderCell {
   padding: 16px 12px;
   text-align: left;
   font-weight: 600;
-  color: #E5E7EB;
+  color: var(--text-secondary);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #2A3441;
+  border-bottom: 1px solid var(--border-color);
+  transition: color 0.3s ease, border-color 0.3s ease;
 }
 
 .tableRow {
-  border-bottom: 1px solid #2A3441;
-  transition: background-color 0.2s ease;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s ease, border-color 0.3s ease;
 }
 
 .tableRow:hover {
-  background: #1E293B;
+  background: var(--bg-tertiary);
 }
 
 .tableCell {
   padding: 24px 12px;
-  color: #E5E7EB;
+  color: var(--text-secondary);
   vertical-align: middle;
   font-size: 13px;
+  transition: color 0.3s ease;
 }
 
 .tickerCell {
@@ -143,28 +152,32 @@
 
 .ticker {
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 14px;
+  transition: color 0.3s ease;
 }
 
 .linkedBadge {
-  background: #4F46E5;
-  color: #fff;
+  background: var(--accent-primary);
+  color: var(--text-white);
   font-size: 10px;
   font-weight: 600;
   padding: 2px 6px;
   border-radius: 10px;
   width: fit-content;
   cursor: help;
+  transition: background-color 0.3s ease;
 }
 
 .currentPrice {
-  color: #10B981;
+  color: var(--status-success);
   font-weight: 600;
+  transition: color 0.3s ease;
 }
 
 .noPrice {
-  color: #6B7280;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
 }
 
 .pnlCell {
@@ -174,13 +187,15 @@
 }
 
 .profit {
-  color: #10B981;
+  color: var(--status-success);
   font-weight: 600;
+  transition: color 0.3s ease;
 }
 
 .loss {
-  color: #EF4444;
+  color: var(--status-error);
   font-weight: 600;
+  transition: color 0.3s ease;
 }
 
 .pnlPercent {
@@ -196,13 +211,15 @@
 }
 
 .statusBadge.open {
-  background: #10B981;
-  color: #fff;
+  background: var(--status-success);
+  color: var(--text-white);
+  transition: background-color 0.3s ease;
 }
 
 .statusBadge.closed {
-  background: #6B7280;
-  color: #fff;
+  background: var(--text-muted);
+  color: var(--text-white);
+  transition: background-color 0.3s ease;
 }
 
 .actionButtons {
@@ -222,53 +239,61 @@
 }
 
 .editButton {
-  background: #4F46E5;
-  color: #fff;
+  background: var(--accent-primary);
+  color: var(--text-white);
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .editButton:hover {
-  background: #4338CA;
+  background: var(--accent-secondary);
   transform: translateY(-1px);
 }
 
 .closeButton {
-  background: #F59E0B;
-  color: #fff;
+  background: var(--status-warning);
+  color: var(--text-white);
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .closeButton:hover {
-  background: #D97706;
+  background: var(--status-warning);
+  opacity: 0.8;
   transform: translateY(-1px);
 }
 
 .deleteButton {
-  background: #EF4444;
-  color: #fff;
+  background: var(--status-error);
+  color: var(--text-white);
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .deleteButton:hover {
-  background: #DC2626;
+  background: var(--status-error);
+  opacity: 0.8;
   transform: translateY(-1px);
 }
 
 .emptyState {
   text-align: center;
   padding: 60px 20px;
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .emptyState h3 {
   font-size: 24px;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 12px;
+  transition: color 0.3s ease;
 }
 
 .emptyState p {
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-size: 16px;
   margin-bottom: 24px;
+  transition: color 0.3s ease;
 }
 
 /* Modal Styles */
@@ -286,27 +311,30 @@
 }
 
 .modalContent {
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 32px;
   max-width: 500px;
   width: 90%;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-color);
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .modalContent h3 {
   font-size: 20px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0 0 16px 0;
+  transition: color 0.3s ease;
 }
 
 .modalContent p {
   font-size: 16px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   margin: 0 0 24px 0;
   line-height: 1.5;
+  transition: color 0.3s ease;
 }
 
 .formGroup {
@@ -317,25 +345,27 @@
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #E5E7EB;
+  color: var(--text-secondary);
   margin-bottom: 6px;
+  transition: color 0.3s ease;
 }
 
 .modalInput {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #2A3441;
-  background: #232B3D;
-  color: #E5E7EB;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
   border-radius: 6px;
   font-size: 14px;
   box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
 .modalInput:focus {
   outline: none;
-  border-color: #4F46E5;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--shadow-primary);
 }
 
 .modalActions {
@@ -350,16 +380,17 @@
   font-size: 14px;
   font-weight: 500;
   border-radius: 6px;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-color);
   background: transparent;
-  color: #9CA3AF;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .cancelButton:hover {
-  background: #2A3441;
-  color: #fff;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
 }
 
 .closeInvestmentButton {
@@ -368,14 +399,15 @@
   font-weight: 600;
   border-radius: 6px;
   border: none;
-  background: #F59E0B;
-  color: #fff;
+  background: var(--status-warning);
+  color: var(--text-white);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .closeInvestmentButton:hover {
-  background: #D97706;
+  background: var(--status-warning);
+  opacity: 0.8;
   transform: translateY(-1px);
 }
 
@@ -385,14 +417,15 @@
   font-weight: 600;
   border-radius: 6px;
   border: none;
-  background: #EF4444;
-  color: #fff;
+  background: var(--status-error);
+  color: var(--text-white);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .confirmDeleteButton:hover {
-  background: #DC2626;
+  background: var(--status-error);
+  opacity: 0.8;
   transform: translateY(-1px);
 }
 
@@ -424,4 +457,80 @@
     flex-direction: column;
     gap: 4px;
   }
+}
+
+/* Theme-aware components */
+.checkbox {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+}
+
+.summaryCard {
+  background: linear-gradient(90deg, var(--bg-secondary), var(--bg-primary));
+  border-radius: 14px;
+  padding: 18px 24px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+  font-weight: 600;
+  font-size: 1.08rem;
+  color: var(--text-primary);
+  align-items: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color);
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summaryIcon {
+  font-size: 1.3em;
+}
+
+.summaryLabel {
+  color: var(--text-muted);
+}
+
+.summaryValue {
+  font-size: 1.1em;
+  color: var(--text-primary);
+}
+
+.summarySuccess {
+  color: var(--status-success) !important;
+}
+
+.summaryError {
+  color: var(--status-error) !important;
+}
+
+.summaryPercent {
+  font-weight: 400;
+  margin-left: 0.3em;
+}
+
+.sortArrowActive {
+  color: var(--accent-primary);
+}
+
+.sortArrowInactive {
+  color: var(--text-muted);
+}
+
+.sortArrow {
+  margin-left: 4px;
+  font-size: 1.1em;
+}
+
+.tickerMeta {
+  font-size: 0.60rem;
+  color: var(--text-secondary);
 }

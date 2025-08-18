@@ -4,9 +4,11 @@ import PageHeader from "../../components/PageHeader";
 import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../../contexts/ThemeContext";
 import styles from "./RecommendationList.module.css";
 
 export default function RecommendationList() {
+    const { theme } = useTheme();
     const [recommendations, setRecommendations] = useState([]);
     const [prices, setPrices] = useState({});
     const [error, setError] = useState(null);
@@ -93,7 +95,7 @@ export default function RecommendationList() {
 
     if (loading) {
         return (
-            <div className={styles.container}>
+            <div className={`${styles.container} ${theme}`}>
                 {/* <PageHeader
                     title="Stock Recommendations"
                     subtitle="Track and monitor stock recommendations"
@@ -128,7 +130,7 @@ export default function RecommendationList() {
     });
 
     return (
-        <div className={styles.container}>
+        <div className={`${styles.container} ${theme}`}>
             {/* <PageHeader
                 title="Stock Recommendations"
                 subtitle="Track and monitor stock recommendations"

@@ -4,11 +4,13 @@ import { createRecommendation, updateRecommendation, getRecommendationById } fro
 import PageHeader from "../../components/PageHeader";
 import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
+import { useTheme } from "../../contexts/ThemeContext";
 import TickerSearch from "../../components/TickerSearch";
 import styles from "./RecommendationForm.module.css";
 import { getCurrentPrice } from '../../api/tickerApi';
 
 export default function RecommendationForm() {
+  const { theme } = useTheme();
   const [form, setForm] = useState({
     ticker: '',
     buyBelow: '',
@@ -134,7 +136,7 @@ export default function RecommendationForm() {
 
   if (initialLoading) {
     return (
-      <div className={styles.container}>
+      <div className={`${styles.container} ${theme}`}>
         <PageHeader
           title={isEdit ? "Edit Recommendation" : "Add Recommendation"}
           subtitle="Loading..."
@@ -157,13 +159,14 @@ export default function RecommendationForm() {
   }
 
   return (
-    <div className={styles.container}>
-      <PageHeader
-        title={isEdit ? "Edit Recommendation" : "Add New Recommendation"}
-        subtitle={isEdit ? "Update stock recommendation details" : "Add a new stock recommendation to track"}
-        showBackButton={true}
-        onBackClick={() => navigate('/recommendations')}
-      />
+    <div className={`${styles.container} ${theme}`}>
+      <button
+        type="button"
+        onClick={() => navigate('/recommendations')}
+        className={styles.cancelButton}
+      >
+        Back
+      </button>
 
       <div className={styles.formContainer}>
         <form onSubmit={handleSubmit}>
@@ -252,7 +255,7 @@ export default function RecommendationForm() {
               className={styles.submitButton}
               disabled={loading}
             >
-              {loading ? 'Saving...' : (isEdit ? 'Update' : 'Create')}
+              {loading ? 'Saving...' : (isEdit ? 'Update' : 'Add')}
             </button>
           </div>
         </form>

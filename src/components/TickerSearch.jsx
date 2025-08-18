@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { searchTickers } from '../api/tickerApi';
+import { useTheme } from '../contexts/ThemeContext';
 import styles from './TickerSearch.module.css';
 
 const quoteTypeMap = {
@@ -10,6 +11,7 @@ const quoteTypeMap = {
 };
 
 const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker...", instrumentType = "Stocks" }) => {
+  const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -124,7 +126,7 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
   };
 
   return (
-    <div className={styles.tickerSearch}>
+    <div className={`${styles.tickerSearch} ${theme}`}>
       <input
         ref={inputRef}
         type="text"

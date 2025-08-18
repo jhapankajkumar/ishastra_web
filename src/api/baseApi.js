@@ -1,7 +1,8 @@
 import axios from 'axios';
+import config from '../config/environment';
 
 export const API = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: config.API_ENDPOINT,
   timeout: 10000, // 10 second timeout
 });
 

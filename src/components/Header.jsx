@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getMarketIndices } from "../api/marketApi";
+import { useTheme } from "../contexts/ThemeContext";
 import styles from "./Header.module.css";
 
 const navLinks = [
   { to: "/", label: "Dashboard", icon: "📊" },
-  { to: "/analysis", label: "Analysis", special: true, icon: "🔍" },
-  { to: "/watchlist", label: "Watchlist", special: true, icon: "👀" },
+  { to: "/watchlist", label: "Watchlist", special: false, icon: "👀" },
   { to: "/trades", label: "Trades", icon: "💼" },
   { to: "/investments", label: "Investments", icon: "💰" },
   { to: "/recommendations", label: "Recommendations", icon: "💡" },
   { to: "/journal", label: "Journal", icon: "📝" },
   { to: "/risk-management", label: "Risk Management", icon: "⚖️" },
-  
+  { to: "/analysis", label: "Analysis", special: true, icon: "🔍" },
   
 ];
 
 export default function Header() {
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [indices, setIndices] = useState({
     nifty50: { value: null, change: null, changePercent: null },
@@ -143,6 +144,15 @@ export default function Header() {
               </div>
             )}
           </div>
+          
+          {/* Theme Toggle Button */}
+          <button 
+            className={styles.themeToggle}
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
         </nav>
         
         {/* Mobile Hamburger */}

@@ -5,9 +5,11 @@ import PageHeader from "../../components/PageHeader";
 import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../../contexts/ThemeContext";
 import styles from "./JournalList.module.css";
 
 export default function JournalList() {
+  const { theme } = useTheme();
   const [journals, setJournals] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [popupJournal, setPopupJournal] = useState(null);
@@ -180,7 +182,7 @@ export default function JournalList() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
+      <div className={`${styles.container} ${theme}`}>
         {/* <PageHeader
           title="Chart Reading Journal"
           subtitle="Track your chart analysis and market observations"
@@ -190,7 +192,7 @@ export default function JournalList() {
           justifyContent: 'center',
           alignItems: 'center',
           height: '200px',
-          color: '#9CA3AF'
+          color: 'var(--text-secondary)'
         }}>
           Loading journal entries...
         </div>
@@ -199,7 +201,7 @@ export default function JournalList() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${theme}`}>
       {/* <PageHeader 
         title="Chart Reading Journal"
         subtitle="Track your chart analysis and market observations"
@@ -348,18 +350,18 @@ export default function JournalList() {
           zIndex: 1000
         }}>
           <div style={{
-            backgroundColor: '#1A2332',
+            backgroundColor: 'var(--bg-secondary)',
             borderRadius: 12,
             padding: 32,
             maxWidth: 500,
             width: '90%',
-            border: '1px solid #2A3441',
+            border: '1px solid var(--border-secondary)',
             boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
           }}>
             <h3 style={{
               fontSize: '20px',
               fontWeight: '600',
-              color: '#fff',
+              color: 'var(--text-primary)',
               margin: '0 0 16px 0'
             }}>
               Delete Journal Entry
@@ -367,11 +369,11 @@ export default function JournalList() {
 
             <p style={{
               fontSize: '16px',
-              color: '#9CA3AF',
+              color: 'var(--text-secondary)',
               margin: '0 0 24px 0',
               lineHeight: '1.5'
             }}>
-              Are you sure you want to delete the journal entry for <strong style={{ color: '#fff' }}>{journalToDelete.stock}</strong> from {formatDate(journalToDelete.date)}?
+              Are you sure you want to delete the journal entry for <strong style={{ color: 'var(--text-primary)' }}>{journalToDelete.stock}</strong> from {formatDate(journalToDelete.date)}?
               This action cannot be undone and will permanently remove all analysis data.
             </p>
 
@@ -387,19 +389,19 @@ export default function JournalList() {
                   fontSize: '16px',
                   fontWeight: '500',
                   borderRadius: 8,
-                  border: '1px solid #2A3441',
+                  border: '1px solid var(--border-secondary)',
                   backgroundColor: 'transparent',
-                  color: '#9CA3AF',
+                  color: 'var(--text-secondary)',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
                 onMouseOver={(e) => {
-                  e.target.style.backgroundColor = '#2A3441';
-                  e.target.style.color = '#fff';
+                  e.target.style.backgroundColor = 'var(--bg-tertiary)';
+                  e.target.style.color = 'var(--text-primary)';
                 }}
                 onMouseOut={(e) => {
                   e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = '#9CA3AF';
+                  e.target.style.color = 'var(--text-secondary)';
                 }}
               >
                 Cancel
@@ -412,7 +414,7 @@ export default function JournalList() {
                   fontWeight: '600',
                   borderRadius: 8,
                   border: 'none',
-                  backgroundColor: '#EF4444',
+                  backgroundColor: 'var(--status-error)',
                   color: '#fff',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
@@ -422,7 +424,7 @@ export default function JournalList() {
                   e.target.style.transform = 'translateY(-1px)';
                 }}
                 onMouseOut={(e) => {
-                  e.target.style.backgroundColor = '#EF4444';
+                  e.target.style.backgroundColor = 'var(--status-error)';
                   e.target.style.transform = 'translateY(0)';
                 }}
               >

@@ -1,10 +1,61 @@
-# Getting Started with Create React App
+# Ishastra Web - Trading & Investment Platform
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+## Environment Setup
 
-In the project directory, you can run:
+The application supports 2 environments with different API and frontend configurations.
+
+### Environment Files
+
+- `.env.development` - Development environment (automatically used by `npm start`)
+- `.env.production` - Production environment (automatically used by `npm run build`)
+
+### Environment Configuration
+
+| Environment | API Base URL | Frontend URL | Command |
+|-------------|--------------|--------------|---------|
+| Development | `http://localhost:8000` | `http://localhost:3000` | `npm start` |
+| Dev with Prod Config | `http://192.168.10.100:8000` | `http://localhost:3000` | `npm run start:prod` |
+| Production Build | `http://192.168.10.100:8000` | `http://192.168.10.100:3000` | `npm run build` |
+| Serve Production | `http://192.168.10.100:8000` | `http://localhost:[random]` | `npm run serve` |
+| Serve Production on 3000 | `http://192.168.10.100:8000` | `http://localhost:3000` | `npm run serve:prod` |
+
+## Quick Start
+
+### Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server (uses .env.development)
+npm start
+```
+
+### Testing Production Configuration
+
+```bash
+# Start development server with production API endpoints
+npm run start:prod
+```
+
+### Production Build and Serve
+
+```bash
+# Build for production (uses .env.production)
+npm run build
+
+# Build and serve production app locally
+npm run serve
+
+# Build and serve production app on port 3000
+npm run serve:prod
+```
+
+The app will automatically use the appropriate configuration based on the command used.
+
+## Available Scripts
 
 ### `npm start`
 

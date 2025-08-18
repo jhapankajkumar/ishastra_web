@@ -6,6 +6,7 @@ import {
   Tooltip,
   Legend
 } from "chart.js";
+import { useTheme } from '../contexts/ThemeContext';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -26,8 +27,15 @@ const palette = [
 ];
 
 const SectorDonutChart = ({ investments }) => {
+  const { theme } = useTheme();
   const { labels, data } = getSectorData(investments);
-  if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 16 }}>No sector data</div>;
+  
+  // Get colors based on theme
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim();
+  const mutedTextColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim();
+  
+  if (!labels.length) return <div style={{ color: mutedTextColor, fontSize: 16 }}>No sector data</div>;
   return (
     <Doughnut
       data={{
@@ -37,7 +45,7 @@ const SectorDonutChart = ({ investments }) => {
             data,
             backgroundColor: palette,
             borderWidth: 2,
-            borderColor: '#181F2A',
+            borderColor: borderColor,
             hoverOffset: 8
           }
         ]
@@ -47,7 +55,7 @@ const SectorDonutChart = ({ investments }) => {
           legend: {
             display: true,
             position: 'right',
-            labels: { color: '#E5E7EB', font: { size: 10 } }
+            labels: { color: textColor, font: { size: 10 } }
           },
           tooltip: { callbacks: { label: ctx => `${ctx.label}: ₹${ctx.parsed.toLocaleString()}` } }
         },

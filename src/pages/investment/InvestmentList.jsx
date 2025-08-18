@@ -5,9 +5,11 @@ import PageHeader from "../../components/PageHeader";
 import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../../contexts/ThemeContext";
 import styles from "./InvestmentList.module.css";
 
 export default function InvestmentList() {
+  const { theme } = useTheme();
   const [investments, setInvestments] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [showCombined, setShowCombined] = useState(true);
@@ -25,6 +27,15 @@ export default function InvestmentList() {
   // Sorting state
   const [sortBy, setSortBy] = useState('ticker');
   const [sortOrder, setSortOrder] = useState('asc');
+  
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+  };
   
   // Indices state
   const [indicesData, setIndicesData] = useState({
@@ -124,16 +135,16 @@ export default function InvestmentList() {
     return recommendations.find(rec => rec.ticker === investment.ticker);
   };
 
-  const groupInvestments = () => {
+  const groupInvestments = (investmentList = investments) => {
     if (groupBy === 'ticker') {
-      const grouped = investments.reduce((acc, inv) => {
+      const grouped = investmentList.reduce((acc, inv) => {
         if (!acc[inv.ticker]) acc[inv.ticker] = [];
         acc[inv.ticker].push(inv);
         return acc;
       }, {});
       return grouped;
     }
-    return { all: investments };
+    return { all: investmentList };
   };
 
   if (error && error.type === 'NETWORK_ERROR') {
@@ -201,7 +212,7 @@ export default function InvestmentList() {
       case 'gainLossToday':
         aValue = (a.currentPrice - (a.lastDayPrice || a.avgBuyPrice)) * (a.quantity || 0);
         bValue = (b.currentPrice - (b.lastDayPrice || b.avgBuyPrice)) * (b.quantity || 0);
-
+        break;
       default:
         aValue = 0;
         bValue = 0;
@@ -244,7 +255,7 @@ export default function InvestmentList() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${theme}`}>
       {/* <PageHeader
         title="Long-Term Investments"
         subtitle="Track and monitor your investment portfolio"
@@ -269,7 +280,7 @@ export default function InvestmentList() {
               type="checkbox"
               checked={showCombined}
               onChange={e => setShowCombined(e.target.checked)}
-              style={{ width: 22, height: 22, accentColor: '#6366F1', cursor: 'pointer' }}
+              className={styles.checkbox}
             />
           </div>
           {/* Removed sort selection dropdown and button. Sorting is now only via table headers. */}
@@ -284,38 +295,23 @@ export default function InvestmentList() {
 
       {/* Show summary row always, calculated from currently displayed investments */}
       {summaryTotals && (
-        <div style={{
-          background: 'linear-gradient(90deg, #e0e7ff 0%, #f8fafc 100%)',
-          borderRadius: '14px',
-          padding: '18px 24px',
-          marginBottom: '18px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '2.5rem',
-          fontWeight: 600,
-          fontSize: '1.08rem',
-          color: '#222',
-          alignItems: 'center',
-          boxShadow: '0 2px 12px rgba(99,102,241,0.08)',
-          border: '1px solid #c7d2fe',
-          justifyContent: 'center',
-        }}>
-          <span style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
-            <span style={{fontSize:'1.3em'}}>💰</span>
-            <span style={{color:'#6366F1'}}>Total Invested:</span>
-            <strong style={{fontSize:'1.1em'}}>₹{summaryTotals.invested.toLocaleString('en-IN', {maximumFractionDigits:2})}</strong>
+        <div className={styles.summaryCard}>
+          <span className={styles.summaryItem}>
+            <span className={styles.summaryIcon}>💰</span>
+            <span className={styles.summaryLabel}>Total Invested:</span>
+            <strong className={styles.summaryValue}>₹{summaryTotals.invested.toLocaleString('en-IN', {maximumFractionDigits:2})}</strong>
           </span>
-          <span style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
-            <span style={{fontSize:'1.3em'}}>📈</span>
-            <span style={{color:'#059669'}}>Current Value:</span>
-            <strong style={{fontSize:'1.1em'}}>₹{summaryTotals.current.toLocaleString('en-IN', {maximumFractionDigits:2})}</strong>
+          <span className={styles.summaryItem}>
+            <span className={styles.summaryIcon}>📈</span>
+            <span className={`${styles.summaryLabel} ${styles.summarySuccess}`}>Current Value:</span>
+            <strong className={styles.summaryValue}>₹{summaryTotals.current.toLocaleString('en-IN', {maximumFractionDigits:2})}</strong>
           </span>
-          <span style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
-            <span style={{fontSize:'1.3em'}}>{summaryTotals.profit >= 0 ? '🟢' : '🔴'}</span>
-            <span style={{color: summaryTotals.profit >= 0 ? '#059669' : '#dc2626'}}>Profit/Loss:</span>
-            <strong style={{fontSize:'1.1em',color: summaryTotals.profit >= 0 ? '#059669' : '#dc2626'}}>
+          <span className={styles.summaryItem}>
+            <span className={styles.summaryIcon}>{summaryTotals.profit >= 0 ? '🟢' : '🔴'}</span>
+            <span className={`${styles.summaryLabel} ${summaryTotals.profit >= 0 ? styles.summarySuccess : styles.summaryError}`}>Profit/Loss:</span>
+            <strong className={`${styles.summaryValue} ${summaryTotals.profit >= 0 ? styles.summarySuccess : styles.summaryError}`}>
               {summaryTotals.profit >= 0 ? '+' : ''}₹{summaryTotals.profit.toLocaleString('en-IN', {maximumFractionDigits:2})}
-              <span style={{fontWeight:400,marginLeft:'0.3em'}}>({summaryTotals.profitPercent}%)</span>
+              <span className={styles.summaryPercent}>({summaryTotals.profitPercent}%)</span>
             </strong>
           </span>
         </div>
@@ -334,92 +330,92 @@ export default function InvestmentList() {
               <thead className={styles.tableHeader}>
                 <tr>
                   {/* Ticker */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('ticker') || setSortOrder(sortBy==='ticker'&&sortOrder==='asc'?'desc':'asc')}>
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('ticker')}>
                     Ticker
-                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                    <span className={styles.sortArrow}>
                       {sortBy==='ticker' ? (
-                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
-                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
+                      ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
                   {/* Recommendation (not sortable) */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('recommendation') || setSortOrder(sortBy==='recommendation'&&sortOrder==='asc'?'desc':'asc')}>Rec
-                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('recommendation')}>Rec
+                    <span className={styles.sortArrow}>
                       {sortBy==='recommendation' ? (
-                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
-                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
+                      ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
                   {/* Qty */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('quantity') || setSortOrder(sortBy==='quantity'&&sortOrder==='asc'?'desc':'asc')}>
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('quantity')}>
                     Qty
-                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                    <span className={styles.sortArrow}>
                       {sortBy==='quantity' ? (
-                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
-                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
+                      ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
                   {/* Buy Avg */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('avgBuyPrice') || setSortOrder(sortBy==='avgBuyPrice'&&sortOrder==='asc'?'desc':'asc')}>
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('avgBuyPrice')}>
                     Buy Avg
-                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                    <span className={styles.sortArrow}>
                       {sortBy==='avgBuyPrice' ? (
-                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
-                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
+                      ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
                   {/* Current Price */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('currentPrice') || setSortOrder(sortBy==='currentPrice'&&sortOrder==='asc'?'desc':'asc')}>
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('currentPrice')}>
                     LTP
-                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                    <span className={styles.sortArrow}>
                       {sortBy==='currentPrice' ? (
-                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
-                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
+                      ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
                   {/* Invested */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('investedAmount') || setSortOrder(sortBy==='investedAmount'&&sortOrder==='asc'?'desc':'asc')}>
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('investedAmount')}>
                     Invested
-                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                    <span className={styles.sortArrow}>
                       {sortBy==='investedAmount' ? (
-                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
-                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
+                      ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
                   {/* Current Value */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('currentValue') || setSortOrder(sortBy==='currentValue'&&sortOrder==='asc'?'desc':'asc')}>
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('currentValue')}>
                     Current
-                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                    <span className={styles.sortArrow}>
                       {sortBy==='currentValue' ? (
-                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
-                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
+                      ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
                   {/* P&L */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('profitLoss') || setSortOrder(sortBy==='profitLoss'&&sortOrder==='asc'?'desc':'asc')}>
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('profitLoss')}>
                     P&L
-                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                    <span className={styles.sortArrow}>
                       {sortBy==='profitLoss' ? (
-                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
-                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
+                      ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
 
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('gainLossToday') || setSortOrder(sortBy==='gainLossToday'&&sortOrder==='asc'?'desc':'asc')}>
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('gainLossToday')}>
                     Today's P&L
-                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                    <span className={styles.sortArrow}>
                       {sortBy==='gainLossToday' ? (
-                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
-                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
+                      ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
                   {/* Date */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => setSortBy('entryDate') || setSortOrder(sortBy==='entryDate'&&sortOrder==='asc'?'desc':'asc')}>
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('entryDate')}>
                     Date
-                    <span style={{marginLeft:4, fontSize:'1.1em'}}>
+                    <span className={styles.sortArrow}>
                       {sortBy==='entryDate' ? (
-                        sortOrder==='asc' ? <span style={{color:'#6366F1'}}>▲</span> : <span style={{color:'#6366F1'}}>▼</span>
-                      ) : <span style={{color:'#bbb'}}>▲</span>}
+                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
+                      ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
                   {/* Actions (not sortable) */}
@@ -440,10 +436,10 @@ export default function InvestmentList() {
                             )}
                           </div>
                           <div></div>
-                          <div style={{ fontSize: '0.60rem', color: '#bbb' }}>
+                          <div className={styles.tickerMeta}>
                             {investment.sector || '—'} | {investment.marketCap || '—'}
                           </div>
-                          <div style={{ fontSize: '0.60rem', color: '#bbb' }}>
+                          <div className={styles.tickerMeta}>
                             {investment.notes || '—'}
                           </div>
                         </div>

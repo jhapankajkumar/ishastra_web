@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import ImageGallery from "../../components/ImageGallery";
-// import styles from "../pages/Dashboard.module.css"; // Reserved for future styling
+import styles from "./TradeDetailsPopup.module.css";
 import { getTradeTransactions } from '../../api/tradeApi';
 import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
+import { useTheme } from "../../contexts/ThemeContext";
+import config from "../../config/environment";
 
 export default function TradeDetailsPopup({ trade, onClose }) {
+  const { theme } = useTheme();
   const [exitTactics, setExitTactics] = useState([]);
   const [setups, setSetups] = useState([]);
   const [exitTransactions, setExitTransactions] = useState([]);
@@ -147,922 +150,398 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   const postImages = trade.tradeImages?.filter(img => img.imageType === "post") || [];
 
   return (
-    <div style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.8)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 1000,
-      padding: 20
-    }}>
-      <div style={{
-        backgroundColor: "#0F1419",
-        borderRadius: 16,
-        padding: 32,
-        maxWidth: 1000,
-        width: "100%",
-        maxHeight: "90vh",
-        overflowY: "auto",
-        position: "relative",
-        border: "1px solid #2A3441",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.5)"
-      }}>
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: 24,
-            right: 24,
-            background: "#2A3441",
-            border: "none",
-            color: "#9CA3AF",
-            fontSize: 18,
-            cursor: "pointer",
-            width: 40,
-            height: 40,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 10,
-            transition: "all 0.2s ease",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-          }}
-          onMouseOver={(e) => {
-            e.target.style.background = "#374151";
-            e.target.style.color = "#fff";
-            e.target.style.transform = "scale(1.05)";
-          }}
-          onMouseOut={(e) => {
-            e.target.style.background = "#2A3441";
-            e.target.style.color = "#9CA3AF";
-            e.target.style.transform = "scale(1)";
-          }}
-        >
-          <svg 
-            width="20" 
-            height="20" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2"
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <path d="m18 6-12 12"/>
-            <path d="m6 6 12 12"/>
-          </svg>
-        </button>
+    <div className={`${styles.overlay} ${theme}`}>
+      <div className={styles.popup}>
+        <div className={styles.content}>
+          {/* Close Button */}
+          <button onClick={onClose} className={styles.closeButton}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m18 6-12 12"/>
+              <path d="m6 6 12 12"/>
+            </svg>
+          </button>
 
-        <div style={{ 
-          marginBottom: 32, 
-          marginRight: 60,
-          borderBottom: "1px solid #2A3441",
-          paddingBottom: 20
-        }}>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            marginBottom: 8
-          }}>
-            <div style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              backgroundColor: "#10B981"
-            }}></div>
-            <h1 style={{
-              fontSize: "32px",
-              fontWeight: "700",
-              color: "#fff",
-              margin: 0,
-              letterSpacing: "-0.5px"
-            }}>
-              {trade.ticker}
-            </h1>
+          {/* Header */}
+          <div className={styles.header}>
+            <div className={styles.headerTop}>
+              <div className={styles.tickerBadge}></div>
+              <h1 className={styles.tickerTitle}>
+                {trade.ticker}
+              </h1>
+            </div>
+            <p className={styles.companyName}>
+              Trade Details & Analysis
+            </p>
           </div>
-          <p style={{
-            fontSize: "16px",
-            color: "#9CA3AF",
-            margin: 0
-          }}>
-            Trade Details & Analysis
-          </p>
-        </div>
 
-        {/* Entry Section */}
-        <div style={{
-          backgroundColor: "#1A2332",
-          borderRadius: 12,
-          padding: 24,
-          marginBottom: 24,
-          border: "1px solid #2A3441"
-        }}>
-          <h3 style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#fff",
-            margin: "0 0 20px 0"
-          }}>
-            Entry Analysis
-          </h3>
-          
-          <div style={{ marginBottom: 20 }}>
-            <label style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#9CA3AF",
-              display: "block",
-              marginBottom: 8
-            }}>
-              Reason for Entry
-            </label>
-            <div style={{
-              backgroundColor: "#0F1419",
-              border: "1px solid #2A3441",
-              borderRadius: 8,
-              padding: 16,
-              color: "#E5E7EB",
-              fontSize: "15px",
-              lineHeight: "1.5",
-              minHeight: 60,
-              whiteSpace: "pre-wrap"
-            }}>
-              {trade.reasonForEntry || "No reason provided"}
-            </div>
-          </div>
-        </div>
-
-        {/* Entry Details */}
-        <div style={{
-          backgroundColor: "#1A2332",
-          borderRadius: 12,
-          padding: 24,
-          marginBottom: 24,
-          border: "1px solid #2A3441"
-        }}>
-          <h3 style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#4F46E5",
-            margin: "0 0 20px 0"
-          }}>
-            Entry Details
-          </h3>
-          
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 20,
-            marginBottom: 20
-          }}>
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 6
-              }}>
-                Date
-              </label>
-              <span style={{
-                fontSize: "16px",
-                color: "#E5E7EB",
-                fontWeight: "500"
-              }}>
-                {formatDate(trade.entryDate)}
-              </span>
-            </div>
-            
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 6
-              }}>
-                Average Price
-              </label>
-              <span style={{
-                fontSize: "16px",
-                color: "#E5E7EB",
-                fontWeight: "500"
-              }}>
-                {trade.entryPrice !== undefined && trade.entryPrice !== null ? `$${Number(trade.entryPrice).toFixed(2)}` : "-"}
-              </span>
-            </div>
-            
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 6
-              }}>
-                Original Quantity
-              </label>
-              <span style={{
-                fontSize: "16px",
-                color: "#E5E7EB",
-                fontWeight: "500"
-              }}>
-                {getOriginalQuantity().toLocaleString()}
-              </span>
-            </div>
-            
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 6
-              }}>
-                Remaining Quantity
-              </label>
-              <span style={{
-                fontSize: "16px",
-                color: getRemainingQuantity() === 0 ? "#10B981" : "#F59E0B",
-                fontWeight: "500"
-              }}>
-                {getRemainingQuantity().toLocaleString()} {getRemainingQuantity() === 0 ? "(Fully Exited)" : "(Partial)"}
-              </span>
-            </div>
-            
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 6
-              }}>
-                Setup
-              </label>
-              <span style={{
-                fontSize: "16px",
-                color: "#E5E7EB",
-                fontWeight: "500"
-              }}>
-                {getSetupName(trade.tradeSetupId)}
-              </span>
-            </div>
-          </div>
-          
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 20,
-            paddingTop: 20,
-            borderTop: "1px solid #2A3441"
-          }}>
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 6
-              }}>
-                Total Invested
-              </label>
-              <span style={{
-                fontSize: "18px",
-                color: "#3B82F6",
-                fontWeight: "600"
-              }}>
-                {getInvested()}
-              </span>
-            </div>
-            
-            <div>
-              <label style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#9CA3AF",
-                display: "block",
-                marginBottom: 6
-              }}>
-                Profit & Loss
-              </label>
-              <span style={{
-                fontSize: "18px",
-                color: getPL() === "-" ? "#9CA3AF" : getPL().includes("-") ? "#EF4444" : "#10B981",
-                fontWeight: "600"
-              }}>
-                {getPL()}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Entry Charts */}
-        {entryImages.length > 0 && (
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            marginBottom: 24,
-            border: "1px solid #2A3441"
-          }}>
-            <h4 style={{
-              fontSize: "16px",
-              fontWeight: "600",
-              color: "#9CA3AF",
-              margin: "0 0 16px 0"
-            }}>
-              Entry Charts
-            </h4>
-            <ImageGallery
-              images={entryImages.map(img => ({
-                src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
-                alt: "Entry Chart"
-              }))}
-              maxHeight={220}
-            />
-          </div>
-        )}
-
-        {/* Exit Section - Enhanced for Partial Exits */}
-        {(exitTransactions.length > 0 || trade.exitDate || trade.exitPrice) && (
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            marginBottom: 24,
-            border: "1px solid #2A3441"
-          }}>
-            <h3 style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              color: "#F59E0B",
-              margin: "0 0 20px 0"
-            }}>
-              Exit Details {exitTransactions.length > 1 && `(${exitTransactions.length} Partial Exits)`}
-            </h3>
-            
-            {/* Exit Summary */}
-            {(() => {
-              const summary = getExitTransactionsSummary();
-              if (summary) {
-                return (
-                  <div style={{
-                    backgroundColor: "#0F1419",
-                    borderRadius: 8,
-                    padding: 16,
-                    marginBottom: 20,
-                    border: "1px solid #2A3441"
-                  }}>
-                    <h4 style={{
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#F59E0B",
-                      margin: "0 0 12px 0"
-                    }}>
-                      Exit Summary
-                    </h4>
-                    <div style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-                      gap: 16
-                    }}>
-                      <div>
-                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Total Exited</span>
-                        <span style={{ fontSize: "16px", color: "#E5E7EB", fontWeight: "500" }}>
-                          {summary.totalExitedQty.toLocaleString()} shares
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Avg Exit Price</span>
-                        <span style={{ fontSize: "16px", color: "#E5E7EB", fontWeight: "500" }}>
-                          ${summary.avgExitPrice.toFixed(2)}
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Last Exit Date</span>
-                        <span style={{ fontSize: "16px", color: "#E5E7EB", fontWeight: "500" }}>
-                          {formatDate(summary.lastExitDate)}
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Exit Count</span>
-                        <span style={{ fontSize: "16px", color: "#E5E7EB", fontWeight: "500" }}>
-                          {summary.exitCount} transaction{summary.exitCount !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-
-            {/* Individual Exit Transactions */}
-            {exitTransactions.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <h4 style={{
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#9CA3AF",
-                  margin: "0 0 16px 0"
-                }}>
-                  Exit Transactions
-                </h4>
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 12
-                }}>
-                  {exitTransactions.map((tx, idx) => (
-                    <div key={idx} style={{
-                      backgroundColor: "#0F1419",
-                      borderRadius: 8,
-                      padding: 16,
-                      border: "1px solid #2A3441",
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-                      gap: 12,
-                      alignItems: "center"
-                    }}>
-                      <div>
-                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Date</span>
-                        <span style={{ fontSize: "14px", color: "#E5E7EB", fontWeight: "500" }}>
-                          {formatDate(tx.transactionDate)}
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Price</span>
-                        <span style={{ fontSize: "14px", color: "#E5E7EB", fontWeight: "500" }}>
-                          ${Number(tx.price).toFixed(2)}
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Quantity</span>
-                        <span style={{ fontSize: "14px", color: "#E5E7EB", fontWeight: "500" }}>
-                          {Number(tx.quantity).toLocaleString()}
-                        </span>
-                      </div>
-                      <div>
-                        <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>Tactic</span>
-                        <span style={{ fontSize: "14px", color: "#E5E7EB", fontWeight: "500" }}>
-                          {getExitTacticName(tx.exitTacticId)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+          {/* Main Content */}
+          <div className={styles.body}>
+            {/* Entry Section */}
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Entry Analysis</h3>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Reason for Entry</label>
+                <div className={styles.textareaField}>
+                  {trade.reasonForEntry || "No reason provided"}
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Legacy Exit Data (for backward compatibility) */}
-            {!exitTransactions.length && (trade.exitDate || trade.exitPrice) && (
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: 20,
-                marginBottom: 20
-              }}>
-                <div>
-                  <label style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#9CA3AF",
-                    display: "block",
-                    marginBottom: 6
-                  }}>
-                    Date
-                  </label>
-                  <span style={{
-                    fontSize: "16px",
-                    color: "#E5E7EB",
-                    fontWeight: "500"
-                  }}>
-                    {formatDate(trade.exitDate)}
+            {/* Entry Details */}
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitleAccent}>Entry Details</h3>
+              <div className={styles.grid}>
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Date</label>
+                  <span className={styles.value}>{formatDate(trade.entryDate)}</span>
+                </div>
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Average Price</label>
+                  <span className={styles.value}>
+                    {trade.entryPrice !== undefined && trade.entryPrice !== null ? `$${Number(trade.entryPrice).toFixed(2)}` : "-"}
                   </span>
                 </div>
-                
-                <div>
-                  <label style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#9CA3AF",
-                    display: "block",
-                    marginBottom: 6
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Original Quantity</label>
+                  <span className={styles.value}>{getOriginalQuantity().toLocaleString()}</span>
+                </div>
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Remaining Quantity</label>
+                  <span className={styles.value} style={{
+                    color: getRemainingQuantity() === 0 ? "var(--status-success)" : "var(--status-warning)"
                   }}>
-                    Average Price
-                  </label>
-                  <span style={{
-                    fontSize: "16px",
-                    color: "#E5E7EB",
-                    fontWeight: "500"
-                  }}>
-                    {trade.exitPrice !== undefined && trade.exitPrice !== null ? `$${Number(trade.exitPrice).toFixed(2)}` : "-"}
+                    {getRemainingQuantity().toLocaleString()} {getRemainingQuantity() === 0 ? "(Fully Exited)" : "(Partial)"}
                   </span>
                 </div>
-                
-                <div>
-                  <label style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#9CA3AF",
-                    display: "block",
-                    marginBottom: 6
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Setup</label>
+                  <span className={styles.value}>{getSetupName(trade.tradeSetupId)}</span>
+                </div>
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Stop Loss</label>
+                  <span className={styles.value} style={{
+                    color: "var(--status-error)"
                   }}>
-                    Exit Tactic
-                  </label>
-                  <span style={{
-                    fontSize: "16px",
-                    color: "#E5E7EB",
-                    fontWeight: "500"
+                    {trade.stopLoss !== undefined && trade.stopLoss !== null ? `$${Number(trade.stopLoss).toFixed(2)}` : "-"}
+                  </span>
+                </div>
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Target 1</label>
+                  <span className={styles.value} style={{
+                    color: "var(--status-success)"
                   }}>
-                    {getExitTacticName(trade.exitTacticId)}
+                    {trade.target1 !== undefined && trade.target1 !== null ? `$${Number(trade.target1).toFixed(2)}` : "-"}
                   </span>
                 </div>
               </div>
-            )}
-
-            {trade.reasonForExit && (
-              <div style={{ marginTop: 20 }}>
-                <label style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#9CA3AF",
-                  display: "block",
-                  marginBottom: 8
-                }}>
-                  Reason for Exit
-                </label>
-                <div style={{
-                  backgroundColor: "#0F1419",
-                  border: "1px solid #2A3441",
-                  borderRadius: 8,
-                  padding: 16,
-                  color: "#E5E7EB",
-                  fontSize: "15px",
-                  lineHeight: "1.5",
-                  whiteSpace: "pre-wrap"
-                }}>
-                  {trade.reasonForExit || "No reason provided"}
+              
+              <div className={styles.gridFinancial}>
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Total Invested</label>
+                  <span className={styles.valueFinancial}>{getInvested()}</span>
+                </div>
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Profit & Loss</label>
+                  <span className={styles.valueFinancial} style={{
+                    color: getPL() === "-" ? "var(--text-muted)" : getPL().includes("-") ? "var(--status-error)" : "var(--status-success)"
+                  }}>
+                    {getPL()}
+                  </span>
                 </div>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* Exit Charts */}
-        {exitImages.length > 0 && (
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            marginBottom: 24,
-            border: "1px solid #2A3441"
-          }}>
-            <h4 style={{
-              fontSize: "16px",
-              fontWeight: "600",
-              color: "#9CA3AF",
-              margin: "0 0 16px 0"
-            }}>
-              Exit Charts
-            </h4>
-            <ImageGallery
-              images={exitImages.map(img => ({
-                src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
-                alt: "Exit Chart"
-              }))}
-              maxHeight={220}
-            />
-          </div>
-        )}
-
-        {/* Exit Strategy Analysis - Only for Open Trades */}
-        {trade.status?.toLowerCase() === 'open' && trade.impulseAnalysis && (
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            marginBottom: 24,
-            border: "1px solid #2A3441"
-          }}>
-            <h3 style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              color: "#F59E0B",
-              margin: "0 0 20px 0"
-            }}>
-              Exit Strategy Analysis
-            </h3>
-            
-            {/* Impulse Analysis Card */}
-            <div style={{
-              background: "linear-gradient(135deg, #0F1419 0%, #1A2332 100%)",
-              border: "1px solid #2A3441",
-              borderRadius: 12,
-              padding: 20,
-              marginBottom: 20
-            }}>
-              {/* Impulse Header */}
-              <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 16,
-                flexWrap: "wrap",
-                gap: 12
-              }}>
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 16,
-                  flexWrap: "wrap"
-                }}>
-                  <div style={{
-                    padding: "8px 16px",
-                    borderRadius: 24,
-                    fontSize: "14px",
-                    fontWeight: "700",
-                    color: "white",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                    backgroundColor: trade.impulseAnalysis.impulseColor?.toLowerCase() === 'green' 
-                      ? '#10B981' 
-                      : trade.impulseAnalysis.impulseColor?.toLowerCase() === 'red' 
-                      ? '#EF4444' 
-                      : '#F59E0B'
-                  }}>
-                    {trade.impulseAnalysis.impulseColor?.toUpperCase()} IMPULSE
-                  </div>
-                  <div style={{
-                    background: "#374151",
-                    padding: "6px 12px",
-                    borderRadius: 20,
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    color: trade.impulseAnalysis.exitRecommended ? "#EF4444" : "#10B981"
-                  }}>
-                    Exit Recommended: {trade.impulseAnalysis.exitRecommended ? 'YES' : 'NO'}
-                  </div>
-                </div>
-                <div style={{
-                  fontSize: "12px",
-                  color: "#9CA3AF",
-                  fontStyle: "italic"
-                }}>
-                  Last Updated: {formatDate(trade.impulseAnalysis.lastUpdated)}
-                </div>
-              </div>
-
-              {/* Analysis Reasoning */}
-              {trade.impulseAnalysis.reasoning && trade.impulseAnalysis.reasoning.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <h4 style={{
-                    margin: "0 0 8px 0",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    color: "#E5E7EB"
-                  }}>
-                    Analysis Reasoning:
-                  </h4>
-                  <ul style={{
-                    margin: 0,
-                    paddingLeft: 20,
-                    color: "#D1D5DB"
-                  }}>
-                    {trade.impulseAnalysis.reasoning.map((reason, index) => (
-                      <li key={index} style={{
-                        marginBottom: 4,
-                        lineHeight: 1.5
-                      }}>
-                        {reason}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Technical Data */}
-              {trade.impulseAnalysis.technicalData && (
-                <div style={{
-                  background: "#0F1419",
-                  borderRadius: 8,
-                  padding: 16,
-                  border: "1px solid #374151"
-                }}>
-                  <h4 style={{
-                    margin: "0 0 12px 0",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    color: "#E5E7EB"
-                  }}>
-                    Technical Data:
-                  </h4>
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                    gap: 12
-                  }}>
-                    <div>
-                      <span style={{
-                        fontSize: "11px",
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        color: "#9CA3AF",
-                        letterSpacing: "0.5px",
-                        display: "block"
-                      }}>
-                        Current Price
-                      </span>
-                      <span style={{
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        color: "#3B82F6"
-                      }}>
-                        ${trade.impulseAnalysis.technicalData.currentPrice?.toFixed(2)}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <span style={{
-                        fontSize: "11px",
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        color: "#9CA3AF",
-                        letterSpacing: "0.5px",
-                        display: "block"
-                      }}>
-                        EMA 13
-                      </span>
-                      <span style={{
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        color: "#E5E7EB"
-                      }}>
-                        {trade.impulseAnalysis.technicalData.ema13?.toFixed(2)}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <span style={{
-                        fontSize: "11px",
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        color: "#9CA3AF",
-                        letterSpacing: "0.5px",
-                        display: "block"
-                      }}>
-                        EMA 21
-                      </span>
-                      <span style={{
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        color: "#E5E7EB"
-                      }}>
-                        {trade.impulseAnalysis.technicalData.ema21?.toFixed(2)}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <span style={{
-                        fontSize: "11px",
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        color: "#9CA3AF",
-                        letterSpacing: "0.5px",
-                        display: "block"
-                      }}>
-                        MACD Histogram
-                      </span>
-                      <span style={{
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        color: trade.impulseAnalysis.technicalData.macdHistogram > 0 ? "#10B981" : "#EF4444"
-                      }}>
-                        {trade.impulseAnalysis.technicalData.macdHistogram?.toFixed(4)}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <span style={{
-                        fontSize: "11px",
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        color: "#9CA3AF",
-                        letterSpacing: "0.5px",
-                        display: "block"
-                      }}>
-                        EMA 13 Trend
-                      </span>
-                      <span style={{
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        color: trade.impulseAnalysis.technicalData.ema13Slope === 'rising' ? "#10B981" : "#EF4444"
-                      }}>
-                        {trade.impulseAnalysis.technicalData.ema13Slope}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <span style={{
-                        fontSize: "11px",
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        color: "#9CA3AF",
-                        letterSpacing: "0.5px",
-                        display: "block"
-                      }}>
-                        MACD Trend
-                      </span>
-                      <span style={{
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        color: trade.impulseAnalysis.technicalData.macdHistSlope === 'rising' ? "#10B981" : "#EF4444"
-                      }}>
-                        {trade.impulseAnalysis.technicalData.macdHistSlope}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
-        )}
 
-        {/* Post Trade Analysis */}
-        {(trade.postTradeAnalysis || postImages.length > 0) && (
-          <div style={{
-            backgroundColor: "#1A2332",
-            borderRadius: 12,
-            padding: 24,
-            marginBottom: 24,
-            border: "1px solid #2A3441"
-          }}>
-            <h3 style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              color: "#8B5CF6",
-              margin: "0 0 20px 0"
-            }}>
-              Post Trade Analysis
-            </h3>
-
-            {trade.postTradeAnalysis && (
-              <div style={{ marginBottom: postImages.length > 0 ? 20 : 0 }}>
-                <label style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#9CA3AF",
-                  display: "block",
-                  marginBottom: 8
-                }}>
-                  Analysis Notes
-                </label>
-                <div style={{
-                  backgroundColor: "#0F1419",
-                  border: "1px solid #2A3441",
-                  borderRadius: 8,
-                  padding: 16,
-                  color: "#E5E7EB",
-                  fontSize: "15px",
-                  lineHeight: "1.5",
-                  whiteSpace: "pre-wrap"
-                }}>
-                  {trade.postTradeAnalysis}
-                </div>
-              </div>
-            )}
-
-            {/* Post Trade Files */}
-            {postImages.length > 0 && (
-              <div>
-                <h4 style={{
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#9CA3AF",
-                  margin: "0 0 16px 0"
-                }}>
-                  Post Trade Files
-                </h4>
+            {/* Entry Charts */}
+            {entryImages.length > 0 && (
+              <div className={styles.section}>
+                <h4 className={styles.sectionSubtitle}>Entry Charts</h4>
                 <ImageGallery
-                  images={postImages.map(img => ({
-                    src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
-                    alt: "Post Trade"
+                  images={entryImages.map(img => ({
+                    src: config.getImageUrl(img.imageUrl || img.filePath),
+                    alt: "Entry Chart"
                   }))}
                   maxHeight={220}
                 />
               </div>
             )}
+
+            {/* Exit Section - Enhanced for Partial Exits */}
+            {(exitTransactions.length > 0 || trade.exitDate || trade.exitPrice) && (
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitleAccent}>
+                  Exit Details {exitTransactions.length > 1 && `(${exitTransactions.length} Partial Exits)`}
+                </h3>
+                
+                {/* Exit Summary */}
+                {(() => {
+                  const summary = getExitTransactionsSummary();
+                  if (summary) {
+                    return (
+                      <div className={styles.grid}>
+                        <div className={styles.fieldItem}>
+                          <label className={styles.label}>Total Exited Qty</label>
+                          <span className={styles.value}>{summary.totalExitedQty.toLocaleString()}</span>
+                        </div>
+                        <div className={styles.fieldItem}>
+                          <label className={styles.label}>Avg Exit Price</label>
+                          <span className={styles.value}>${summary.avgExitPrice.toFixed(2)}</span>
+                        </div>
+                        <div className={styles.fieldItem}>
+                          <label className={styles.label}>Last Exit Date</label>
+                          <span className={styles.value}>{formatDate(summary.lastExitDate)}</span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Individual Exit Transactions */}
+                {exitTransactions.length > 0 && (
+                  <div style={{ marginBottom: 20 }}>
+                    <h4 className={styles.sectionSubtitle}>
+                      Exit Transactions
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {exitTransactions.map((tx, index) => (
+                        <div key={index} style={{
+                          background: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border-secondary)',
+                          borderRadius: 8,
+                          padding: 16,
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                          gap: 12
+                        }}>
+                          <div>
+                            <label className={styles.label}>Date</label>
+                            <span className={styles.value}>{formatDate(tx.transactionDate)}</span>
+                          </div>
+                          <div>
+                            <label className={styles.label}>Quantity</label>
+                            <span className={styles.value}>{Number(tx.quantity || 0).toLocaleString()}</span>
+                          </div>
+                          <div>
+                            <label className={styles.label}>Price</label>
+                            <span className={styles.value}>${Number(tx.price || 0).toFixed(2)}</span>
+                          </div>
+                          <div>
+                            <label className={styles.label}>P&L</label>
+                            <span className={styles.value} style={{
+                              color: trade.direction?.toLowerCase() === 'long' 
+                                ? (Number(tx.price || 0) >= Number(trade.entryPrice || 0) ? 'var(--status-success)' : 'var(--status-error)')
+                                : (Number(tx.price || 0) <= Number(trade.entryPrice || 0) ? 'var(--status-success)' : 'var(--status-error)')
+                            }}>
+                              ${trade.direction && trade.entryPrice ? (
+                                trade.direction.toLowerCase() === 'long'
+                                  ? ((Number(tx.price || 0) - Number(trade.entryPrice)) * Number(tx.quantity || 0)).toFixed(2)
+                                  : ((Number(trade.entryPrice) - Number(tx.price || 0)) * Number(tx.quantity || 0)).toFixed(2)
+                              ) : '0.00'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Legacy Exit Data (for backward compatibility) */}
+                {!exitTransactions.length && (trade.exitDate || trade.exitPrice) && (
+                  <div className={styles.grid}>
+                    <div className={styles.fieldItem}>
+                      <label className={styles.label}>Date</label>
+                      <span className={styles.value}>{formatDate(trade.exitDate)}</span>
+                    </div>
+                    <div className={styles.fieldItem}>
+                      <label className={styles.label}>Average Price</label>
+                      <span className={styles.value}>
+                        {trade.exitPrice !== undefined && trade.exitPrice !== null ? `$${Number(trade.exitPrice).toFixed(2)}` : "-"}
+                      </span>
+                    </div>
+                    <div className={styles.fieldItem}>
+                      <label className={styles.label}>Exit Tactic</label>
+                      <span className={styles.value}>{getExitTacticName(trade.exitTacticId)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {trade.reasonForExit && (
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Reason for Exit</label>
+                    <div className={styles.textareaField}>
+                      {trade.reasonForExit || "No reason provided"}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Exit Charts */}
+            {exitImages.length > 0 && (
+              <div className={styles.section}>
+                <h4 className={styles.sectionSubtitle}>Exit Charts</h4>
+                <ImageGallery
+                  images={exitImages.map(img => ({
+                    src: config.getImageUrl(img.imageUrl || img.filePath),
+                    alt: "Exit Chart"
+                  }))}
+                  maxHeight={220}
+                />
+              </div>
+            )}
+
+            {/* Exit Strategy Analysis - Only for Open Trades */}
+            {trade.status?.toLowerCase() === 'open' && trade.impulseAnalysis && (
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitleAccent}>Exit Strategy Analysis</h3>
+                
+                {/* Impulse Analysis Card */}
+                <div style={{
+                  background: 'linear-gradient(135deg, var(--bg-accent) 0%, var(--bg-secondary) 100%)',
+                  border: '1px solid var(--border-secondary)',
+                  borderRadius: 12,
+                  padding: 20,
+                  marginBottom: 20
+                }}>
+                  {/* Impulse Header */}
+                  {/* Impulse Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                    
+                    <h4 style={{
+                      margin: 0,
+                      fontSize: '18px',
+                      fontWeight: '700',
+                      color: 'var(--text-primary)',
+                      textTransform: 'uppercase'
+                    }}>
+                      Impulse Color: {trade.impulseAnalysis.impulseColor || 'Unknown'}
+                    </h4>
+                    <div style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      backgroundColor: trade.impulseAnalysis.impulseColor === 'red' ? '#EF4444' : 
+                                      trade.impulseAnalysis.impulseColor === 'blue' ? '#3B82F6' : 
+                                      trade.impulseAnalysis.impulseColor === 'green' ? '#10B981' :
+                                      'var(--text-muted)',
+                      border: '2px solid #ffffff',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}></div>
+                    <span style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#ffffff',
+                      backgroundColor: trade.impulseAnalysis.exitRecommended ? '#EF4444' : '#10B981',
+                      padding: '6px 12px',
+                      borderRadius: 6,
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      Exit: {trade.impulseAnalysis.exitRecommended ? 'YES' : 'NO'}
+                    </span>
+                  </div>                  {/* Analysis Reasoning */}
+                  {trade.impulseAnalysis.reasoning && trade.impulseAnalysis.reasoning.length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                      <h5 style={{
+                        margin: '0 0 8px 0',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: 'var(--text-secondary)'
+                      }}>
+                        Analysis Points:
+                      </h5>
+                      <ul style={{
+                        margin: 0,
+                        paddingLeft: 20,
+                        color: 'var(--text-primary)'
+                      }}>
+                        {trade.impulseAnalysis.reasoning.map((point, index) => (
+                          <li key={index} style={{ marginBottom: 4, fontSize: '14px' }}>
+                            {point}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Technical Data */}
+                  {trade.impulseAnalysis.technicalData && (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                      gap: 12,
+                      marginTop: 16,
+                      padding: 16,
+                      backgroundColor: 'var(--bg-tertiary)',
+                      borderRadius: 8,
+                      border: '1px solid var(--border-primary)'
+                    }}>
+                      {Object.entries(trade.impulseAnalysis.technicalData).map(([key, value]) => (
+                        <div key={key}>
+                          <label className={styles.label} style={{ textTransform: 'capitalize' }}>
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </label>
+                          <span className={styles.value}>
+                            {typeof value === 'number' ? value.toFixed(2) : value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Post Trade Analysis */}
+            {(trade.postTradeAnalysis || trade.lessonLearned || trade.emotionalState || postImages.length > 0) && (
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitleAccent}>Post Trade Analysis</h3>
+
+                {trade.postTradeAnalysis && (
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Analysis Notes</label>
+                    <div className={styles.textareaField}>
+                      {trade.postTradeAnalysis}
+                    </div>
+                  </div>
+                )}
+
+                {trade.lessonLearned && (
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Lessons Learned</label>
+                    <div className={styles.textareaField}>
+                      {trade.lessonLearned}
+                    </div>
+                  </div>
+                )}
+
+                {trade.emotionalState && (
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Emotional State</label>
+                    <div className={styles.textareaField}>
+                      {trade.emotionalState}
+                    </div>
+                  </div>
+                )}
+
+                {/* Post Trade Files */}
+                {postImages.length > 0 && (
+                  <div>
+                    <h4 className={styles.sectionSubtitle}>Post Trade Files</h4>
+                    <ImageGallery
+                      images={postImages.map(img => ({
+                        src: config.getImageUrl(img.imageUrl || img.filePath),
+                        alt: "Post Trade"
+                      }))}
+                      maxHeight={220}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

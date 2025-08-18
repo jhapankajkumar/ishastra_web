@@ -5,7 +5,8 @@
   max-width: 1200px;
   margin: 0 auto;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: var(--bg-primary);
+  transition: background-color 0.3s ease;
 }
 
 .header {
@@ -16,12 +17,12 @@
 .header h1 {
   font-size: 2rem;
   margin-bottom: 0.5rem;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .header p {
   font-size: 1rem;
-  color: #7f8c8d;
+  color: var(--text-muted);
   margin-bottom: 1.5rem;
 }
 
@@ -36,15 +37,15 @@
 
 .sortControls label {
   font-size: 0.9rem;
-  color: #34495e;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .sortButton {
   padding: 0.5rem 1rem;
-  border: 1px solid #bdc3c7;
-  background: white;
-  color: #34495e;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.85rem;
@@ -52,26 +53,28 @@
 }
 
 .sortButton:hover {
-  background: #ecf0f1;
-  border-color: #95a5a6;
+  background: var(--bg-tertiary);
+  border-color: var(--border-secondary);
 }
 
 .sortButton.active {
-  background: #3498db;
+  background: var(--btn-primary-bg);
   color: white;
-  border-color: #2980b9;
+  border-color: var(--btn-primary-hover);
 }
 
 /* Stats Bar */
 .statsBar {
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
   gap: 2rem;
   margin-bottom: 2rem;
   padding: 1rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .stat {
@@ -83,7 +86,7 @@
 
 .statLabel {
   font-size: 0.8rem;
-  color: #7f8c8d;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -91,7 +94,7 @@
 .statValue {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 /* Stock List */
@@ -102,19 +105,19 @@
 }
 
 .stockCard {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 1.25rem;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 2px solid transparent;
+  border: 2px solid var(--border-primary);
 }
 
 .stockCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-  border-color: #3498db;
+  box-shadow: var(--shadow-md);
+  border-color: var(--btn-primary-bg);
 }
 
 /* Stock Header */
@@ -128,7 +131,7 @@
 .stockTitle h3 {
   font-size: 1.25rem;
   margin: 0 0 0.5rem 0;
-  color: #2c3e50;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -148,27 +151,27 @@
 }
 
 .badgeBuy {
-  background: #27ae60;
+  background: var(--success-color);
   color: white;
 }
 
 .badgeWatch {
-  background: #f39c12;
+  background: var(--warning-color);
   color: white;
 }
 
 .badgeHold {
-  background: #3498db;
+  background: var(--info-color);
   color: white;
 }
 
 .badgeAvoid {
-  background: #e74c3c;
+  background: var(--error-color);
   color: white;
 }
 
 .badgeDefault {
-  background: #95a5a6;
+  background: var(--neutral-color);
   color: white;
 }
 
@@ -181,19 +184,19 @@
 }
 
 .gradeA {
-  background: #27ae60;
+  background: var(--success-color);
 }
 
 .gradeB {
-  background: #2ecc71;
+  background: var(--btn-success-bg);
 }
 
 .gradeC {
-  background: #f39c12;
+  background: var(--warning-color);
 }
 
 .gradeD {
-  background: #e74c3c;
+  background: var(--error-color);
 }
 
 .priorityBadge {
@@ -201,14 +204,14 @@
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
-  background: #8e44ad;
+  background: var(--btn-primary-bg);
   color: white;
 }
 
 .stockPrice {
   font-size: 1.25rem;
   font-weight: bold;
-  color: #27ae60;
+  color: var(--profit-color);
 }
 
 /* Stock Metrics */
@@ -217,9 +220,11 @@
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   margin-bottom: 1rem;
   padding: 0.75rem;
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
   border-radius: 6px;
   gap: 0.5rem;
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .metric {
@@ -231,7 +236,7 @@
 
 .metricLabel {
   font-size: 0.75rem;
-  color: #7f8c8d;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -239,21 +244,22 @@
 .metricValue {
   font-size: 1rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 /* Next Step */
 .nextStep {
   margin-bottom: 1rem;
   padding: 0.75rem;
-  background: #e8f4fd;
+  background: var(--info-bg);
   border-radius: 6px;
-  border-left: 4px solid #3498db;
+  border-left: 4px solid var(--info-color);
+  transition: background-color 0.3s ease;
 }
 
 .nextStepLabel {
   font-size: 0.8rem;
-  color: #2980b9;
+  color: var(--info-color);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -262,7 +268,7 @@
 .nextStepText {
   display: block;
   font-size: 0.9rem;
-  color: #34495e;
+  color: var(--text-secondary);
   margin-top: 0.25rem;
   line-height: 1.4;
 }
@@ -273,9 +279,10 @@
   justify-content: space-between;
   margin-bottom: 1rem;
   padding: 0.75rem;
-  background: #f0f8f0;
+  background: var(--success-bg);
   border-radius: 6px;
-  border-left: 4px solid #27ae60;
+  border-left: 4px solid var(--success-color);
+  transition: background-color 0.3s ease;
 }
 
 .positionItem {
@@ -287,7 +294,7 @@
 
 .positionLabel {
   font-size: 0.75rem;
-  color: #27ae60;
+  color: var(--success-color);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
@@ -296,7 +303,7 @@
 .positionValue {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 /* Stock Footer */
@@ -305,11 +312,11 @@
   justify-content: space-between;
   align-items: center;
   font-size: 0.8rem;
-  color: #7f8c8d;
+  color: var(--text-muted);
 }
 
 .clickHint {
-  color: #3498db;
+  color: var(--btn-primary-bg);
   font-weight: 500;
 }
 
@@ -326,8 +333,8 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #ecf0f1;
-  border-top: 4px solid #3498db;
+  border: 4px solid var(--border-primary);
+  border-top: 4px solid var(--btn-primary-bg);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -339,7 +346,7 @@
 }
 
 .loading p {
-  color: #7f8c8d;
+  color: var(--text-muted);
   font-size: 1rem;
 }
 
@@ -347,24 +354,26 @@
 .error {
   text-align: center;
   padding: 2rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .error h3 {
-  color: #e74c3c;
+  color: var(--error-color);
   margin-bottom: 1rem;
 }
 
 .error p {
-  color: #7f8c8d;
+  color: var(--text-muted);
   margin-bottom: 1.5rem;
 }
 
 .retryButton {
   padding: 0.75rem 1.5rem;
-  background: #3498db;
+  background: var(--btn-primary-bg);
   color: white;
   border: none;
   border-radius: 4px;
@@ -374,20 +383,22 @@
 }
 
 .retryButton:hover {
-  background: #2980b9;
+  background: var(--btn-primary-hover);
 }
 
 /* Empty State */
 .emptyState {
   text-align: center;
   padding: 4rem;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .emptyState h3 {
-  color: #7f8c8d;
+  color: var(--text-muted);
   margin-bottom: 1rem;
 }
 

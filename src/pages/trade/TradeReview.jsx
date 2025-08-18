@@ -5,13 +5,16 @@ import styles from "./TradeReview.module.css";
 import PageHeader from "../../components/PageHeader";
 import { getTradeById, addPostAnalysis, getTradeTransactions } from '../../api/tradeApi';
 import { useNotification } from '../../components/NotificationProvider';
+import { useTheme } from "../../contexts/ThemeContext";
 import ErrorPage from '../../components/ErrorPage';
 import CommonAddChart from "../../components/CommonAddChart";
+import config from "../../config/environment";
 
 const TradeReview = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const { theme } = useTheme();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -151,7 +154,7 @@ const TradeReview = () => {
 
   if (loading) {
     return (
-      <div className={styles.container}>
+      <div className={`${styles.container} ${theme}`}>
         <PageHeader title="Trade Review" showBackButton onBackClick={() => navigate('/')} />
         <div className={styles.loading}>Loading trade data...</div>
       </div>
@@ -165,13 +168,14 @@ const TradeReview = () => {
   const percentGain = getPercentGain();
   const isProfit = totalPL >= 0;
   return (
-    <div className={styles.container}>
-      <PageHeader
-        title={`Trade Review - ${trade.ticker}`}
-        subtitle="Analyze your completed trade performance"
-        showBackButton
-        onBackClick={() => navigate('/')}
-      />
+    <div className={`${styles.container} ${theme}`}>
+      <button
+        type="button"
+        onClick={() => navigate('/trades')}
+        className={styles.cancelButton}
+      >
+        Back
+      </button>
 
       <div className={styles.formContainer}>
         {/* Entry Charts Gallery */}
@@ -193,7 +197,7 @@ const TradeReview = () => {
             </h4>
             <ImageGallery
               images={entryImages.map((img, idx) => ({
-                src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
+                src: config.getImageUrl(img.imageUrl || img.filePath),
                 alt: `Entry Chart ${idx + 1}`
               }))}
               maxHeight={180}
@@ -219,7 +223,7 @@ const TradeReview = () => {
             </h4>
             <ImageGallery
               images={exitImages.map((img, idx) => ({
-                src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
+                src: config.getImageUrl(img.imageUrl || img.filePath),
                 alt: `Exit Chart ${idx + 1}`
               }))}
               maxHeight={180}
@@ -245,7 +249,7 @@ const TradeReview = () => {
             </h4>
             <ImageGallery
               images={postImages.map((img, idx) => ({
-                src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
+                src: config.getImageUrl(img.imageUrl || img.filePath),
                 alt: `Post Trade ${idx + 1}`
               }))}
               maxHeight={180}

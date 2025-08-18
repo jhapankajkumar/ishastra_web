@@ -1,5 +1,7 @@
 import React from "react";
 import ImageGallery from "../../components/ImageGallery";
+import config from "../../config/environment";
+
 export default function JournalDetailsPopup({ journal, charts, onClose }) {
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
@@ -450,7 +452,7 @@ export default function JournalDetailsPopup({ journal, charts, onClose }) {
               </label>
                 <ImageGallery
                   images={entryImages.map(img => ({
-                    src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
+                    src: config.getImageUrl(img.imageUrl || img.filePath),
                     alt: "Entry Trade"
                   }))}
                   maxHeight={220}
@@ -516,7 +518,7 @@ export default function JournalDetailsPopup({ journal, charts, onClose }) {
                 </h4>
                 <ImageGallery
                   images={exitImages.map(img => ({
-                    src: `http://localhost:8000/${img.imageUrl || img.filePath}`,
+                    src: config.getImageUrl(img.imageUrl || img.filePath),
                     alt: "Exit Trade"
                   }))}
                   maxHeight={220}

@@ -5,6 +5,7 @@ import PageHeader from "../../components/PageHeader";
 import { getTradeById, updateTrade, partialExitTrade } from '../../api/tradeApi';
 import { getCurrentPrice } from '../../api/tickerApi';
 import { useNotification } from '../../components/NotificationProvider';
+import { useTheme } from "../../contexts/ThemeContext";
 import ErrorPage from '../../components/ErrorPage';
 import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
 import CommonAddChart from '../../components/CommonAddChart';
@@ -13,6 +14,7 @@ const TradeUpdate = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const showNotification = useNotification();
+  const { theme } = useTheme();
 
   const [activeTab, setActiveTab] = useState('exit');
   const [loading, setLoading] = useState(true);
@@ -166,7 +168,7 @@ const TradeUpdate = () => {
     }
   };
 
-  
+
 
   const handleExitSubmit = async (e) => {
     e.preventDefault();
@@ -239,7 +241,7 @@ const TradeUpdate = () => {
 
   if (loading) {
     return (
-      <div className={styles.container}>
+      <div className={`${styles.container} ${theme}`}>
         <PageHeader
           title="Update Trade"
           showBackButton={true}
@@ -274,7 +276,7 @@ const TradeUpdate = () => {
   };
 
   const calculateUnrealisedPnL = () => {
-    if (!trade.entryPrice  || !exitForm.exitFilledShares) return 0;
+    if (!trade.entryPrice || !exitForm.exitFilledShares) return 0;
     const entryPrice = parseFloat(trade.entryPrice);
     const exitPrice = parseFloat(currentPrice || 0);
     const quantity = parseFloat(exitForm.exitFilledShares);
@@ -312,13 +314,14 @@ const TradeUpdate = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <PageHeader
-        title={`Update Trade - ${trade.ticker}`}
-        subtitle="Add exit details and post-trade analysis"
-        showBackButton={true}
-        onBackClick={() => navigate('/dashboard')}
-      />
+    <div className={`${styles.container} ${theme}`}>
+      <button
+        type="button"
+        onClick={() => navigate('/trades')}
+        className={styles.cancelButton}
+      >
+        Back
+      </button>
 
       <div className={styles.formContainer}>
         {/* Trade Summary - Essential Entry Details + Calculated Metrics */}
@@ -614,7 +617,7 @@ const TradeUpdate = () => {
                 <div className={styles.buttonGroup}>
                   <button
                     type="button"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate('/trades')}
                     className={styles.cancelButton}
                   >
                     Cancel

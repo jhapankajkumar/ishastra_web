@@ -7,6 +7,7 @@ import { createJournal, updateJournal, getJournalById } from '../../api/journalA
 import { fetchSetups } from '../../api/firebaseMetaApi';
 import { getTechnicalIndicators } from '../../api/tickerApi';
 import { useNotification } from '../../components/NotificationProvider';
+import { useTheme } from "../../contexts/ThemeContext";
 import ErrorPage from '../../components/ErrorPage';
 import { getTickerBySymbol } from '../../data/tickerData';
 import CommonAddChart from "../../components/CommonAddChart";
@@ -34,6 +35,7 @@ const initialState = {
 };
 
 export default function StockAnalysisAdd({ onSubmit }) {
+  const { theme } = useTheme();
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -173,13 +175,14 @@ export default function StockAnalysisAdd({ onSubmit }) {
   };
 
   return (
-    <div className={styles.container}>
-      {!onSubmit && (
-        <PageHeader
-          title={isEditMode ? "Edit Chart Reading" : "Add Chart Reading"}
-          subtitle={isEditMode ? "Update your chart analysis and observations" : "Log your chart analysis and market observations"}
-        />
-      )}
+    <div className={`${styles.container} ${theme}`}>
+      <button
+        type="button"
+        onClick={() => navigate('/journal')}
+        className={styles.cancelButton}
+      >
+        Back
+      </button>
 
       <div className={styles.formContainer}>
         <form onSubmit={handleSubmit}>

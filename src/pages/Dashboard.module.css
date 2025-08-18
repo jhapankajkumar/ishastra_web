@@ -4,10 +4,11 @@
   margin: 0;
   padding: 24px 5%;
   box-sizing: border-box;
-  background: #101828;
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #fff;
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Responsive: reduce horizontal padding on small screens */
@@ -27,15 +28,17 @@
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 24px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .statsCard {
-  background: #181f2a;
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 32px 0px;
   margin-bottom: 32px;
   width: 100%;
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .statsRow {
@@ -59,7 +62,7 @@
 
 .statLabel {
   font-size: 1.05rem;
-  color: #b0b8c9;
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
   font-weight: 500;
   white-space: normal;    /* allow wrapping */
@@ -87,7 +90,7 @@
 .statValue {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: 1px;
 }
 
@@ -119,30 +122,34 @@
 }
 
 .card {
-  background: #181f2a;
+  background: var(--bg-secondary);
   border-radius: 16px; 
   padding-left: 24px;
   padding-bottom: 24px;
   padding-right: 24px;
   box-sizing: border-box;
   width: 100%;
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .card h3 {
   font-size: 1.05rem;
   font-weight: 600;
   margin-bottom: 16px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .tradesTableWrapper {
   width: 100%;
-  background: #181f2a;
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 24px;
   margin-top: 24px;
   box-sizing: border-box;
   overflow-x: auto;
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .tradesTableWrapper table {
@@ -153,14 +160,14 @@
 
 .tradesTableWrapper th, .tradesTableWrapper td {
   padding: 8px 12px;
-  border-bottom: 1px solid #222b3a;
+  border-bottom: 1px solid var(--border-primary);
   text-align: left;
   font-size: 1rem;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .tradesTableWrapper th {
-  background: #1a2233;
+  background: var(--bg-tertiary);
   font-weight: 600;
 }
 

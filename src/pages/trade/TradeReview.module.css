@@ -1,24 +1,26 @@
-/* TradeReview - Dark Theme */
+/* TradeReview - Theme Support */
 .container {
   max-width: none;
   margin: 0;
   padding: 24px 5%;
-  background: #101828;
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #fff;
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, sans-serif;
   box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .formContainer {
   max-width: 1000px;
   width: 100%;
   margin: 24px auto 0;
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 32px 40px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
-  border: 1px solid #2A3441;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .performanceCards {
@@ -29,22 +31,22 @@
 }
 
 .perfCard {
-  background: #253649;
+  background: var(--bg-tertiary);
   border-radius: 12px;
   padding: 24px;
   text-align: center;
-  border: 1px solid #374151;
+  border: 1px solid var(--border-color);
   transition: all 0.3s ease;
 }
 
 .profitCard {
-  border-color: #10B981;
-  background: linear-gradient(135deg, #064E3B 0%, #253649 100%);
+  border-color: var(--status-success);
+  background: linear-gradient(135deg, var(--bg-success) 0%, var(--bg-tertiary) 100%);
 }
 
 .lossCard {
-  border-color: #EF4444;
-  background: linear-gradient(135deg, #7F1D1D 0%, #253649 100%);
+  border-color: var(--status-error);
+  background: linear-gradient(135deg, var(--bg-error) 0%, var(--bg-tertiary) 100%);
 }
 
 .perfIcon {
@@ -56,38 +58,42 @@
   font-size: 32px;
   font-weight: 800;
   margin-bottom: 8px;
-  color: #F9FAFB;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .profitCard .perfValue {
-  color: #10B981;
+  color: var(--status-success);
 }
 
 .lossCard .perfValue {
-  color: #EF4444;
+  color: var(--status-error);
 }
 
 .perfLabel {
   font-size: 14px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  transition: color 0.3s ease;
 }
 
 .tradeSummary {
-  background: #253649;
+  background: var(--bg-tertiary);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 32px;
-  border: 1px solid #374151;
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .tradeSummary h3 {
   margin: 0 0 16px 0;
-  color: #F9FAFB;
+  color: var(--text-primary);
   font-size: 20px;
   font-weight: 700;
+  transition: color 0.3s ease;
 }
 
 .summaryRow {
@@ -96,14 +102,16 @@
   align-items: center;
   padding: 12px 0;
   font-size: 16px;
-  color: #D1D5DB;
-  border-top: 1px solid #374151;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-color);
+  transition: color 0.3s ease, border-color 0.3s ease;
 }
 
 .reviewForm {
-  background: #253649;
+  background: var(--bg-tertiary);
   border-radius: 12px;
-  border: 1px solid #374151;
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .formSection {
@@ -112,9 +120,10 @@
 
 .formSection h3 {
   margin: 0 0 24px 0;
-  color: #F9FAFB;
+  color: var(--text-primary);
   font-size: 24px;
   font-weight: 700;
+  transition: color 0.3s ease;
 }
 
 .fieldGroup {
@@ -124,30 +133,31 @@
 .label {
   display: block;
   margin-bottom: 8px;
-  color: #D1D5DB;
+  color: var(--text-secondary);
   font-weight: 600;
   font-size: 14px;
+  transition: color 0.3s ease;
 }
 
 .select,
 .textarea {
   width: 100%;
   padding: 16px 20px;
-  border: 2px solid #374151;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-size: 16px;
   font-family: inherit;
   transition: all 0.3s ease;
-  background: #1A2332;
-  color: #F9FAFB;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   box-sizing: border-box;
 }
 
 .select:focus,
 .textarea:focus {
   outline: none;
-  border-color: #3B82F6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
 }
 
 .textarea {
@@ -162,14 +172,15 @@
   justify-content: center;
   margin-top: 40px;
   padding-top: 32px;
-  border-top: 2px solid #374151;
+  border-top: 2px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 .skipButton {
   padding: 16px 32px;
   background: transparent;
-  color: #9CA3AF;
-  border: 2px solid #374151;
+  color: var(--text-muted);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   font-weight: 600;
   font-size: 16px;
@@ -179,8 +190,8 @@
 
 .submitButton {
   padding: 16px 40px;
-  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%);
+  color: var(--text-primary);
   border: none;
   border-radius: 12px;
   font-weight: 600;
@@ -192,27 +203,28 @@
 .loading {
   text-align: center;
   padding: 80px 20px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-size: 18px;
+  transition: color 0.3s ease;
 }
 
 /* Enhanced Detail Cards */
 .detailCard {
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 1px solid #334155;
+  border: 1px solid var(--border-color);
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .detailCard:hover {
-  border-color: #4F46E5;
+  border-color: var(--accent-primary);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(79, 70, 229, 0.15);
 }
 
 .cardHeader {
-  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%);
   padding: 16px 20px;
   display: flex;
   align-items: center;
@@ -254,7 +266,7 @@
 }
 
 .detailLabel {
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 500;
   text-transform: uppercase;
@@ -262,13 +274,15 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: color 0.3s ease;
 }
 
 .detailValue {
-  color: #F1F5F9;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
   word-break: break-word;
+  transition: color 0.3s ease;
 }
 
 /* Enhanced Badges */
@@ -284,20 +298,20 @@
 }
 
 .longBadge {
-  background: linear-gradient(135deg, #10B981, #059669);
-  color: white;
+  background: linear-gradient(135deg, var(--status-success), #059669);
+  color: var(--text-primary);
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .shortBadge {
-  background: linear-gradient(135deg, #EF4444, #DC2626);
-  color: white;
+  background: linear-gradient(135deg, var(--status-error), #DC2626);
+  color: var(--text-primary);
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .setupBadge {
-  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
-  color: white;
+  background: linear-gradient(135deg, var(--accent-secondary), var(--accent-secondary-dark, #7C3AED));
+  color: var(--text-inverse);
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 14px;
@@ -307,8 +321,8 @@
 }
 
 .strategyBadge {
-  background: linear-gradient(135deg, #06B6D4, #0891B2);
-  color: white;
+  background: linear-gradient(135deg, var(--accent-info), var(--accent-info-dark, #0891B2));
+  color: var(--text-inverse);
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 14px;
@@ -328,32 +342,32 @@
 }
 
 .gradeA {
-  background: linear-gradient(135deg, #10B981, #059669);
-  color: white;
+  background: linear-gradient(135deg, var(--status-success), var(--status-success-dark, #059669));
+  color: var(--text-inverse);
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .gradeB {
-  background: linear-gradient(135deg, #3B82F6, #2563EB);
-  color: white;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-dark, #2563EB));
+  color: var(--text-inverse);
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .gradeC {
-  background: linear-gradient(135deg, #F59E0B, #D97706);
-  color: white;
+  background: linear-gradient(135deg, var(--status-warning), var(--status-warning-dark, #D97706));
+  color: var(--text-inverse);
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
 
 .gradeD {
-  background: linear-gradient(135deg, #EF4444, #DC2626);
-  color: white;
+  background: linear-gradient(135deg, var(--status-error), var(--status-error-dark, #DC2626));
+  color: var(--text-inverse);
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .gradeF {
-  background: linear-gradient(135deg, #7F1D1D, #991B1B);
-  color: white;
+  background: linear-gradient(135deg, var(--status-critical, #7F1D1D), var(--status-critical-dark, #991B1B));
+  color: var(--text-inverse);
   box-shadow: 0 2px 8px rgba(127, 29, 29, 0.3);
 }
 
@@ -374,7 +388,7 @@
 }
 
 .noExitText {
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-size: 16px;
   font-style: italic;
 }
@@ -392,9 +406,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #1f2937;
+  background: var(--bg-secondary);
   border-radius: 6px;
-  border: 1px solid #374151;
+  border: 1px solid var(--border-color);
 }
 
 /* Responsive Design */
@@ -423,16 +437,16 @@
 
 /* Enhanced Performance Card */
 .performanceCard {
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 1px solid #334155;
+  border: 1px solid var(--border-color);
   overflow: hidden;
   margin-bottom: 24px;
   transition: all 0.3s ease;
 }
 
 .performanceCard:hover {
-  border-color: #4F46E5;
+  border-color: var(--accent-primary);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(79, 70, 229, 0.15);
 }
@@ -584,6 +598,18 @@
 .summaryStatItem strong {
   color: #9CA3AF;
   font-weight: 500;
+}
+.cancelButton {
+  padding: 12px 24px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
 }
 
 /* Responsive Design for Performance Section */

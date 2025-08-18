@@ -4,10 +4,11 @@
   margin: 0;
   padding: 24px 5%;
   box-sizing: border-box;
-  background: #101828;
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #fff;
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .loading {
@@ -15,7 +16,7 @@
   justify-content: center;
   align-items: center;
   height: 200px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-size: 16px;
 }
 
@@ -41,58 +42,61 @@
 
 .filterGroup label {
   font-size: 14px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .filterSelect {
   padding: 8px 12px;
-  border: 1px solid #2A3441;
-  background: #1A2332;
-  color: #E5E7EB;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  transition: border-color 0.2s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 
 .filterButton:hover {
-  background: #232B3D;
-  color: #E5E7EB;
-  border-color: #4F46E5;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
 }
 
 .filterButton.active {
-  background: #4F46E5;
-  color: #fff;
-  border-color: #4F46E5;
+  background: var(--accent-primary);
+  color: #ffffff;
+  border-color: var(--accent-primary);
 }
 
 .addButton {
+  display: inline-block;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  color: #fff;
-  border: none;
+  background: var(--btn-primary-bg);
+  color: white;
+  text-decoration: none;
   border-radius: 8px;
-  cursor: pointer;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 16px;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: var(--shadow-md);
+  border: none;
+  cursor: pointer;
 }
 
 .addButton:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  box-shadow: var(--shadow-success-hover);
 }
 
 /* Table Styles */
 .tableContainer {
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #2A3441;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-primary);
 }
 
 .table {
@@ -102,32 +106,32 @@
 }
 
 .tableHeader {
-  background: #232B3D;
+  background: var(--bg-hover);
 }
 
 .tableHeaderCell {
   padding: 16px 20px;
   text-align: left;
   font-weight: 600;
-  color: #E5E7EB;
+  color: var(--text-primary);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #2A3441;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .tableRow {
-  border-bottom: 1px solid #2A3441;
+  border-bottom: 1px solid var(--border-primary);
   transition: background-color 0.2s ease;
 }
 
 .tableRow:hover {
-  background: #1E293B;
+  background: var(--bg-hover);
 }
 
 .tableCell {
   padding: 12px;
-  color: #E5E7EB;
+  color: var(--text-primary);
   vertical-align: middle;
 }
 
@@ -139,14 +143,14 @@
 
 .ticker {
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 12px;
 }
 
 .sector {
   font-size: 8px;
-  color: #9CA3AF;
-  background: #374151;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
   padding: 2px 8px;
   border-radius: 12px;
   width: fit-content;
@@ -154,16 +158,16 @@
 }
 
 .opportunityPrice {
-  color: #10B981;
+  color: var(--status-success);
   font-weight: 600;
 }
 
 .regularPrice {
-  color: #E5E7EB;
+  color: var(--text-primary);
 }
 
 .noPrice {
-  color: #6B7280;
+  color: var(--text-muted);
 }
 
 .opportunityCell {
@@ -173,8 +177,8 @@
 }
 
 .opportunityBadge {
-  background: #10B981;
-  color: #fff;
+  background: var(--status-success);
+  color: #ffffff;
   font-size: 12px;
   font-weight: 600;
   padding: 4px 8px;
@@ -183,8 +187,8 @@
 }
 
 .noOpportunityBadge {
-  background: #EF4444;
-  color: #fff;
+  background: var(--status-danger);
+  color: #ffffff;
   font-size: 12px;
   font-weight: 600;
   padding: 4px 8px;
@@ -194,11 +198,11 @@
 
 .priceDiff {
   font-size: 10px;
-  color: #9CA3AF;
+  color: var(--text-secondary);
 }
 
 .noData {
-  color: #6B7280;
+  color: var(--text-muted);
 }
 
 .actionButtons {
@@ -218,42 +222,42 @@
 }
 
 .editButton {
-  background: #4F46E5;
-  color: #fff;
+  background: var(--accent-primary);
+  color: #ffffff;
 }
 
 .editButton:hover {
-  background: #4338CA;
+  background: var(--accent-primary-hover);
   transform: translateY(-1px);
 }
 
 .archiveButton {
-  background: #F59E0B;
-  color: #fff;
+  background: var(--status-warning);
+  color: #ffffff;
 }
 
 .archiveButton:hover {
-  background: #D97706;
+  background: var(--status-warning-hover);
   transform: translateY(-1px);
 }
 
 .unarchiveButton {
-  background: #8B5CF6;
-  color: #fff;
+  background: var(--accent-secondary);
+  color: #ffffff;
 }
 
 .unarchiveButton:hover {
-  background: #7C3AED;
+  background: var(--accent-secondary-hover);
   transform: translateY(-1px);
 }
 
 .deleteButton {
-  background: #EF4444;
-  color: #fff;
+  background: var(--status-danger);
+  color: #ffffff;
 }
 
 .deleteButton:hover {
-  background: #DC2626;
+  background: var(--status-danger-hover);
   transform: translateY(-1px);
 }
 
@@ -264,7 +268,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--overlay-backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -272,25 +276,25 @@
 }
 
 .modalContent {
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 32px;
   max-width: 500px;
   width: 90%;
-  border: 1px solid #2A3441;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-modal);
 }
 
 .modalContent h3 {
   font-size: 20px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0 0 16px 0;
 }
 
 .modalContent p {
   font-size: 14px;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   margin: 0 0 24px 0;
   line-height: 1.5;
 }
@@ -306,16 +310,16 @@
   font-size: 14px;
   font-weight: 500;
   border-radius: 8px;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-primary);
   background: transparent;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .cancelButton:hover {
-  background: #2A3441;
-  color: #fff;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .confirmDeleteButton {
@@ -324,14 +328,14 @@
   font-weight: 600;
   border-radius: 8px;
   border: none;
-  background: #EF4444;
-  color: #fff;
+  background: var(--status-danger);
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .confirmDeleteButton:hover {
-  background: #DC2626;
+  background: var(--status-danger-hover);
   transform: translateY(-1px);
 }
 
@@ -339,26 +343,26 @@
   margin-top: 20px;
   text-align: center;
   padding: 60px 20px;
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-primary);
 }
 
 .emptyState h3 {
   font-size: 24px;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
 .emptyState p {
-  color: #9CA3AF;
+  color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 24px;
 }
 
 .marketCapLarge {
-  background-color: #0f5132;
-  color: white;
+  background-color: var(--status-success-dark);
+  color: #ffffff;
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 0.75rem;
@@ -366,8 +370,8 @@
 }
 
 .marketCapMid {
-  background-color: #084298;
-  color: white;
+  background-color: var(--accent-primary);
+  color: #ffffff;
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 0.75rem;
@@ -375,8 +379,8 @@
 }
 
 .marketCapSmall {
-  background-color: #6c757d;
-  color: white;
+  background-color: var(--text-muted);
+  color: #ffffff;
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 0.75rem;

@@ -4,10 +4,11 @@
   margin: 0;
   padding: 24px 5%;
   box-sizing: border-box;
-  background: #101828;
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #fff;
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .actionBar {
@@ -16,7 +17,7 @@
   align-items: center;
   margin-bottom: 24px;
   padding: 20px 0;
-  border-bottom: 1px solid #2A3441;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .filters {
@@ -33,43 +34,44 @@
 
 .filterGroup label {
   font-size: 14px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .filterSelect {
   padding: 8px 12px;
-  border: 1px solid #2A3441;
-  background: #1A2332;
-  color: #E5E7EB;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 .filterSelect:hover {
-  border-color: #4F46E5;
+  border-color: var(--btn-primary-bg);
 }
 
 .addButton {
   display: inline-block;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-  color: #fff;
+  background: var(--btn-primary-bg);
+  color: white;
   text-decoration: none;
   border-radius: 8px;
   font-weight: 600;
   font-size: 16px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-md);
   border: none;
   cursor: pointer;
 }
 
 .addButton:hover {
+  background: var(--btn-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Sections */
@@ -80,22 +82,23 @@
 .sectionTitle {
   font-size: 20px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px 0;
-  border-bottom: 1px solid #2A3441;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 /* Table Container */
 .tableContainer {
   overflow-x: auto;
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 1px solid #2A3441;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-md);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Table Styles */
@@ -106,16 +109,17 @@
 }
 
 .tradesTable th {
-  background: #0F172A;
-  color: #E5E7EB;
+  background: var(--bg-accent);
+  color: var(--text-secondary);
   font-weight: 600;
   padding: 16px 12px;
   text-align: left;
-  border-bottom: 2px solid #2A3441;
+  border-bottom: 2px solid var(--border-primary);
   white-space: nowrap;
   position: sticky;
   top: 0;
   z-index: 10;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .tradesTable th:first-child {
@@ -128,38 +132,39 @@
 
 /* Table Rows */
 .tradeRow {
-  background: #1A2332;
-  border-bottom: 1px solid #2A3441;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .tradeRow:hover {
-  background: #1E293B;
+  background: var(--bg-tertiary);
   transform: scale(1.001);
 }
 
 .tradeRow.open_profit {
-  border-left: 4px solid #10B981;
+  border-left: 4px solid var(--profit-color);
 }
 
 .tradeRow.open_loss {
-  border-left: 4px solid #EF4444;
+  border-left: 4px solid var(--loss-color);
 }
 
 .tradeRow.closed_profit {
-  border-left: 4px solid #3B82F6;
+  border-left: 4px solid var(--success-color);
 }
 
 .tradeRow.closed_loss {
-  border-left: 4px solid #F59E0B;
+  border-left: 4px solid var(--warning-color);
 }
 
 /* Table Cells */
 .tradesTable td {
   padding: 16px 12px;
   vertical-align: middle;
-  color: #E5E7EB;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .tradesTable td:first-child {
@@ -184,12 +189,12 @@
 .ticker {
   font-weight: 700;
   font-size: 16px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .companyName {
   font-size: 12px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -205,18 +210,19 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  transition: all 0.3s ease;
 }
 
 .direction.long {
-  background: rgba(16, 185, 129, 0.2);
-  color: #34D399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--success-bg);
+  color: var(--success-color);
+  border: 1px solid var(--success-color);
 }
 
 .direction.short {
-  background: rgba(239, 68, 68, 0.2);
-  color: #F87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--error-bg);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
 }
 
 /* Status Badge */
@@ -228,30 +234,31 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  transition: all 0.3s ease;
 }
 
 .statusBadge.open_profit {
-  background: rgba(16, 185, 129, 0.2);
-  color: #34D399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--success-bg);
+  color: var(--success-color);
+  border: 1px solid var(--success-color);
 }
 
 .statusBadge.open_loss {
-  background: rgba(239, 68, 68, 0.2);
-  color: #F87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--error-bg);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
 }
 
 .statusBadge.closed_profit {
-  background: rgba(59, 130, 246, 0.2);
-  color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: var(--info-bg);
+  color: var(--info-color);
+  border: 1px solid var(--info-color);
 }
 
 .statusBadge.closed_loss {
-  background: rgba(245, 158, 11, 0.2);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: var(--warning-bg);
+  color: var(--warning-color);
+  border: 1px solid var(--warning-color);
 }
 
 /* Price with Change */
@@ -264,24 +271,25 @@
 .priceChange {
   font-size: 11px;
   font-weight: 600;
+  transition: color 0.3s ease;
 }
 
 .priceChange.positive {
-  color: #34D399;
+  color: var(--profit-color);
 }
 
 .priceChange.negative {
-  color: #F87171;
+  color: var(--loss-color);
 }
 
 /* P&L Styling */
 .profit {
-  color: #34D399 !important;
+  color: var(--profit-color) !important;
   font-weight: 600;
 }
 
 .loss {
-  color: #F87171 !important;
+  color: var(--loss-color) !important;
   font-weight: 600;
 }
 
@@ -289,7 +297,7 @@
 .strategyCell {
   max-width: 200px;
   font-size: 12px;
-  color: #9CA3AF;
+  color: var(--text-muted);
 }
 
 /* Actions Cell */
@@ -309,57 +317,59 @@
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
-  background: rgba(75, 85, 99, 0.2);
-  color: #9CA3AF;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
   min-width: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .actionBtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .viewBtn:hover {
-  background: rgba(59, 130, 246, 0.2);
-  color: #60A5FA;
+  background: var(--info-bg);
+  color: var(--info-color);
 }
 
 .editBtn:hover {
-  background: rgba(16, 185, 129, 0.2);
-  color: #34D399;
+  background: var(--success-bg);
+  color: var(--success-color);
 }
 
 .reviewBtn:hover {
-  background: rgba(124, 58, 237, 0.2);
-  color: #A78BFA;
+  background: var(--warning-bg);
+  color: var(--warning-color);
 }
 
 .deleteBtn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #F87171;
+  background: var(--error-bg);
+  color: var(--error-color);
 }
 
 /* Empty State */
 .emptyState {
   text-align: center;
   padding: 60px 20px;
-  background: #1A2332;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 1px solid #2A3441;
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .emptyState h3 {
   font-size: 20px;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
 .emptyState p {
   font-size: 16px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   margin-bottom: 24px;
 }
 

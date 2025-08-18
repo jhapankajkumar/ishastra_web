@@ -573,18 +573,18 @@ export default function TradeList() {
           zIndex: 1000
         }}>
           <div style={{
-            backgroundColor: '#1A2332',
+            backgroundColor: 'var(--bg-secondary)',
             borderRadius: 12,
             padding: 32,
             maxWidth: 500,
             width: '90%',
-            border: '1px solid #2A3441',
+            border: '1px solid var(--border-secondary)',
             boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
           }}>
             <h3 style={{
               fontSize: '20px',
               fontWeight: '600',
-              color: '#fff',
+              color: 'var(--text-primary)',
               margin: '0 0 16px 0'
             }}>
               Delete Trade
@@ -592,11 +592,11 @@ export default function TradeList() {
 
             <p style={{
               fontSize: '16px',
-              color: '#9CA3AF',
+              color: 'var(--text-secondary)',
               margin: '0 0 24px 0',
               lineHeight: '1.5'
             }}>
-              Are you sure you want to delete the trade for <strong style={{ color: '#fff' }}>{tradeToDelete.ticker}</strong>?
+              Are you sure you want to delete the trade for <strong style={{ color: 'var(--text-primary)' }}>{tradeToDelete.ticker}</strong>?
               This action cannot be undone and will permanently remove all trade data including charts and analysis.
             </p>
 
@@ -612,19 +612,19 @@ export default function TradeList() {
                   fontSize: '16px',
                   fontWeight: '500',
                   backgroundColor: 'transparent',
-                  color: '#9CA3AF',
-                  border: '1px solid #374151',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border-secondary)',
                   borderRadius: 8,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
                 onMouseOver={e => {
-                  e.target.style.backgroundColor = '#374151';
-                  e.target.style.color = '#fff';
+                  e.target.style.backgroundColor = 'var(--bg-tertiary)';
+                  e.target.style.color = 'var(--text-primary)';
                 }}
                 onMouseOut={e => {
                   e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = '#9CA3AF';
+                  e.target.style.color = 'var(--text-secondary)';
                 }}
               >
                 Cancel
@@ -635,7 +635,7 @@ export default function TradeList() {
                   padding: '12px 24px',
                   fontSize: '16px',
                   fontWeight: '500',
-                  backgroundColor: '#DC2626',
+                  backgroundColor: 'var(--status-error)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: 8,
@@ -646,7 +646,7 @@ export default function TradeList() {
                   e.target.style.backgroundColor = '#B91C1C';
                 }}
                 onMouseOut={e => {
-                  e.target.style.backgroundColor = '#DC2626';
+                  e.target.style.backgroundColor = 'var(--status-error)';
                 }}
               >
                 Delete Trade

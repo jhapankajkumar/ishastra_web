@@ -6,6 +6,7 @@ import PageHeader from "../../components/PageHeader";
 import { updateJournal, getJournalById } from '../../api/journalApi';
 import { fetchSetups } from '../../api/firebaseMetaApi';
 import { useNotification } from '../../components/NotificationProvider';
+import { useTheme } from "../../contexts/ThemeContext";
 import ErrorPage from '../../components/ErrorPage';
 import ImageGallery from '../../components/ImageGallery';
 import CommonAddChart from "../../components/CommonAddChart";
@@ -14,6 +15,7 @@ import CommonAddChart from "../../components/CommonAddChart";
 const todayStr = new Date().toISOString().split('T')[0];
 
 export default function JournalLogUpdate() {
+  const { theme } = useTheme();
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -124,12 +126,12 @@ export default function JournalLogUpdate() {
 
   if (initialLoading || !form) {
     return (
-      <div className={styles.container}>
+      <div className={`${styles.container} ${theme}`}>
         <PageHeader
           title="Update Chart Reading"
           subtitle="Loading journal data..."
         />
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: '#9CA3AF' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: 'var(--text-secondary)' }}>
           Loading journal data for editing...
         </div>
       </div>
@@ -158,11 +160,14 @@ export default function JournalLogUpdate() {
 
   // --- UI ---
   return (
-    <div className={styles.container}>
-      <PageHeader
-        title="Update Chart Reading"
-        subtitle="Update your chart analysis and observations"
-      />
+    <div className={`${styles.container} ${theme}`}>
+      <button
+        type="button"
+        onClick={() => navigate('/journal')}
+        className={styles.cancelButton}
+      >
+        Back
+      </button>
       <div className={styles.journalUpdateContainer}>
         {/* Header */}
         <div className={styles.journalHeader}>

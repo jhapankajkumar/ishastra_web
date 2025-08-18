@@ -16,17 +16,20 @@ import InvestmentForm from './pages/investment/InvestmentForm';
 import Header from './components/Header'; // Import the Header component
 import ErrorBoundary from './components/ErrorBoundary';
 import { NotificationProvider } from './components/NotificationProvider';
+import { ThemeProvider } from './contexts/ThemeContext'; // Import ThemeProvider
 import UpdateInvestmentForm from './pages/investment/UpdateInvestmentForm'; // Import UpdateInvestmentForm
 import Watchlist from './pages/Watchlist'; // Import Watchlist component
 import StockDetail from './pages/StockDetail'; // Import StockDetail component
+import './styles/themes.css'; // Import global theme styles
 
 function App() {
   return (
     <ErrorBoundary>
-      <NotificationProvider>
-        <BrowserRouter>
-          <Header />
-          <Routes>
+      <ThemeProvider>
+        <NotificationProvider>
+          <BrowserRouter>
+            <Header />
+            <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/analysis" element={<TickerAnalysis />} />
             <Route path="/watchlist" element={<Watchlist />} />
@@ -51,7 +54,8 @@ function App() {
           </Routes>
         </BrowserRouter>
       </NotificationProvider>
-    </ErrorBoundary>
+    </ThemeProvider>
+  </ErrorBoundary>
   );
 }
 

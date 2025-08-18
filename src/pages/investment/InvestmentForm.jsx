@@ -4,10 +4,12 @@ import { createInvestment, updateInvestment, getInvestmentById } from '../../api
 import { getAllRecommendations } from '../../api/recommendationApi';
 import { searchTickers, getCurrentPrice } from '../../api/tickerApi';
 import { useNotification } from '../../components/NotificationProvider';
+import { useTheme } from '../../contexts/ThemeContext';
 import styles from './InvestmentForm.module.css';
 import TickerSearch from "../../components/TickerSearch";
 
 const InvestmentForm = () => {
+    const { theme } = useTheme();
     const { id } = useParams();
     const navigate = useNavigate();
     const notification = useNotification();
@@ -279,11 +281,15 @@ const InvestmentForm = () => {
     }
 
     return (
-        <div className={styles.container}>
-            <div className={styles.header}>
-                <h1>{isEditing ? 'Edit Investment' : 'Add New Investment'}</h1>
-                <p>Track your long-term investment positions</p>
-            </div>
+        <div className={`${styles.container} ${theme}`}>
+            <button
+                type="button"
+                onClick={() => navigate('/investments')}
+                className={styles.cancelButton}
+                disabled={saving}
+            >
+                Back
+            </button>
             <div className={styles.formContainer}>
                 <form onSubmit={handleSubmit}>
                     <div className={styles.card}>
@@ -348,21 +354,21 @@ const InvestmentForm = () => {
                     </div>
                     <div className={styles.card}>
                         <h2 className={styles.cardTitle}>Investment Details</h2>
-                        
+
                         <div className={styles.gridTwoCol}>
                             <div className={styles.fieldGroup}>
-                            <label htmlFor="invested_on" className={styles.label}>Investment Date *</label>
-                            <input
-                                type="date"
-                                id="entryDate"
-                                name="entryDate"
-                                value={formData.entryDate}
-                                onChange={handleInputChange}
-                                className={`${styles.input} ${errors.entryDate ? styles.inputError : ''}`}
-                                disabled={saving}
-                            />
-                            {errors.entryDate && <span className={styles.error}>{errors.entryDate}</span>}
-                        </div>
+                                <label htmlFor="invested_on" className={styles.label}>Investment Date *</label>
+                                <input
+                                    type="date"
+                                    id="entryDate"
+                                    name="entryDate"
+                                    value={formData.entryDate}
+                                    onChange={handleInputChange}
+                                    className={`${styles.input} ${errors.entryDate ? styles.inputError : ''}`}
+                                    disabled={saving}
+                                />
+                                {errors.entryDate && <span className={styles.error}>{errors.entryDate}</span>}
+                            </div>
                             <div className={styles.fieldGroup}>
                                 <label htmlFor="quantity" className={styles.label}>Quantity *</label>
                                 <input
@@ -378,7 +384,7 @@ const InvestmentForm = () => {
                                 />
                                 {errors.quantity && <span className={styles.error}>{errors.quantity}</span>}
                             </div>
-                            
+
                         </div>
                         <div className={styles.gridTwoCol}>
                             <div className={styles.fieldGroup}>
