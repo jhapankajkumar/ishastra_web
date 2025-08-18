@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import TickerSearch from '../components/TickerSearch';
 import { getUnifiedAnalysis } from '../api/analysisApi';
+import { useTheme } from '../contexts/ThemeContext';
 import styles from './TickerAnalysis.module.css';
 
 const TickerAnalysis = () => {
+  const { theme } = useTheme();
   const [selectedTicker, setSelectedTicker] = useState('');
   const [analysisData, setAnalysisData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -211,516 +213,333 @@ const TickerAnalysis = () => {
 
     return (
       <div className={styles.analysisResults}>
-        <div className={styles.header}>
-          <h2>Analysis Results for {symbol || selectedTicker}</h2>
-          <div className={styles.timestamp}>
-            Generated: {timestamp ? new Date(timestamp).toLocaleString() : new Date().toLocaleString()}
-          </div>
-          <div className={styles.engineInfo}>
-            Current Price: ${currentPrice} | Analysis Date: {timestamp ? new Date(timestamp).toLocaleDateString() : 'Today'}
+        {/* Compact Header */}
+        <div className={styles.resultHeader}>
+          <div className={styles.stockInfo}>
+            <h2 className={styles.stockSymbol}>{symbol || selectedTicker}</h2>
+            <div className={styles.stockMeta}>
+              <span className={styles.currentPrice}>${currentPrice}</span>
+              <span className={styles.analysisTime}>
+                {timestamp ? new Date(timestamp).toLocaleDateString() : 'Today'}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Decision & Status */}
-        {decision && (
-          <div className={styles.section}>
-            <h3>🎯 Trading Decision</h3>
-            <div className={styles.tradingDecision}>
-              <div className={styles.decisionHeader}>
-                <div className={styles.mainDecisionCard}>
-                  <div className={styles.decisionTitle}>Market Action</div>
-                  <div className={`${styles.statusBadge} ${styles[getStatusColor(decision.action)]}`}>
-                    {getStatusDisplayText(decision.action)}
-                  </div>
-                </div>
+        {/* Key Metrics Dashboard */}
+        <div className={styles.metricsGrid}>
+          {decision && (
+            <div className={styles.metricCard}>
+              <div className={styles.metricHeader}>
+                <span className={styles.metricIcon}>🎯</span>
+                <span className={styles.metricLabel}>Decision</span>
               </div>
-                
-              <div className={styles.decisionMetrics}>
-                <div className={styles.metricCard}>
-                  <div className={styles.metricLabel}>Grade</div>
-                  <div className={styles.metricValue}>{decision.grade || 'N/A'}</div>
-                </div>
-                <div className={styles.metricCard}>
-                  <div className={styles.metricLabel}>Confidence</div>
-                  <div className={styles.metricValue}>{decision.confidence ? `${decision.confidence}%` : 'N/A'}</div>
-                </div>
-                <div className={styles.metricCard}>
-                  <div className={styles.metricLabel}>Agreement</div>
-                  <div className={styles.metricValue}>{decision.systemsAgreement || 'N/A'}</div>
-                  <div className={styles.metricSubtext}>{decision.systemsAnalyzed || 0} systems</div>
-                </div>
+              <div className={`${styles.metricValue} ${styles[getStatusColor(decision.action)]}`}>
+                {getStatusDisplayText(decision.action)}
               </div>
-
-              {/* Overall Reasoning */}
-              {decision.reasoning && typeof decision.reasoning === 'string' && (
-                <div className={styles.overallReasoning}>
-                  <h4>🎯 Overall Analysis:</h4>
-                  <div className={styles.reasoningText}>
-                    {decision.reasoning}
-                  </div>
-                </div>
-              )}
-
-              {/* Why Avoid & Flip Conditions */}
-              {whyAvoid && Array.isArray(whyAvoid) && whyAvoid.length > 0 && (
-                <div className={styles.avoidReasons}>
-                  <h4>⚠️ Why Avoid:</h4>
-                  <div className={styles.reasonsList}>
-                    {whyAvoid.map((reason, index) => (
-                      <div key={index} className={styles.reasonItem}>
-                        {typeof reason === 'string' ? 
-                          (getReasonCodeMessage ? getReasonCodeMessage(reason) : reason) : 
-                          JSON.stringify(reason)
-                        }
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {flipToReady && Array.isArray(flipToReady) && flipToReady.length > 0 && (
-                <div className={styles.flipConditions}>
-                  <h4>🔄 Conditions to Become Ready:</h4>
-                  <div className={styles.conditionsList}>
-                    {flipToReady.map((condition, index) => (
-                      <div key={index} className={styles.conditionItem}>
-                        {typeof condition === 'string' ? condition : JSON.stringify(condition)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Next Steps */}
-              {nextStepSummary && typeof nextStepSummary === 'string' && (
-                <div className={styles.nextSteps} style={{ marginTop: 32 }}>
-                  <h4 style={{ marginBottom: 8 }}>🚀 Next Steps</h4>
-                  <div className={styles.nextStepSummary}>
-                    {nextStepSummary}
-                  </div>
-                </div>
-              )}
+              <div className={styles.metricSubtext}>
+                Grade: {decision.grade || 'N/A'} • {decision.confidence ? `${decision.confidence}%` : 'N/A'} confidence
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Execution Plan */}
-        {execution && (
-          <div className={styles.section}>
-            <h3>📈 Execution Plan</h3>
-            <div className={styles.executionPlan}>
-              {/* Price Levels Card */}
-              <div className={styles.executionCard}>
-                <h4 className={styles.executionCardTitle}>🎯 Price Levels</h4>
-                <div className={styles.priceGrid}>
-                  <div className={styles.priceCard}>
-                    <div className={styles.priceLabel}>Entry Price</div>
-                    <div className={`${styles.priceValue} ${styles.entryPrice}`}>${execution.entry}</div>
-                  </div>
-                  <div className={styles.priceCard}>
-                    <div className={styles.priceLabel}>Stop Loss</div>
-                    <div className={`${styles.priceValue} ${styles.stopLoss}`}>${execution.stop}</div>
-                  </div>
-                  <div className={styles.priceCard}>
-                    <div className={styles.priceLabel}>Target 1</div>
-                    <div className={`${styles.priceValue} ${styles.target1}`}>${execution.target1}</div>
-                  </div>
-                  <div className={styles.priceCard}>
-                    <div className={styles.priceLabel}>Target 2</div>
-                    <div className={`${styles.priceValue} ${styles.target2}`}>${execution.target2}</div>
-                  </div>
-                  <div className={styles.priceCard}>
-                    <div className={styles.priceLabel}>Risk/Reward</div>
-                    <div className={`${styles.priceValue} ${styles.riskReward}`}>{execution.riskReward?.toFixed(2)}</div>
-                  </div>
-                </div>
+          {execution && (
+            <div className={styles.metricCard}>
+              <div className={styles.metricHeader}>
+                <span className={styles.metricIcon}>📈</span>
+                <span className={styles.metricLabel}>Entry</span>
               </div>
-
-              {/* Position Sizing Card */}
-              {execution.positionSize && (
-                <div className={styles.executionCard}>
-                  <h4 className={styles.executionCardTitle}>📊 Position Sizing</h4>
-                  <div className={styles.positionGrid}>
-                    <div className={styles.positionCard}>
-                      <div className={styles.positionIcon}>📈</div>
-                      <div className={styles.positionContent}>
-                        <div className={styles.positionLabel}>Shares</div>
-                        <div className={styles.positionValue}>{execution.positionSize.shares.toLocaleString()}</div>
-                      </div>
-                    </div>
-                    <div className={styles.positionCard}>
-                      <div className={styles.positionIcon}>💰</div>
-                      <div className={styles.positionContent}>
-                        <div className={styles.positionLabel}>Total Value</div>
-                        <div className={styles.positionValue}>${execution.positionSize.value?.toLocaleString()}</div>
-                      </div>
-                    </div>
-                    <div className={styles.positionCard}>
-                      <div className={styles.positionIcon}>⚖️</div>
-                      <div className={styles.positionContent}>
-                        <div className={styles.positionLabel}>Risk Level</div>
-                        <div className={styles.positionValue}>{execution.positionSize.risk}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className={styles.metricValue}>${execution.entry}</div>
+              <div className={styles.metricSubtext}>
+                Stop: ${execution.stop} • Target: ${execution.target1}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Risk Assessment */}
-        {risk && (
-          <div className={styles.section}>
-            <h3>⚖️ Risk Assessment</h3>
-            <div className={styles.riskAssessment}>
-              <div className={styles.riskCard}>
-                <div className={styles.riskHeader}>
-                  <div className={styles.riskIcon}>🛡️</div>
-                  <h4>Risk Metrics</h4>
-                </div>
-                <div className={styles.riskMetricsGrid}>
-                  <div className={styles.riskMetricCard}>
-                    <div className={styles.riskMetricIcon}>📊</div>
-                    <div className={styles.riskMetricContent}>
-                      <div className={styles.riskMetricLabel}>Risk Level</div>
-                      <div className={`${styles.riskMetricValue} ${styles.riskLevel} ${styles[risk.level?.toLowerCase()]}`}>
-                        {risk.level}
+          {execution?.riskReward && (
+            <div className={styles.metricCard}>
+              <div className={styles.metricHeader}>
+                <span className={styles.metricIcon}>⚖️</span>
+                <span className={styles.metricLabel}>Risk/Reward</span>
+              </div>
+              <div className={styles.metricValue}>{execution.riskReward.toFixed(2)}</div>
+              <div className={styles.metricSubtext}>
+                Position: {execution.positionSize?.shares || 'N/A'} shares
+              </div>
+            </div>
+          )}
+
+          {risk && (
+            <div className={styles.metricCard}>
+              <div className={styles.metricHeader}>
+                <span className={styles.metricIcon}>🛡️</span>
+                <span className={styles.metricLabel}>Risk Level</span>
+              </div>
+              <div className={`${styles.metricValue} ${styles[risk.level?.toLowerCase()]}`}>
+                {risk.level}
+              </div>
+              <div className={styles.metricSubtext}>
+                Max DD: {risk.maxDrawdown || 'N/A'}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Compact Sections */}
+        <div className={styles.sectionsContainer}>
+          {/* Reasoning */}
+          {decision?.reasoning && (
+            <div className={styles.compactSection}>
+              <h3 className={styles.sectionTitle}>
+                <span className={styles.sectionIcon}>🧠</span>
+                Analysis Summary
+              </h3>
+              <div className={styles.sectionContent}>
+                <p className={styles.reasoningText}>{decision.reasoning}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Execution Details */}
+          {execution && (
+            <div className={styles.compactSection}>
+              <h3 className={styles.sectionTitle}>
+                <span className={styles.sectionIcon}>📊</span>
+                Execution Plan
+              </h3>
+              <div className={styles.sectionContent}>
+                <div className={styles.executionGrid}>
+                  <div className={styles.executionItem}>
+                    <span className={styles.label}>Entry:</span>
+                    <span className={styles.value}>${execution.entry}</span>
+                  </div>
+                  <div className={styles.executionItem}>
+                    <span className={styles.label}>Stop:</span>
+                    <span className={styles.value}>${execution.stop}</span>
+                  </div>
+                  <div className={styles.executionItem}>
+                    <span className={styles.label}>Target 1:</span>
+                    <span className={styles.value}>${execution.target1}</span>
+                  </div>
+                  <div className={styles.executionItem}>
+                    <span className={styles.label}>Target 2:</span>
+                    <span className={styles.value}>${execution.target2}</span>
+                  </div>
+                  {execution.positionSize && (
+                    <>
+                      <div className={styles.executionItem}>
+                        <span className={styles.label}>Shares:</span>
+                        <span className={styles.value}>{execution.positionSize.shares?.toLocaleString()}</span>
                       </div>
-                    </div>
-                  </div>
-                  <div className={styles.riskMetricCard}>
-                    <div className={styles.riskMetricIcon}>⚡</div>
-                    <div className={styles.riskMetricContent}>
-                      <div className={styles.riskMetricLabel}>Tail Risk Score</div>
-                      <div className={styles.riskMetricValue}>{risk.tailRiskScore}</div>
-                    </div>
-                  </div>
-                  <div className={styles.riskMetricCard}>
-                    <div className={styles.riskMetricIcon}>📉</div>
-                    <div className={styles.riskMetricContent}>
-                      <div className={styles.riskMetricLabel}>Max Drawdown</div>
-                      <div className={styles.riskMetricValue}>{risk.maxDrawdown}</div>
-                    </div>
-                  </div>
+                      <div className={styles.executionItem}>
+                        <span className={styles.label}>Total Value:</span>
+                        <span className={styles.value}>${execution.positionSize.value?.toLocaleString()}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Market Context */}
-        {context && (
-          <div className={styles.section}>
-            <h3>🌐 Market Context</h3>
-            <div className={styles.marketContext}>
-              <div className={styles.contextGrid}>
-                <div className={styles.contextCard}>
-                  <div className={styles.contextCardHeader}>
-                    <div className={styles.contextIcon}>📈</div>
-                    <h4>Trend Analysis</h4>
+          {/* Market Context */}
+          {context && (
+            <div className={styles.compactSection}>
+              <h3 className={styles.sectionTitle}>
+                <span className={styles.sectionIcon}>🌐</span>
+                Market Context
+              </h3>
+              <div className={styles.sectionContent}>
+                <div className={styles.contextGrid}>
+                  <div className={styles.contextItem}>
+                    <span className={styles.label}>Trend:</span>
+                    <span className={`${styles.value} ${styles[context.trend?.toLowerCase()]}`}>
+                      {context.trend}
+                    </span>
                   </div>
-                  <div className={styles.contextContent}>
+                  {context.levels && (
+                    <>
+                      <div className={styles.contextItem}>
+                        <span className={styles.label}>Support:</span>
+                        <span className={styles.value}>${context.levels.support}</span>
+                      </div>
+                      <div className={styles.contextItem}>
+                        <span className={styles.label}>Resistance:</span>
+                        <span className={styles.value}>${context.levels.resistance}</span>
+                      </div>
+                    </>
+                  )}
+                  {context.volume && (
                     <div className={styles.contextItem}>
-                      <span className={styles.contextLabel}>Current Trend</span>
-                      <span className={`${styles.contextValue} ${styles.trend} ${styles[context.trend?.toLowerCase()]}`}>
-                        {context.trend}
-                      </span>
+                      <span className={styles.label}>Volume:</span>
+                      <span className={styles.value}>{context.volume.status} ({context.volume.multiple}x)</span>
                     </div>
-                  </div>
+                  )}
                 </div>
-
-                <div className={styles.contextCard}>
-                  <div className={styles.contextCardHeader}>
-                    <div className={styles.contextIcon}>🎯</div>
-                    <h4>Key Levels</h4>
-                  </div>
-                  <div className={styles.contextContent}>
-                    <div className={styles.contextItem}>
-                      <span className={styles.contextLabel}>Support</span>
-                      <span className={`${styles.contextValue} ${styles.support}`}>${context.levels?.support}</span>
-                    </div>
-                    <div className={styles.contextItem}>
-                      <span className={styles.contextLabel}>Resistance</span>
-                      <span className={`${styles.contextValue} ${styles.resistance}`}>${context.levels?.resistance}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {context.volume && (
-                  <div className={styles.contextCard}>
-                    <div className={styles.contextCardHeader}>
-                      <div className={styles.contextIcon}>📊</div>
-                      <h4>Volume Analysis</h4>
-                    </div>
-                    <div className={styles.contextContent}>
-                      <div className={styles.contextItem}>
-                        <span className={styles.contextLabel}>Status</span>
-                        <span className={`${styles.contextValue} ${styles.volume} ${styles[context.volume.status?.toLowerCase()]}`}>
-                          {context.volume.status}
-                        </span>
-                      </div>
-                      <div className={styles.contextItem}>
-                        <span className={styles.contextLabel}>Multiple</span>
-                        <span className={styles.contextValue}>{context.volume.multiple}x</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {context.earnings && (
-                  <div className={styles.contextCard}>
-                    <div className={styles.contextCardHeader}>
-                      <div className={styles.contextIcon}>📅</div>
-                      <h4>Earnings</h4>
-                    </div>
-                    <div className={styles.contextContent}>
-                      <div className={styles.contextItem}>
-                        <span className={styles.contextLabel}>Days Away</span>
-                        <span className={styles.contextValue}>{context.earnings.daysAway || 'N/A'}</span>
-                      </div>
-                      <div className={styles.contextItem}>
-                        <span className={styles.contextLabel}>Impact</span>
-                        <span className={`${styles.contextValue} ${styles.earningsImpact}`}>
-                          {context.earnings.impact}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Individual Systems Analysis */}
-        {systems && (
-          <div className={styles.section}>
-            <h3>🔍 Systems Analysis Breakdown</h3>
-            <div className={styles.systemsAnalysis}>
-              <div className={styles.systemsGrid}>
-                {Object.entries(systems).map(([systemKey, system]) => (
-                  <div key={systemKey} className={styles.systemCard}>
-                    <div className={styles.systemHeader}>
-                      <div className={styles.systemName}>
-                        <span className={styles.systemIcon}>🤖</span>
-                        {system.systemName || systemKey}
-                      </div>
-                      <div className={styles.systemBadges}>
-                        <div className={`${styles.systemDecision} ${styles[getStatusColor(system.decision)]}`}>
+          {/* Risk Assessment */}
+          {risk && (
+            <div className={styles.compactSection}>
+              <h3 className={styles.sectionTitle}>
+                <span className={styles.sectionIcon}>⚠️</span>
+                Risk Assessment
+              </h3>
+              <div className={styles.sectionContent}>
+                <div className={styles.riskGrid}>
+                  <div className={styles.riskItem}>
+                    <span className={styles.label}>Risk Level:</span>
+                    <span className={`${styles.value} ${styles[risk.level?.toLowerCase()]}`}>
+                      {risk.level}
+                    </span>
+                  </div>
+                  {risk.tailRiskScore && (
+                    <div className={styles.riskItem}>
+                      <span className={styles.label}>Tail Risk:</span>
+                      <span className={styles.value}>{risk.tailRiskScore}</span>
+                    </div>
+                  )}
+                  {risk.maxDrawdown && (
+                    <div className={styles.riskItem}>
+                      <span className={styles.label}>Max Drawdown:</span>
+                      <span className={styles.value}>{risk.maxDrawdown}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Next Steps */}
+          {nextStepSummary && (
+            <div className={styles.compactSection}>
+              <h3 className={styles.sectionTitle}>
+                <span className={styles.sectionIcon}>🚀</span>
+                Next Steps
+              </h3>
+              <div className={styles.sectionContent}>
+                <p className={styles.nextStepsText}>{nextStepSummary}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Why Avoid */}
+          {whyAvoid && Array.isArray(whyAvoid) && whyAvoid.length > 0 && (
+            <div className={styles.compactSection}>
+              <h3 className={styles.sectionTitle}>
+                <span className={styles.sectionIcon}>🚫</span>
+                Why Avoid
+              </h3>
+              <div className={styles.sectionContent}>
+                <div className={styles.reasonsList}>
+                  {whyAvoid.slice(0, 3).map((reason, index) => (
+                    <div key={index} className={styles.reasonItem}>
+                      {typeof reason === 'string' ? reason : JSON.stringify(reason)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Systems Analysis - Collapsed by default */}
+          {systems && Object.keys(systems).length > 0 && (
+            <div className={styles.compactSection}>
+              <h3 className={styles.sectionTitle}>
+                <span className={styles.sectionIcon}>🤖</span>
+                Systems Analysis ({Object.keys(systems).length} systems)
+              </h3>
+              <div className={styles.sectionContent}>
+                <div className={styles.systemsSummary}>
+                  {Object.entries(systems).slice(0, 3).map(([systemKey, system]) => (
+                    <div key={systemKey} className={styles.systemItem}>
+                      <div className={styles.systemHeader}>
+                        <span className={styles.systemName}>{system.systemName || systemKey}</span>
+                        <span className={`${styles.systemDecision} ${styles[getStatusColor(system.decision)]}`}>
                           {getStatusDisplayText(system.decision)}
-                        </div>
-                        {system.grade && (
-                          <div className={styles.systemGrade}>
-                            Grade: {system.grade}
-                          </div>
-                        )}
-                        {system.confidence && (
-                          <div className={styles.systemConfidence}>
-                            {Math.round((typeof system.confidence === 'number' ? system.confidence : parseFloat(system.confidence)) * 100)}%
-                          </div>
-                        )}
+                        </span>
                       </div>
-                    </div>
-                    
-                    <div className={styles.systemContent}>
-                      {/* System Reasoning */}
-                      {system.reasoning && Array.isArray(system.reasoning) && system.reasoning.length > 0 && (
-                        <div className={styles.systemReasoning}>
-                          <h5>📋 Analysis:</h5>
-                          <ul className={styles.reasoningList}>
-                            {system.reasoning.map((reason, idx) => (
-                              <li key={idx}>{typeof reason === 'string' ? reason : JSON.stringify(reason)}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Handle string reasoning */}
-                      {system.reasoning && typeof system.reasoning === 'string' && (
-                        <div className={styles.systemReasoning}>
-                          <h5>📋 Analysis:</h5>
-                          <div className={styles.reasoningText}>
-                            {system.reasoning}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Risk/Reward if available */}
-                      {system.riskReward && typeof system.riskReward === 'object' && (system.riskReward.stopLoss || system.riskReward.target1) && (
-                        <div className={styles.systemRiskReward}>
-                          <h5>⚖️ Risk/Reward:</h5>
-                          <div className={styles.riskRewardGrid}>
-                            {system.riskReward.stopLoss && (
-                              <div className={styles.rrItem}>
-                                <span>Stop Loss:</span>
-                                <span>${system.riskReward.stopLoss}</span>
-                              </div>
-                            )}
-                            {system.riskReward.target1 && (
-                              <div className={styles.rrItem}>
-                                <span>Target 1:</span>
-                                <span>${system.riskReward.target1}</span>
-                              </div>
-                            )}
-                            {system.riskReward.riskReward && system.riskReward.riskReward > 0 && (
-                              <div className={styles.rrItem}>
-                                <span>R:R Ratio:</span>
-                                <span>{parseFloat(system.riskReward.riskReward).toFixed(2)}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Execution Plan if available */}
-                      {system.executionPlan && typeof system.executionPlan === 'object' && system.executionPlan.action && (
-                        <div className={styles.systemExecution}>
-                          <h5>🎯 Execution Plan:</h5>
-                          <div className={styles.executionDetails}>
-                            <div className={styles.executionItem}>
-                              <span>Action:</span>
-                              <span className={`${styles.executionAction} ${styles[getStatusColor(system.executionPlan.action)]}`}>
-                                {system.executionPlan.action}
-                              </span>
-                            </div>
-                            {system.executionPlan.entryStrategy && (
-                              <div className={styles.executionItem}>
-                                <span>Entry Strategy:</span>
-                                <div>
-                                  {typeof system.executionPlan.entryStrategy === 'string' ? (
-                                    <span>{system.executionPlan.entryStrategy}</span>
-                                  ) : (
-                                    <div>
-                                      {system.executionPlan.entryStrategy.type && (
-                                        <div><strong>Type:</strong> {system.executionPlan.entryStrategy.type}</div>
-                                      )}
-                                      {system.executionPlan.entryStrategy.method && (
-                                        <div><strong>Method:</strong> {system.executionPlan.entryStrategy.method}</div>
-                                      )}
-                                      {system.executionPlan.entryStrategy.conditions && Array.isArray(system.executionPlan.entryStrategy.conditions) && (
-                                        <div>
-                                          <strong>Conditions:</strong>
-                                          <ul>
-                                            {system.executionPlan.entryStrategy.conditions.map((condition, idx) => (
-                                              <li key={idx}>{typeof condition === 'string' ? condition : JSON.stringify(condition)}</li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            {system.executionPlan.exitStrategy && (
-                              <div className={styles.executionItem}>
-                                <span>Exit Strategy:</span>
-                                <span>
-                                  {typeof system.executionPlan.exitStrategy === 'string' 
-                                    ? system.executionPlan.exitStrategy 
-                                    : JSON.stringify(system.executionPlan.exitStrategy)
-                                  }
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                      {system.grade && (
+                        <div className={styles.systemMeta}>
+                          Grade: {system.grade} • 
+                          {system.confidence && ` ${Math.round((typeof system.confidence === 'number' ? system.confidence : parseFloat(system.confidence)) * 100)}% confidence`}
                         </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                  {Object.keys(systems).length > 3 && (
+                    <div className={styles.moreSystems}>
+                      +{Object.keys(systems).length - 3} more systems...
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Scenario Planning */}
-        {scenarios && (
-          <div className={styles.section}>
-            <h3>🎯 Scenario Planning</h3>
-            <div className={styles.scenarioPlanning}>
-              {scenarios.breakout && (
-                <div className={styles.scenarioCard}>
-                  <h4>📈 Breakout Scenario</h4>
-                  <div className={styles.scenarioDetails}>
-                    <div className={styles.scenarioMetrics}>
-                      <div className={styles.metric}>
-                        <span>Trigger:</span>
-                        <span>${scenarios.breakout.trigger}</span>
-                      </div>
-                      <div className={styles.metric}>
-                        <span>Probability:</span>
-                        <span>{scenarios.breakout.probability}%</span>
-                      </div>
-                      <div className={styles.metric}>
-                        <span>Target:</span>
-                        <span>${scenarios.breakout.target}</span>
-                      </div>
+          {/* Scenarios Planning */}
+          {scenarios && (
+            <div className={styles.compactSection}>
+              <h3 className={styles.sectionTitle}>
+                <span className={styles.sectionIcon}>🎯</span>
+                Scenario Planning
+              </h3>
+              <div className={styles.sectionContent}>
+                <div className={styles.contextGrid}>
+                  {scenarios.breakout && (
+                    <div className={styles.contextItem}>
+                      <span className={styles.label}>Breakout (${scenarios.breakout.trigger}):</span>
+                      <span className={styles.value}>{scenarios.breakout.probability}% → ${scenarios.breakout.target}</span>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {scenarios.breakdown && (
-                <div className={styles.scenarioCard}>
-                  <h4>📉 Breakdown Scenario</h4>
-                  <div className={styles.scenarioDetails}>
-                    <div className={styles.scenarioMetrics}>
-                      <div className={styles.metric}>
-                        <span>Trigger:</span>
-                        <span>${scenarios.breakdown.trigger}</span>
-                      </div>
-                      <div className={styles.metric}>
-                        <span>Probability:</span>
-                        <span>{scenarios.breakdown.probability}%</span>
-                      </div>
-                      <div className={styles.metric}>
-                        <span>Target:</span>
-                        <span>${scenarios.breakdown.target}</span>
-                      </div>
+                  )}
+                  {scenarios.breakdown && (
+                    <div className={styles.contextItem}>
+                      <span className={styles.label}>Breakdown (${scenarios.breakdown.trigger}):</span>
+                      <span className={styles.value}>{scenarios.breakdown.probability}% → ${scenarios.breakdown.target}</span>
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        )}
-
+          )}
+        </div>
       </div>
     );
   };
 
   return (
     <div className={styles.container}>
-      <div className={styles.searchSection}>
-        <h1>Stock Analysis</h1>
-        <p>Search for a stock ticker to get comprehensive AI-powered analysis</p>
-
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>Stock Analysis</h1>
         <div className={styles.searchContainer}>
           <TickerSearch
             value={selectedTicker}
             onChange={handleTickerChange}
             onSelect={handleTickerSelect}
-            placeholder="Search for stocks (e.g., AAPL, GOOGL, TSLA)..."
+            placeholder="Search for stocks (e.g., AAPL, GOOGL)..."
           />
         </div>
       </div>
 
       {loading && (
-        <div className={styles.loading}>
+        <div className={styles.loadingState}>
           <div className={styles.spinner}></div>
-          <p>Analyzing {selectedTicker}...</p>
+          <span>Analyzing {selectedTicker}...</span>
         </div>
       )}
 
       {error && (
-        <div className={styles.error}>
-          <h3>Analysis Error</h3>
-          <p>{error}</p>
-          <button onClick={() => setError(null)} className={styles.retryButton}>
-            Dismiss
-          </button>
+        <div className={styles.errorState}>
+          <span className={styles.errorIcon}>⚠️</span>
+          <div className={styles.errorContent}>
+            <h3>Analysis Error</h3>
+            <p>{error}</p>
+            <button onClick={() => setError(null)} className={styles.dismissBtn}>
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
 
