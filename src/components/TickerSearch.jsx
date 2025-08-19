@@ -18,79 +18,14 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
-  const autoSelectedRef = useRef(null); // Track auto-selected values to prevent loops
 
   useEffect(() => {
     setSearchTerm(value || '');
-    // Reset auto-selected reference when value changes to a different ticker
-    if (autoSelectedRef.current && autoSelectedRef.current !== value) {
-      autoSelectedRef.current = null;
-    }
   }, [value]);
 
-  // Auto-select when ticker is prepopulated (e.g., from watchlist)
   useEffect(() => {
     let active = true;
-    
-    // If we have a prepopulated value that looks like a ticker symbol and onSelect is provided
-    // and we haven't already auto-selected this value
-    if (value && value.length >= 2 && onSelect && autoSelectedRef.current !== value) {
-      // Search for the ticker to get its details
-      searchTickers(value)
-        .then(res => {
-          if (!active) return;
-          const data = res.data || res || [];
-          let filtered = Array.isArray(data) ? data : [];
-          
-          if (instrumentType && quoteTypeMap[instrumentType]) {
-            filtered = filtered.filter(
-              t => (t.quoteType || '').toUpperCase() === quoteTypeMap[instrumentType]
-            );
-          }
-          
-          // Find exact match for the prepopulated ticker
-          const exactMatch = filtered.find(ticker => 
-            ticker.symbol && ticker.symbol.toUpperCase() === value.toUpperCase()
-          );
-          
-          if (exactMatch) {
-            // Mark this value as auto-selected to prevent loops
-            autoSelectedRef.current = value;
-            
-            // Auto-select the exact match to populate company name, currency, etc.
-            const companyName = exactMatch.name || exactMatch.shortname || exactMatch.longname || '';
-            let currency = 'USD';
-            if (exactMatch.exchDisp) {
-              const exch = exactMatch.exchDisp.toLowerCase();
-              if (exch.includes('nse') || exch.includes('bse') || exch.includes('bombay')) {
-                currency = 'INR';
-              }
-            }
-            onSelect({ 
-              symbol: exactMatch.symbol, 
-              name: companyName, 
-              currency, 
-              sector: exactMatch.sector?.toUpperCase() || '' 
-            });
-            
-            // Hide suggestions dropdown after auto-selection
-            setSuggestions([]);
-            setShowSuggestions(false);
-            setActiveSuggestion(-1);
-          }
-        })
-        .catch(() => {
-          // Silently fail for prepopulated values - don't show suggestions
-        });
-    }
-    
-    return () => { active = false; };
-  }, [value, onSelect, instrumentType]); // Depend on value, onSelect, and instrumentType
-
-  useEffect(() => {
-    let active = true;
-    // Don't show suggestions if this value was auto-selected from prepopulation
-    if (searchTerm.length >= 1 && autoSelectedRef.current !== searchTerm) {
+    if (searchTerm.length >= 1) {
       searchTickers(searchTerm)
         .then(res => {
           if (!active) return;
