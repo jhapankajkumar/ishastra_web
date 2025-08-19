@@ -1,20 +1,9 @@
 import React from "react";
 import TickerSearch from "../TickerSearch";
-import { getCurrentPrice, getATR, getTechnicalIndicators } from '../../api/tickerApi';
 import RiskManagementSection from './RiskManagementSection';
 
-export default function TradePlanSection({ form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades }) {
-  console.log("TradePlanSection Rendered");
-  // --- useRef guards to prevent infinite loops ---
-  const hasSetEntryQty = React.useRef(false);
-  const hasSetStopLoss = React.useRef(false);
-  const hasSetTargets = React.useRef(false);
-  // --- ATR fetch state ---
-  const [loadingATR, setLoadingATR] = React.useState(false);
-  const [currentPrice, setCurrentPrice] = React.useState(null);
-  const [loadingPrice, setLoadingPrice] = React.useState(false);
-
-
+export default function TradePlanSection({ form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades, isPopulated, capitalData, capitalLoading }) {
+  // console.log("TradePlanSection Rendered");
 
   // --- Logic for dynamic fields and calculations ---
   // Set default stop loss method as ATR
@@ -29,16 +18,22 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
 
   // Set default market to US if not set
   const market = form.market || "US";
-  // Set initial trading account value
-  const initialAccountValue = market === "India" ? 1000000 : 120000;
-  // Calculate open trades invested amount
-  const openInvested = openTrades && Array.isArray(openTrades) ? openTrades.reduce((sum, t) => {
-    const qty = parseFloat(t.entryFilledShares) || 0;
-    const price = parseFloat(t.entryOrderPrice) || 0;
-    return sum + qty * price;
-  }, 0) : 0;
-  // Calculate remaining account balance
-  const accountBalance = initialAccountValue - openInvested;
+  
+  // Get actual capital data or fallback to hardcoded values
+  let remainingCapital = 0;
+  if (capitalData && !capitalLoading) {
+    // Find capital data for the current market's currency
+    const currency = market === "India" ? "INR" : "USD";
+    const capitalInfo = capitalData.find(cap => cap.currency === currency);
+    remainingCapital = capitalInfo ? capitalInfo.remaining : (market === "India" ? 1000000 : 120000);
+  } else {
+    // Fallback to hardcoded values if capital data is not available
+    remainingCapital = market === "India" ? 2000000 : 200000;
+  }
+  
+  // Calculate remaining account balance (using actual remaining capital from API)
+  const accountBalance = remainingCapital;
+  console.log(`Account Balance: ${accountBalance}`);
 
   // Set default risk % per trade to 1.5 if not set
   const riskPerTrade = form.riskPerTrade || "1.5%";
@@ -72,11 +67,24 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
     stopLossValue = entryPrice * (parseFloat(fixedPercent) / 100);
   }
 
-  console.log(`Stop Loss Value: ${stopLossValue}, Entry Price: ${entryPrice}, Direction: ${direction}`);
+  // console.log(`Stop Loss Value: ${stopLossValue}, Entry Price: ${entryPrice}, Direction: ${direction}`);
+  
+  // Calculate actual risk per share (difference between entry price and stop loss price)
+  let riskPerShare = 0;
+  if (stopLossMethod === "ATR" && atrValue && entryPrice) {
+    const atrStop = (parseFloat(atrValue) || 0) * atrMultiplier;
+    riskPerShare = atrStop; // This is the actual risk per share
+  } else if (stopLossMethod === "Fixed %" && fixedPercent && entryPrice) {
+    riskPerShare = stopLossValue; // For fixed %, stopLossValue is already the risk per share
+  } else if (stopLossMethod === "Fixed Value" && entryPrice) {
+    riskPerShare = stopLossValue; // For fixed value, stopLossValue is the risk per share
+  }
+  
   // Calculate max allowed QTY based on risk per trade
   let maxAllowedQty = 0;
-  if (stopLossValue > 0 && entryPrice > 0) {
-    maxAllowedQty = Math.floor(riskValue / stopLossValue);
+  if (riskPerShare > 0) {
+    maxAllowedQty = Math.floor(riskValue / riskPerShare);
+    console.log(`Quantity calculation: riskValue=${riskValue}, riskPerShare=${riskPerShare}, maxAllowedQty=${maxAllowedQty}`);
   }
 
   // Calculate auto QTY if not set or if entryPrice/stopLossValue changes
@@ -88,13 +96,28 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
   let stopLossPrice = "";
   // If the calculated autoQty changes and user hasn't entered a value, update the form value
   React.useEffect(() => {
-    console.log("Auto Qty useEffect triggered", { autoQty });
+    // Skip auto-calculation if data is populated from watchlist
+    if (isPopulated) {
+      console.log('🔒 Skipping quantity auto-calculation - data from watchlist');
+      return;
+    }
+    
+    // Only auto-calculate quantity if it's empty or zero
+    // If there's already a meaningful value, preserve it (from watchlist or user input)
     const current = form.entryFilledShares;
-    if (current !== String(autoQty)) {
-        console.log("Auto Qty useEffect triggered after", { autoQty });
+    const hasValidQuantity = current && current !== "" && current !== "0" && parseFloat(current) > 0;
+    
+    if (hasValidQuantity) {
+      console.log(`Preserving existing quantity: ${current}`);
+      return;
+    }
+    
+    // Only calculate if we have no valid quantity and autoQty is available
+    if (autoQty > 0) {
+        console.log(`Auto-calculating entryFilledShares: ${current} -> ${autoQty}`);
         handleChange({ target: { name: "entryFilledShares", value: String(autoQty) } });
-      }
-  }, [autoQty, stopLossValue]);
+    }
+  }, [autoQty, stopLossValue, form.entryFilledShares, handleChange, isPopulated]);
 
   // Warn if user QTY > maxAllowedQty
   const qtyWarning = parseFloat(form.entryFilledShares) > maxAllowedQty;
@@ -122,26 +145,33 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
     }
   }
 
-  // Reset hasSetStopLoss ref if any dependency changes that affects stopLossPrice calculation
   React.useEffect(() => {
-    hasSetStopLoss.current = false;
-    hasSetTargets.current = false;
-  }, [atrMultiplier, atrValue, entryPrice, direction, stopLossMethod, fixedPercent, form.stopLossPrice]);
-
-  React.useEffect(() => {
-    console.log("StopLoss useEffect triggered", { stopLossPrice });
-    if (!hasSetStopLoss.current && stopLossPrice && stopLossPrice !== form.stopLossPrice) {
-      if (form.stopLossPrice !== stopLossPrice) {
-        handleChange({
-          target: {
-            name: "stopLossPrice",
-            value: stopLossPrice,
-          },
-        });
-      }
-      hasSetStopLoss.current = true;
+    // Skip auto-calculation if data is populated from watchlist
+    if (isPopulated) {
+      console.log('🔒 Skipping stop loss auto-calculation - data from watchlist');
+      return;
     }
-  }, [stopLossPrice, form.stopLossPrice, handleChange]);
+    
+    // Only auto-calculate stop loss if it's empty or zero
+    // If there's already a meaningful value, preserve it (from watchlist or user input)
+    const hasValidStopLoss = form.stopLossPrice && form.stopLossPrice !== "" && form.stopLossPrice !== "0" && parseFloat(form.stopLossPrice) > 0;
+    
+    if (hasValidStopLoss) {
+      console.log(`Preserving existing stop loss: ${form.stopLossPrice}`);
+      return;
+    }
+    
+    // Only calculate if we have no valid stop loss and calculated stopLossPrice is available
+    if (stopLossPrice && stopLossPrice !== "0") {
+      console.log(`Auto-calculating stopLossPrice: ${form.stopLossPrice} -> ${stopLossPrice}`);
+      handleChange({
+        target: {
+          name: "stopLossPrice",
+          value: stopLossPrice,
+        },
+      });
+    }
+  }, [stopLossPrice, form.stopLossPrice, handleChange, isPopulated]);
 
 
   // Calculate targets (1:2, 1:3, 1:4)
@@ -155,9 +185,25 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
   });
 
   React.useEffect(() => {
-    console.log("Target calculation triggered", { entryPrice, stopLossValue });
-    if (!entryPrice || !stopLossValue || hasSetTargets.current) return;
+    // Skip auto-calculation if data is populated from watchlist
+    if (isPopulated) {
+      console.log('🔒 Skipping targets auto-calculation - data from watchlist');
+      return;
+    }
+    
+    // Only auto-calculate targets if they're empty or zero
+    // If there are already meaningful values, preserve them (from watchlist or user input)
+    if (!entryPrice || !stopLossValue) return;
 
+    const hasValidTargets = (form.target1 && form.target1 !== "" && form.target1 !== "0" && parseFloat(form.target1) > 0) ||
+                           (form.target2 && form.target2 !== "" && form.target2 !== "0" && parseFloat(form.target2) > 0);
+
+    if (hasValidTargets) {
+      console.log(`Preserving existing targets: T1=${form.target1}, T2=${form.target2}, T3=${form.target3}`);
+      return;
+    }
+
+    // Calculate targets only if we have no valid targets
     const entry = parseFloat(entryPrice);
     const risk = parseFloat(stopLossValue); // Risk per share
 
@@ -165,12 +211,11 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
     const t2 = (entry + risk * 3).toFixed(2);
     const t3 = (entry + risk * 4).toFixed(2);
 
-    if (form.target1 !== t1) handleChange({ target: { name: "target1", value: t1 } });
-    if (form.target2 !== t2) handleChange({ target: { name: "target2", value: t2 } });
-    if (form.target3 !== t3) handleChange({ target: { name: "target3", value: t3 } });
-
-    hasSetTargets.current = true;
-  }, [entryPrice, stopLossValue, handleChange]);
+    console.log(`Auto-calculating targets: T1=${t1}, T2=${t2}, T3=${t3}`);
+    handleChange({ target: { name: "target1", value: t1 } });
+    handleChange({ target: { name: "target2", value: t2 } });
+    handleChange({ target: { name: "target3", value: t3 } });
+  }, [entryPrice, stopLossValue, form.target1, form.target2, form.target3, handleChange, isPopulated]);
 
   // Set default entry date as today if not set
   const entryDate = form.entryDate || today;
@@ -222,13 +267,6 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
           <div className={styles.fieldGroup}>
             <label className={styles.label}>Average Price ({market === "India" ? "₹" : "$"})</label>
             <input type="text" name="entryOrderPrice" value={form.entryOrderPrice || ""} onChange={handleChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} placeholder="0.00" disabled={entryDisabled} />
-            {/* Show current price below input if available */}
-            {loadingPrice && <div style={{ color: '#7ecfff', fontSize: '0.95em', marginTop: 2 }}>Fetching current price…</div>}
-            {currentPrice && !loadingPrice && (
-              <div style={{ color: '#b0b8c9', fontSize: '0.95em', marginTop: 2 }}>
-                Current Price: <b style={{ color: '#7ecfff' }}>{currentPrice}</b>
-              </div>
-            )}
           </div>
           {/* Quantity */}
           <div className={styles.fieldGroup}>
@@ -254,8 +292,6 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
         entryDisabled={entryDisabled}
         today={today}
         styles={styles}
-        currentPrice={currentPrice}
-        loadingPrice={loadingPrice}
         atrValue={atrValue}
         atrMultiplier={atrMultiplier}
         stopLossMethod={stopLossMethod}

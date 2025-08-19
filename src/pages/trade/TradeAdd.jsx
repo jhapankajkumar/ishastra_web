@@ -4,12 +4,13 @@ import TradePlanSection from "../../components/tradeLogSections/TradePlanSection
 import NotesSection from "../../components/tradeLogSections/NotesSection";
 import PostTradeAnalysisSection from "../../components/tradeLogSections/PostTradeAnalysisSection";
 import TechnicalIndicators from "../../components/TechnicalIndicators";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import styles from "./TradeAdd.module.css";
 import PageHeader from "../../components/PageHeader";
 import { createTrade, updateTrade, addPostAnalysis } from '../../api/tradeApi';
 import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
 import { getCurrentPrice, getATR, getTechnicalIndicators } from '../../api/tickerApi';
+import { getCapitalInfo } from '../../api/capitalApi';
 import { useNotification } from '../../components/NotificationProvider';
 import ErrorPage from '../../components/ErrorPage';
 import { getTickerBySymbol } from '../../data/tickerData';
@@ -53,6 +54,7 @@ const initialState = {
   exitLessons: "",
   exitConfidence: "",
   exitNotes: "",
+  notes: "", // Add missing notes field
   tradeStatus: "Planned",
   tradeSetupId: 2001, // Use tradeSetupId directly
 };
@@ -111,6 +113,42 @@ function mapTradeDataToForm(tradeData) {
   };
 }
 
+function mapWatchlistDataToForm(watchlistData) {
+  // Map watchlist data structure to form fields
+  // watchlistData comes from WatchlistToTradeConverter.convertWatchlistToTradeEntryForm()
+  // console.log('🔄 Mapping watchlist data to form:', watchlistData);
+
+  const mappedForm = {
+    ...initialState,
+    ticker: watchlistData.tickerSymbol || "",
+    companyName: watchlistData.tickerName || "",
+    instrumentType: watchlistData.instrumentType || "Stocks",
+    positionType: watchlistData.positionType || "Swing",
+    direction: "Long", // Watchlist is always Long positions for BUY signals
+    reasonForEntry: watchlistData.reasonForEntry || "",
+    entryDate: watchlistData.entryDate || new Date().toISOString().split('T')[0],
+    entryOrderPrice: String(watchlistData.averagePrice || ""),
+    entryFilledShares: String(watchlistData.quantity || ""),
+    setupType: String(watchlistData.setupType || ""), // Convert to string for form compatibility
+    riskPerTrade: watchlistData.riskPercent || "1.5%",
+    stopLossPrice: String(watchlistData.stopLossPrice || ""),
+    stopLossMethod: watchlistData.stopLossMethod || "Manual",
+    atrMultiplier: watchlistData.atrMultiplier || 1.5,
+    atrValue: String(watchlistData.atrValue || ""),
+    target1: String(watchlistData.target1 || ""),
+    target2: String(watchlistData.target2 || ""),
+    target3: String(watchlistData.target3 || ""),
+    setupConfidence: watchlistData.setupConfidence || "",
+    timeframesUsed: watchlistData.timeframeUsed ? [watchlistData.timeframeUsed] : ["Daily"],
+    notes: watchlistData.notes || "", // Map notes field (should contain exit conditions)
+    tradeStatus: "Planned",
+    currency: watchlistData.tickerSymbol && (watchlistData.tickerSymbol.includes('.NS') || watchlistData.tickerSymbol.includes('.BSE') || watchlistData.tickerSymbol.includes('.BO')) ? "INR" : "USD"
+  };
+  
+  // console.log('✅ Mapped form data:', mappedForm);
+  return mappedForm;
+}
+
 export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
 
   const [form, setForm] = useState(tradeData ? mapTradeDataToForm(tradeData) : initialState);
@@ -124,8 +162,13 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
   const [entryDisabled, setEntryDisabled] = useState(false);
   const [exitDisabled, setExitDisabled] = useState(false);
   const [postDisabled, setPostDisabled] = useState(false);
+  const [showPrefilledNotification, setShowPrefilledNotification] = useState(false);
+  const [capitalData, setCapitalData] = useState(null);
+  const [capitalLoading, setCapitalLoading] = useState(false);
   const notification = useNotification();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isPopulated, setIsPopulated] = useState(false);
 
   // Mode helpers
   const isAdd = mode === 'add';
@@ -143,10 +186,14 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
     } else if (type === 'file') {
       setForm((prev) => ({ ...prev, [name]: files }));
     } else {
-      console.log(`Updating field: ${name} with value: ${value}`); // Debug log
+      // console.log(`Updating field: ${name} with value: ${value}`); // Debug log
       if (name === 'setupType') {
         // Special handling for setupType to also set setupName
         setForm((prev) => ({ ...prev, tradeSetupId: e.target.setupId }));
+      } else if (name === 'timeframesUsed') {
+        // Special handling for timeframesUsed to maintain it as an array
+        setForm((prev) => ({ ...prev, [name]: value ? [value] : [] }));
+        return;
       }
       
       setForm((prev) => ({ ...prev, [name]: value }));
@@ -162,12 +209,24 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
       symbol = tickerObj.symbol;
       companyName = tickerObj.name || '';
     }
+    
+    // Set currency based on exchange
     if (symbol.includes('.NS') || symbol.includes('.BSE') || symbol.includes('.BO')) {
       setForm((prev) => ({ ...prev, currency: "INR" }));
     } else {
       setForm((prev) => ({ ...prev, currency: "USD" }));
     }
-    setForm((prev) => ({ ...prev, ticker: symbol, companyName, entryFilledShares: "" }));
+    
+    // If data is from watchlist, only update ticker and company name
+    // Don't override quantity or risk management values
+    if (isPopulated) {
+      console.log('🔒 Preserving watchlist data - only updating ticker and company name');
+      setForm((prev) => ({ ...prev, ticker: symbol, companyName }));
+      // return; // Exit early to preserve watchlist values
+    }
+    
+    // For manual ticker selection (not from watchlist), clear quantity and fetch fresh data
+    setForm((prev) => ({ ...prev, ticker: symbol, companyName }));
 
     // Calculate period for ATR: last 30 days from today
     const today = new Date();
@@ -215,6 +274,73 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
     });
     return () => { mounted = false; };
   }, []);
+
+  // Fetch capital information on mount
+  useEffect(() => {
+    let mounted = true;
+    setCapitalLoading(true);
+    
+    getCapitalInfo()
+      .then((response) => {
+        if (mounted && response.success) {
+          setCapitalData(response.data);
+          console.log('💰 Capital data loaded:', response.data);
+        }
+      })
+      .catch((error) => {
+        if (mounted) {
+          console.error('Error fetching capital information:', error);
+          // Fall back to default values if API fails
+          setCapitalData([
+            { currency: "USD", remaining: 120000 },
+            { currency: "INR", remaining: 1000000 }
+          ]);
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setCapitalLoading(false);
+        }
+      });
+    
+    return () => { mounted = false; };
+  }, []);
+
+  // Handle prefilled data from watchlist
+  useEffect(() => {
+    const locationState = location?.state;
+    
+    if (locationState?.prefilledData && locationState?.source === 'watchlist') {
+      // console.log('📋 Loading pre-filled data from watchlist:', locationState.prefilledData);
+      setIsPopulated(true);
+      // Map the watchlist data to form format
+      const mappedData = mapWatchlistDataToForm(locationState.prefilledData);
+      console.log('Mapped Target1', mappedData.target1);
+      console.log('Target2', mappedData.target2);
+      console.log('Stop Loss', mappedData.stopLossPrice);
+      // console.log('🔄 Mapped data for form:', mappedData);
+      
+      // Set the form data with pre-filled values
+      setForm(prevData => {
+        const newFormData = {
+          ...prevData,
+          ...mappedData
+        };
+        // console.log('✅ Final form data:', newFormData);
+        return newFormData;
+      });
+      
+      // Show notification that form is pre-filled
+      setShowPrefilledNotification(true);
+      
+      // Auto-hide notification after 5 seconds
+      setTimeout(() => {
+        setShowPrefilledNotification(false);
+      }, 5000);
+      
+      // console.log('🎯 Form successfully pre-filled from watchlist data');
+    }
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -275,11 +401,28 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
 
   return (
     <div className={styles.container}>
+      {showPrefilledNotification && (
+        <div className={styles.prefilledNotification}>
+          <div className={styles.notificationContent}>
+            <span className={styles.notificationIcon}>✅</span>
+            <div>
+              <strong>Form pre-filled from Watchlist</strong>
+              <p>Trade data has been automatically populated from {location?.state?.sourceSymbol} analysis</p>
+            </div>
+            <button 
+              className={styles.notificationClose}
+              onClick={() => setShowPrefilledNotification(false)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
       <div className={styles.formContainer}>
         <form onSubmit={handleSubmit}>
           <TradeContextSection {...{form, handleChange, isReview, isUpdate, setups, setupsLoaded, entryDisabled, styles}} />
           <div className={styles.sectionDivider} />
-          <TradePlanSection {...{form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades}} />
+          <TradePlanSection {...{form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades, isPopulated, capitalData, capitalLoading}} />
           <div className={styles.sectionDivider} />
           {form.ticker && (
             <>

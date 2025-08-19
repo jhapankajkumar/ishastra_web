@@ -7,7 +7,13 @@ export default function NotesSection(props) {
       <h2 className={styles.sectionTitle}>Notes & Entry Context</h2>
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Timeframe Used</label>
-        <select name="timeframesUsed" value={form.timeframesUsed} onChange={handleChange} className={styles.select} disabled={entryDisabled}>
+        <select 
+          name="timeframesUsed" 
+          value={Array.isArray(form.timeframesUsed) ? (form.timeframesUsed[0] || "") : (form.timeframesUsed || "")} 
+          onChange={handleChange} 
+          className={styles.select} 
+          disabled={entryDisabled}
+        >
           <option value="">Select Timeframe</option>
           <option value="Daily">Daily</option>
           <option value="Weekly">Weekly</option>

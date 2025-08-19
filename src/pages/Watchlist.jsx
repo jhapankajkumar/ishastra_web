@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getWatchlist } from '../api/analysisApi';
+import { convertWatchlistToTradeEntryForm, validateWatchlistForConversion, hasBuySignal } from '../common/WatchlistToTradeConverter';
 import styles from './Watchlist.module.css';
 
 const Watchlist = () => {
@@ -49,6 +50,43 @@ const Watchlist = () => {
 
   const handleStockClick = (symbol) => {
     navigate(`/stock-detail/${symbol}`);
+  };
+
+  const handleCreateTrade = (stock, event) => {
+    event.stopPropagation(); // Prevent triggering stock card click
+    
+    try {
+      // Validate the watchlist item
+      const validation = validateWatchlistForConversion(stock);
+      
+      if (!validation.isValid) {
+        console.error('Validation failed:', validation.errors);
+        alert(`Cannot create trade: ${validation.errors.join(', ')}`);
+        return;
+      }
+      
+      if (validation.warnings.length > 0) {
+        console.warn('Conversion warnings:', validation.warnings);
+      }
+      
+      // Convert watchlist item to trade form data
+      const tradeFormData = convertWatchlistToTradeEntryForm(stock);
+      
+    //   console.log('🎯 Converted trade data:', tradeFormData);
+      
+      // Navigate to trade entry form with pre-filled data
+      navigate('/trades/new', { 
+        state: { 
+          prefilledData: tradeFormData,
+          source: 'watchlist',
+          sourceSymbol: stock.symbol
+        } 
+      });
+      
+    } catch (error) {
+      console.error('Error converting watchlist to trade:', error);
+      alert('Failed to create trade. Please try again.');
+    }
   };
 
   const getDecisionBadgeClass = (action) => {
@@ -218,7 +256,18 @@ const Watchlist = () => {
               <span className={styles.lastAnalyzed}>
                 Last analyzed: {new Date(stock.lastAnalyzedAt).toLocaleDateString()}
               </span>
-              <span className={styles.clickHint}>Click for details →</span>
+              <div className={styles.footerActions}>
+                {hasBuySignal(stock) && (
+                  <button 
+                    className={styles.createTradeBtn}
+                    onClick={(e) => handleCreateTrade(stock, e)}
+                    title="Create trade entry from this BUY signal"
+                  >
+                    📝 Create Trade
+                  </button>
+                )}
+                <span className={styles.clickHint}>Click for details →</span>
+              </div>
             </div>
           </div>
         ))}

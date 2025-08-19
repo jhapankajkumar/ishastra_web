@@ -315,6 +315,34 @@
   color: var(--text-muted);
 }
 
+.footerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.createTradeBtn {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.createTradeBtn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
 .clickHint {
   color: var(--btn-primary-bg);
   font-weight: 500;
@@ -448,5 +476,16 @@
   .stockFooter {
     flex-direction: column;
     gap: 0.5rem;
+    align-items: stretch;
+  }
+  
+  .footerActions {
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .createTradeBtn {
+    font-size: 0.7rem;
+    padding: 5px 10px;
   }
 }
