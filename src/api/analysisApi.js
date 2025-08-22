@@ -59,9 +59,9 @@ export const getUnifiedAnalysis = async (symbol, period = '3mo', capital = 12000
  */
 export const getWatchlist = async () => {
   try {
-    // const response = await AnalysisAPI_Instance.get('/watchlist');
-    // return 
-    return getWatchlistData();
+    const response = await AnalysisAPI_Instance.get('/watchlist');
+    return response.data;
+    // return getWatchlistData();
   } catch (error) {
     console.error('Error fetching watchlist:', error);
     throw error;

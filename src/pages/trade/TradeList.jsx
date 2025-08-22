@@ -25,31 +25,42 @@ export default function TradeList() {
   const [tradeToDelete, setTradeToDelete] = useState(null);
   const notification = useNotification();
 
-  useEffect(() => {
+  const loadTrades = async () => {
     setLoading(true);
-    getAllTrades()
-      .then(async res => {
-        // For each trade, fetch its exit transactions and attach as exit_transactions
-        const tradesWithExits = await Promise.all(res.data.map(async trade => {
-          try {
-            const txRes = await getTradeTransactions(trade.id);
-            // Only keep exit transactions
-            const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
-            return { ...trade, exitTransactions: exitTx };
-          } catch (e) {
-            return { ...trade, exitTransactions: [] };
-          }
-        }));
-        setTrades(tradesWithExits);
-        setError(null);
-      })
-      .catch(err => {
-        console.error('Failed to fetch trades:', err);
-        setError(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const res = await getAllTrades();
+      // For each trade, fetch its exit transactions and attach as exit_transactions
+      const tradesWithExits = await Promise.all(res.data.map(async trade => {
+        try {
+          const txRes = await getTradeTransactions(trade.id);
+          // Only keep exit transactions
+          const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
+          return { ...trade, exitTransactions: exitTx };
+        } catch (e) {
+          return { ...trade, exitTransactions: [] };
+        }
+      }));
+      setTrades(tradesWithExits);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch trades:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTrades();
+
+    // Set up auto-refresh every 5 minutes
+    const interval = setInterval(() => {
+      console.log('Auto-refreshing trades...');
+      loadTrades();
+    }, 5 * 60 * 1000); // 5 minutes in milliseconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
   const handleEdit = (id) => {
@@ -130,29 +141,7 @@ export default function TradeList() {
 
   const handleRetry = () => {
     setError(null);
-    setLoading(true);
-    getAllTrades()
-      .then(async res => {
-        const tradesWithExits = await Promise.all(res.data.map(async trade => {
-          try {
-            const txRes = await getTradeTransactions(trade.id);
-            const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
-            return { ...trade, exitTransactions: exitTx };
-          } catch (e) {
-            return { ...trade, exitTransactions: [] };
-          }
-        }));
-        const sorted = [...tradesWithExits].sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
-        setTrades(sorted);
-        setError(null);
-      })
-      .catch(err => {
-        console.error('Failed to fetch trades:', err);
-        setError(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    loadTrades();
   };
 
   const formatDate = (dateStr) => {
