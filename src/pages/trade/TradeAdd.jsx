@@ -185,17 +185,7 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
       setForm((prev) => ({ ...prev, [name]: checked }));
     } else if (type === 'file') {
       setForm((prev) => ({ ...prev, [name]: files }));
-    } else {
-      // console.log(`Updating field: ${name} with value: ${value}`); // Debug log
-      if (name === 'setupType') {
-        // Special handling for setupType to also set setupName
-        setForm((prev) => ({ ...prev, tradeSetupId: e.target.setupId }));
-      } else if (name === 'timeframesUsed') {
-        // Special handling for timeframesUsed to maintain it as an array
-        setForm((prev) => ({ ...prev, [name]: value ? [value] : [] }));
-        return;
-      }
-      
+    } else { 
       setForm((prev) => ({ ...prev, [name]: value }));
     }
   };
@@ -344,11 +334,6 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Validate setup selection
-    if (!form.setupType || form.setupType === "") {
-      notification.error("Please select a trade setup before submitting.");
-      return;
-    }
     try {
       if (isAdd) {
         await createTrade(formDataForBackend);
@@ -420,8 +405,8 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
       )}
       <div className={styles.formContainer}>
         <form onSubmit={handleSubmit}>
-          <TradeContextSection {...{form, handleChange, isReview, isUpdate, setups, setupsLoaded, entryDisabled, styles}} />
-          <div className={styles.sectionDivider} />
+          {/* <TradeContextSection {...{form, handleChange, isReview, isUpdate, setups, setupsLoaded, entryDisabled, styles}} /> */}
+          {/* <div className={styles.sectionDivider} /> */}
           <TradePlanSection {...{form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades, isPopulated, capitalData, capitalLoading}} />
           <div className={styles.sectionDivider} />
           {form.ticker && (

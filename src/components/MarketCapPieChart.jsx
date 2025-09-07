@@ -6,7 +6,6 @@ import {
   Tooltip,
   Legend
 } from "chart.js";
-import { useTheme } from '../contexts/ThemeContext';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -27,16 +26,8 @@ const palette = [
 ];
 
 const MarketCapPieChart = ({ investments }) => {
-  const { theme } = useTheme();
   const { labels, data } = getMarketCapData(investments);
-  
-  // Get colors based on theme
-  const textColor = theme === 'light' ? '#6B7280' : '#9CA3AF';
-  const borderColor = theme === 'light' ? '#FFFFFF' : '#1F2937';
-  const mutedTextColor = theme === 'light' ? '#9CA3AF' : '#6B7280';
-  
-  if (!labels.length) return <div style={{ color: mutedTextColor, fontSize: 13 }}>No market cap data</div>;
-  
+  if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 13 }}>No market cap data</div>;
   return (
     <Pie
       data={{
@@ -46,7 +37,7 @@ const MarketCapPieChart = ({ investments }) => {
             data,
             backgroundColor: palette,
             borderWidth: 2,
-            borderColor: borderColor,
+            borderColor: '#181F2A',
             hoverOffset: 8
           }
         ]
@@ -56,7 +47,7 @@ const MarketCapPieChart = ({ investments }) => {
           legend: {
             display: true,
             position: 'right',
-            labels: { color: textColor, font: { size: 10 } }
+            labels: { color: '#E5E7EB', font: { size: 10 } }
           },
           tooltip: { callbacks: { label: ctx => `${ctx.label}: ₹${ctx.parsed.toLocaleString()}` } }
         },

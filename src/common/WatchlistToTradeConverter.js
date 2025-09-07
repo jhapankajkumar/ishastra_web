@@ -148,14 +148,6 @@ export function validateWatchlistForConversion(watchlistItem) {
     errors.push("Symbol is required");
   }
 
-  // Check for BUY signal - check both new format and existing format
-  const hasBuyInSystems = watchlistItem?.systemsData && 
-    Object.values(watchlistItem.systemsData).some(s => s?.decision === "BUY");
-  const hasBuyDecision = watchlistItem?.decisionAction === "BUY";
-  
-  if (!hasBuyInSystems && !hasBuyDecision) {
-    errors.push("No BUY signal found");
-  }
 
   // Check for optional data
   if (!watchlistItem?.executionData?.entry && !watchlistItem?.currentPrice) {

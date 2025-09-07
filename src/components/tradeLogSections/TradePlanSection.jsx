@@ -273,13 +273,7 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
             <label className={styles.label}>Quantity</label>
             <input type="text" name="entryFilledShares" value={form.entryFilledShares || ""} onChange={handleChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} placeholder="100" disabled={entryDisabled} />
           </div>
-          <div className={styles.fieldGroup}>
-            <label className={styles.label}>Position</label>
-            <select name="direction" value={form.direction} onChange={handleChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} disabled={entryDisabled}>
-              <option value="Long">Long (Buy)</option>
-              <option value="Short">Short (Sell)</option>
-            </select>
-          </div>
+          
           <div className={styles.fieldGroup}>
             <label className={styles.label}>Entry Commission ({market === "India" ? "₹" : "$"})</label>
             <input type="number" name="entryCommission" value={form.entryCommission || 0} onChange={handleChange} className={styles.input} placeholder="0" min="0" disabled={entryDisabled} />

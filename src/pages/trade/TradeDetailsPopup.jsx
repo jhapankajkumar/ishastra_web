@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ImageGallery from "../../components/ImageGallery";
 import styles from "./TradeDetailsPopup.module.css";
-import { getTradeTransactions } from '../../api/tradeApi';
 import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
 import { useTheme } from "../../contexts/ThemeContext";
 import config from "../../config/environment";
@@ -10,7 +9,9 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   const { theme } = useTheme();
   const [exitTactics, setExitTactics] = useState([]);
   const [setups, setSetups] = useState([]);
-  const [exitTransactions, setExitTransactions] = useState([]);
+
+  // Use embedded transaction data from trade object
+  const exitTransactions = trade?.tradeTransactions?.filter(tx => tx.transactionType === 'Exit') || [];
 
   useEffect(() => {
     fetchExitTactics()
@@ -23,18 +24,6 @@ export default function TradeDetailsPopup({ trade, onClose }) {
       .then(data => setSetups(data))
       .catch(() => setSetups([]));
   }, []);
-
-  useEffect(() => {
-    // Fetch exit transactions for this trade
-    if (trade?.id) {
-      getTradeTransactions(trade.id)
-        .then(res => {
-          const exitTx = (res.data || []).filter(tx => tx.transactionType === 'Exit');
-          setExitTransactions(exitTx);
-        })
-        .catch(() => setExitTransactions([]));
-    }
-  }, [trade?.id]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
@@ -148,6 +137,10 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   const entryImages = trade.tradeImages?.filter(img => img.imageType === "entry") || [];
   const exitImages = trade.tradeImages?.filter(img => img.imageType === "exit") || [];
   const postImages = trade.tradeImages?.filter(img => img.imageType === "post") || [];
+
+  // Debug logging for analysis data
+  console.log('Trade analysis data:', trade.analysis);
+  console.log('Trade object:', trade);
 
   return (
     <div className={`${styles.overlay} ${theme}`}>
@@ -490,6 +483,283 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* AI Analysis & Action Items - Always show if analysis exists */}
+            {(trade.analysis || trade.status === "Partial Closed") && (
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitleAccent}>AI Analysis & Action Items</h3>
+                
+                {/* Show message if no analysis data */}
+                {!trade.analysis && (
+                  <div style={{
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-secondary)',
+                    borderRadius: 8,
+                    padding: 20,
+                    textAlign: 'center',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    No AI analysis data available for this trade.
+                  </div>
+                )}
+
+                {/* Analysis Summary Card */}
+                {trade.analysis && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, var(--bg-accent) 0%, var(--bg-secondary) 100%)',
+                    border: '1px solid var(--border-secondary)',
+                    borderRadius: 12,
+                    padding: 24,
+                    marginBottom: 20,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  }}>
+                    {/* Status Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                      <div style={{
+                        fontSize: '32px',
+                        lineHeight: 1
+                      }}>
+                        {trade.analysis.statusEmoji || '📊'}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{
+                          margin: 0,
+                          fontSize: '20px',
+                          fontWeight: '700',
+                          color: 'var(--text-primary)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {trade.analysis.status || 'Analysis'}
+                        </h4>
+                        {trade.analysis.priority && (
+                          <span style={{
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#ffffff',
+                            backgroundColor: trade.analysis.priority === 'HIGH' ? '#EF4444' : 
+                                            trade.analysis.priority === 'MEDIUM' ? '#F59E0B' : '#10B981',
+                            padding: '4px 8px',
+                            borderRadius: 4,
+                            textTransform: 'uppercase',
+                            marginTop: 4,
+                            display: 'inline-block'
+                          }}>
+                            {trade.analysis.priority} Priority
+                          </span>
+                        )}
+                      </div>
+                      {trade.analysis.riskEmoji && (
+                        <div style={{
+                          fontSize: '24px',
+                          title: `Risk Level: ${trade.analysis.riskLevel || 'Unknown'}`
+                        }}>
+                          {trade.analysis.riskEmoji}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action & Performance */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                      gap: 16,
+                      marginBottom: 20
+                    }}>
+                      {trade.analysis.action && (
+                        <div style={{
+                          background: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border-primary)',
+                          borderRadius: 8,
+                          padding: 16
+                        }}>
+                          <label style={{
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: 'var(--text-secondary)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            display: 'block',
+                            marginBottom: 8
+                          }}>
+                            Recommended Action
+                          </label>
+                          <span style={{
+                            fontSize: '14px',
+                            color: 'var(--text-primary)',
+                            fontWeight: '500'
+                          }}>
+                            {trade.analysis.action}
+                          </span>
+                        </div>
+                      )}
+
+                      {(trade.analysis.profit || trade.analysis.profitPercent) && (
+                        <div style={{
+                          background: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border-primary)',
+                          borderRadius: 8,
+                          padding: 16
+                        }}>
+                          <label style={{
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: 'var(--text-secondary)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            display: 'block',
+                            marginBottom: 8
+                          }}>
+                            Performance
+                          </label>
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            {trade.analysis.profit && (
+                              <span style={{
+                                fontSize: '16px',
+                                fontWeight: '700',
+                                color: trade.analysis.profit.includes('+') ? 'var(--status-success)' : 'var(--status-error)'
+                              }}>
+                                {trade.analysis.profit}
+                              </span>
+                            )}
+                            {trade.analysis.profitPercent && (
+                              <span style={{
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                color: 'var(--text-secondary)'
+                              }}>
+                                ({trade.analysis.profitPercent})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Metrics Grid */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                      gap: 12,
+                      marginBottom: 16
+                    }}>
+                      {trade.analysis.aiGrade && (
+                        <div>
+                          <label className={styles.label}>AI Grade</label>
+                          <span style={{
+                            fontSize: '16px',
+                            fontWeight: '700',
+                            color: 'var(--text-primary)'
+                          }}>
+                            {trade.analysis.aiGrade}
+                          </span>
+                        </div>
+                      )}
+                      {trade.analysis.healthScore && (
+                        <div>
+                          <label className={styles.label}>Health Score</label>
+                          <span style={{
+                            fontSize: '16px',
+                            fontWeight: '700',
+                            color: 'var(--text-primary)'
+                          }}>
+                            {trade.analysis.healthScore}
+                          </span>
+                        </div>
+                      )}
+                      {trade.analysis.daysHeld && (
+                        <div>
+                          <label className={styles.label}>Days Held</label>
+                          <span className={styles.value}>{trade.analysis.daysHeld}</span>
+                        </div>
+                      )}
+                      {trade.analysis.reviewBy && (
+                        <div>
+                          <label className={styles.label}>Review By</label>
+                          <span className={styles.value}>{formatDate(trade.analysis.reviewBy)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Next Action Section */}
+                    {trade.analysis.nextAction && (
+                      <div style={{
+                        background: 'var(--bg-primary)',
+                        border: '2px solid var(--border-accent)',
+                        borderRadius: 8,
+                        padding: 16,
+                        marginTop: 16
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                          <span style={{
+                            fontSize: '16px',
+                            fontWeight: '700',
+                            color: 'var(--text-accent)'
+                          }}>
+                            🎯 Next Action: {trade.analysis.nextAction.action || 'Monitor'}
+                          </span>
+                          {trade.analysis.nextAction.urgency && (
+                            <span style={{
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              color: '#ffffff',
+                              backgroundColor: 'var(--status-warning)',
+                              padding: '4px 8px',
+                              borderRadius: 4
+                            }}>
+                              {trade.analysis.nextAction.urgency}
+                            </span>
+                          )}
+                        </div>
+                        {trade.analysis.nextAction.details && (
+                          <p style={{
+                            margin: 0,
+                            fontSize: '14px',
+                            color: 'var(--text-primary)',
+                            lineHeight: 1.4
+                          }}>
+                            {trade.analysis.nextAction.details}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Key Level & Reason */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                      gap: 16,
+                      marginTop: 16
+                    }}>
+                      {trade.analysis.keyLevel && (
+                        <div>
+                          <label className={styles.label}>Key Level</label>
+                          <span style={{
+                            fontSize: '14px',
+                            color: 'var(--text-primary)',
+                            fontWeight: '500'
+                          }}>
+                            {trade.analysis.keyLevel}
+                          </span>
+                        </div>
+                      )}
+                      {trade.analysis.reason && (
+                        <div>
+                          <label className={styles.label}>Analysis Reason</label>
+                          <span style={{
+                            fontSize: '14px',
+                            color: 'var(--text-primary)',
+                            fontWeight: '500'
+                          }}>
+                            {trade.analysis.reason}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

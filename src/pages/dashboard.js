@@ -44,73 +44,57 @@ const Dashboard = () => {
   // Load investment data when tab is switched to 'investment'
   useEffect(() => {
     if (activeTab !== 'investment') return;
-    
-    const loadInvestmentData = () => {
-      setInvestmentLoading(true);
-      setInvestmentError(null);
-      Promise.all([getInvestmentSummary(), getAllInvestments(true)])
-        .then(([summaryResponse, listResponse]) => {
-          let summary = summaryResponse?.data || {};
-          let list = listResponse.data || [];
-          // Calculate values from investments if not present in summary
-          let totalInvested = 0;
-          let totalHoldings = 0;
-          let unrealizedPnL = 0;
-          let avgBuyPrice = 0;
-          let todaysPnL = 0;
-          let todaysPnLPercent = 0;
-          let pnlPercent = 0;
-          if (Array.isArray(list) && list.length > 0) {
-            totalInvested = list.reduce((sum, inv) => sum + ((inv.avgBuyPrice || 0) * (inv.quantity || 0)), 0);
-            totalHoldings = list.reduce((sum, inv) => sum + ((inv.currentPrice || 0) * (inv.quantity || 0)), 0);
-            unrealizedPnL = list.reduce((sum, inv) => sum + ((inv.currentPrice - inv.avgBuyPrice) * (inv.quantity || 0)), 0);
-            avgBuyPrice = totalInvested && list.length ? totalInvested / list.reduce((sum, inv) => sum + (inv.quantity || 0), 0) : 0;
-            const lastTotalHoldings = list.reduce((sum, inv) => sum + ((inv.lastDayPrice || 0) * (inv.quantity || 0)), 0);
-            todaysPnL = totalHoldings - lastTotalHoldings;
-            console.log('Today\'s P&L:', todaysPnL);
-            pnlPercent = totalHoldings > 0 ? (unrealizedPnL / totalHoldings) * 100 : 0;
-            todaysPnLPercent = totalHoldings > 0 ? (todaysPnL / totalHoldings) * 100 : 0;
+    setInvestmentLoading(true);
+    setInvestmentError(null);
+    Promise.all([getInvestmentSummary(), getAllInvestments(true)])
+      .then(([summaryResponse, listResponse]) => {
+        let summary = summaryResponse?.data || {};
+        let list = listResponse.data || [];
+        // Calculate values from investments if not present in summary
+        let totalInvested = 0;
+        let totalHoldings = 0;
+        let unrealizedPnL = 0;
+        let avgBuyPrice = 0;
+        let todaysPnL = 0;
+        let todaysPnLPercent = 0;
+        let pnlPercent = 0;
+        if (Array.isArray(list) && list.length > 0) {
+          totalInvested = list.reduce((sum, inv) => sum + ((inv.avgBuyPrice || 0) * (inv.quantity || 0)), 0);
+          totalHoldings = list.reduce((sum, inv) => sum + ((inv.currentPrice || 0) * (inv.quantity || 0)), 0);
+          unrealizedPnL = list.reduce((sum, inv) => sum + ((inv.currentPrice - inv.avgBuyPrice) * (inv.quantity || 0)), 0);
+          avgBuyPrice = totalInvested && list.length ? totalInvested / list.reduce((sum, inv) => sum + (inv.quantity || 0), 0) : 0;
+          const lastTotalHoldings = list.reduce((sum, inv) => sum + ((inv.lastDayPrice || 0) * (inv.quantity || 0)), 0);
+          todaysPnL = totalHoldings - lastTotalHoldings;
+          console.log('Today\'s P&L:', todaysPnL);
+          pnlPercent = totalHoldings > 0 ? (unrealizedPnL / totalHoldings) * 100 : 0;
+          todaysPnLPercent = totalHoldings > 0 ? (todaysPnL / totalHoldings) * 100 : 0;
 
-          }
+        }
 
-          let mappedSummary = {
-            totalInvested: Math.floor(totalInvested),
-            totalHoldings: Math.floor(totalHoldings),
-            unrealizedPnL: Math.floor(unrealizedPnL),
-            avgBuyPrice: Math.floor(avgBuyPrice),
-            todaysPnL: Math.floor(todaysPnL),
-            pnlPercent: pnlPercent,
-            todaysPnLPercent: todaysPnLPercent
-            
-          };
+        let mappedSummary = {
+          totalInvested: Math.floor(totalInvested),
+          totalHoldings: Math.floor(totalHoldings),
+          unrealizedPnL: Math.floor(unrealizedPnL),
+          avgBuyPrice: Math.floor(avgBuyPrice),
+          todaysPnL: Math.floor(todaysPnL),
+          pnlPercent: pnlPercent,
+          todaysPnLPercent: todaysPnLPercent
+          
+        };
 
-          setInvestmentSummary(mappedSummary);
-          // Debug log for investment summary
-          // eslint-disable-next-line no-console
-          // console.log('[Dashboard] investment summary loaded:', mappedSummary);
-          setInvestments(list);
-          // Debug log for investments data
-          // eslint-disable-next-line no-console
-          // console.log('[Dashboard] investments loaded:', list);
-        })
-        .catch((err) => {
-          setInvestmentError(err);
-        })
-        .finally(() => setInvestmentLoading(false));
-    };
-
-    loadInvestmentData();
-
-    // Set up auto-refresh every 5 minutes for investment tab
-    const interval = setInterval(() => {
-      if (activeTab === 'investment') {
-        console.log('Auto-refreshing investment data...');
-        loadInvestmentData();
-      }
-    }, 5 * 60 * 1000); // 5 minutes in milliseconds
-
-    // Cleanup interval on component unmount or tab change
-    return () => clearInterval(interval);
+        setInvestmentSummary(mappedSummary);
+        // Debug log for investment summary
+        // eslint-disable-next-line no-console
+        // console.log('[Dashboard] investment summary loaded:', mappedSummary);
+        setInvestments(list);
+        // Debug log for investments data
+        // eslint-disable-next-line no-console
+        // console.log('[Dashboard] investments loaded:', list);
+      })
+      .catch((err) => {
+        setInvestmentError(err);
+      })
+      .finally(() => setInvestmentLoading(false));
   }, [activeTab]);
 
   useEffect(() => {
@@ -177,15 +161,6 @@ const Dashboard = () => {
       }
     };
     loadDashboardData();
-
-    // Set up auto-refresh every 5 minutes
-    const interval = setInterval(() => {
-      console.log('Auto-refreshing dashboard...');
-      loadDashboardData();
-    }, 5 * 60 * 1000); // 5 minutes in milliseconds
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval);
   }, []);
 
   // Calculate additional metrics

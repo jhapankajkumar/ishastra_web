@@ -78,90 +78,122 @@ export async function addPostAnalysis(id, form) {
   });
 }
 
-// Create trade - only entry chart
-export async function createTrade(form) {
-  const formData = new FormData();
-
-  // Helper defaults
-  const defaultDropdown = (val, options) => (val && val !== 'undefined' ? val : (options && options.length ? options[0] : ''));
-  const defaultNumber = (val) => (val !== undefined && val !== null && val !== '' && val !== 'undefined' ? Number(val) : 0);
-  const defaultText = (val) => (val && val !== 'undefined' ? val : '');
-  const defaultNull = (val) => (val !== undefined && val !== null && val !== 'undefined' && val !== '' ? val : null);
-
-  // Dropdown options (customize as needed)
-  const instrumentTypeOptions = ['Stocks', 'ETF', 'Forex', 'Indices'];
-  const marketOptions = ['India', 'US'];
-  const positionTypeOptions = ['Swing', 'Intraday'];
-  const directionOptions = ['Long', 'Short'];
-  const stopLossMethodOptions = ['ATR', 'Fixed %', 'None'];
-  const timeframeOptions = ['Daily', 'Weekly', 'Hourly', 'Multiple'];
-  const confidenceOptions = ['Low', 'Medium', 'High'];
-
-  // Required fields
-  formData.append('ticker', defaultText(form.ticker));
-  formData.append('tickerName', defaultText(form.companyName));
-  formData.append('instrumentType', defaultDropdown(form.instrumentType, instrumentTypeOptions));
-  formData.append('market', defaultDropdown(form.market, marketOptions));
-  formData.append('positionType', defaultDropdown(form.positionType, positionTypeOptions));
-  formData.append('direction', defaultDropdown(form.direction, directionOptions));
-  formData.append('reasonForEntry', defaultText(form.reasonForEntry));
-  // Ensure entryDate is properly formatted (YYYY-MM-DD) or default to today
-  let entryDate = form.entryDate;
-  console.log('Entry Date:', entryDate); // Debug log
-  if (!entryDate || entryDate === 'undefined' || entryDate.trim() === '') {
-    entryDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-  }
-  console.log('Formatted Entry Date:', entryDate); // Debug log
-  formData.append('entryDate', entryDate);
-  formData.append('entryOrderPrice', defaultNumber(form.entryOrderPrice));
-  formData.append('entryFilledShares', defaultNumber(form.entryFilledShares));
-  // Always send riskPerTrade and risk_per_trade as valid numbers (default 0 if invalid)
-  let riskVal = form.riskPerTrade;
-  console.log('Risk Per Trade:', riskVal); // Debug log
-  formData.append('riskPerTrade', riskVal);
-  formData.append('riskPerTradeValue', form.riskPerTradeValue || 0);
-  formData.append('stopLossPrice', defaultNumber(form.stopLossPrice));
-  formData.append('stopLossMethod', defaultDropdown(form.stopLossMethod, stopLossMethodOptions));
-  formData.append('atrMultiplier', defaultNumber(form.atrMultiplier));
-  formData.append('target1', defaultNumber(form.target1));
-  formData.append('target2', defaultNumber(form.target2));
-  formData.append('target3', defaultNumber(form.target3));
-  formData.append('atrValue', defaultNumber(form.atrValue));
-  // Always send tradeSetup (setup) as null if not set
+// Create trade - supports both FormData (form) and direct object (watchlist)
+export async function createTrade(formOrData, options = {}) {
+  const { useDirectObject = false } = options;
   
-  formData.append('tradeSetup', defaultNull(form.setupType));
-  
-  // Timeframes used (array to comma-separated string, default to Daily)
-  console.log('Timeframes Used:', form.timeframesUsed); // Debug log
-  formData.append('timeframesUsed', defaultDropdown(form.timeframesUsed, timeframeOptions));
-  // Always set status as Executed for new trades (or use form value if present)
-  formData.append('tradeStatus', form.tradeStatus || 'Executed');
-  // Add entryCommission, notes, confidence if present
-  formData.append('entryCommission', defaultNumber(form.entryCommission));
-  formData.append('notes', defaultText(form.notes));
-  
-  let confidenceText = defaultDropdown(form.setupConfidence, confidenceOptions);
-  console.log('Confidence Text:', confidenceText); // Debug log
-  if (confidenceText && confidenceText === 'Low') {
-    formData.append('confidence', 0);
-  }
-  else if (confidenceText && confidenceText === 'Medium') {
-    formData.append('confidence', 1);
-  } else if (confidenceText && confidenceText === 'High') {
-    formData.append('confidence', 2);
+  if (useDirectObject && typeof formOrData === 'object' && !(formOrData instanceof FormData)) {
+    // Direct object input (from watchlist)
+    const data = formOrData;
+    const formData = new FormData();
+
+    // Helper defaults (keep existing logic)
+    const defaultDropdown = (val, options) => (val && val !== 'undefined' ? val : (options && options.length ? options[0] : ''));
+    const defaultNumber = (val) => (val !== undefined && val !== null && val !== '' && val !== 'undefined' ? Number(val) : 0);
+    const defaultText = (val) => (val && val !== 'undefined' ? val : '');
+
+    // Required fields - map from direct object
+    formData.append('ticker', defaultText(data.ticker));
+    formData.append('tickerName', defaultText(data.tickerName));
+    formData.append('direction', 'Long'); // Hardcoded
+    formData.append('instrumentType', 'Stocks'); // Hardcoded
+    formData.append('currency', data.currency || 'INR'); // Default to INR
+    
+    // Confidence mapping (keep existing logic)
+    const confidence = data.confidence || 75;
+    formData.append('confidence', confidence);
+    formData.append('grade', data.grade || "A"); // Default to A
+
+    // Entry Date
+    let entryDate = data.entryDate;
+    if (!entryDate || entryDate === 'undefined' || entryDate.trim() === '') {
+      entryDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    }
+    formData.append('entryDate', entryDate);
+    formData.append('entryPrice', defaultNumber(data.entryPrice));
+    formData.append('quantity', defaultNumber(data.quantity));
+    formData.append('stopLoss', defaultNumber(data.stopLoss));
+    formData.append('target1', defaultNumber(data.target1));
+    formData.append('target2', defaultNumber(data.target2));
+    formData.append('target3', defaultNumber(data.target3));
+    formData.append('tradeSetup', data.tradeSetup || 20001); // Default as per original
+    formData.append('reasonForEntry', defaultText(data.reasonForEntry));
+    
+    // Add other fields
+    formData.append('entryCommission', defaultNumber(data.entryCommission));
+    formData.append('notes', defaultText(data.notes));
+    formData.append('isPaperTrade', true); // Hardcoded as per original
+    
+    // Special field: systemAnalysisResult
+    if (data.systemAnalysisResult) {
+      formData.append('systemAnalysisResult', data.systemAnalysisResult);
+    }
+
+    return API.post('/trades', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
   } else {
-    formData.append('confidence', 0); // Default to Low
-  }
+    // Original FormData logic (existing form-based creation)
+    const form = formOrData;
+    const formData = new FormData();
 
-  formData.append('currency', form.currency || 'INR'); // Default to INR if not set
-  // Only append entryCharts - handle FileList or Array properly
-  if (form.entryCharts) {
-    const files = Array.from(form.entryCharts);
-    files.forEach(file => formData.append('entryCharts', file));
+    // Helper defaults (existing logic)
+    const defaultDropdown = (val, options) => (val && val !== 'undefined' ? val : (options && options.length ? options[0] : ''));
+    const defaultNumber = (val) => (val !== undefined && val !== null && val !== '' && val !== 'undefined' ? Number(val) : 0);
+    const defaultText = (val) => (val && val !== 'undefined' ? val : '');
+    const defaultNull = (val) => (val !== undefined && val !== null && val !== 'undefined' && val !== '' ? val : null);
+
+    // Dropdown options (customize as needed)
+    const confidenceOptions = ['Low', 'Medium', 'High'];
+
+    // Required fields (existing logic)
+    formData.append('ticker', defaultText(form.ticker));
+    formData.append('tickerName', defaultText(form.companyName));
+    formData.append('direction', 'Long');
+    formData.append('instrumentType', 'Stocks');
+    formData.append('currency', form.currency || 'INR');
+    
+    let confidenceText = defaultDropdown(form.setupConfidence, confidenceOptions);
+    if (confidenceText && confidenceText === 'Low') {
+      formData.append('confidence', 60);
+    } else if (confidenceText && confidenceText === 'Medium') {
+      formData.append('confidence', 70);
+    } else if (confidenceText && confidenceText === 'High') {
+      formData.append('confidence', 80);
+    } else {
+      formData.append('confidence', 0);
+    }
+
+    formData.append('grade', "A");
+
+    // Entry Date (existing logic)
+    let entryDate = form.entryDate;
+    if (!entryDate || entryDate === 'undefined' || entryDate.trim() === '') {
+      entryDate = new Date().toISOString().split('T')[0];
+    }
+    formData.append('entryDate', entryDate);
+    formData.append('entryPrice', defaultNumber(form.entryOrderPrice));
+    formData.append('quantity', defaultNumber(form.entryFilledShares));
+    formData.append('stopLoss', defaultNumber(form.stopLossPrice));
+    formData.append('target1', defaultNumber(form.target1));
+    formData.append('target2', defaultNumber(form.target2));
+    formData.append('target3', defaultNumber(form.target3));
+    formData.append('tradeSetup', 20001);
+    formData.append('reasonForEntry', defaultText(form.reasonForEntry));
+    formData.append('entryCommission', defaultNumber(form.entryCommission));
+    formData.append('notes', defaultText(form.notes));
+    formData.append('isPaperTrade', true);
+
+    // Only append entryCharts - handle FileList or Array properly
+    if (form.entryCharts) {
+      const files = Array.from(form.entryCharts);
+      files.forEach(file => formData.append('entryCharts', file));
+    }
+
+    return API.post('/trades', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
   }
-  return API.post('/trades', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
 }
 
 // Delete trade

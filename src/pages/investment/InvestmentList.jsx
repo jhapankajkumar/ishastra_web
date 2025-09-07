@@ -53,15 +53,6 @@ export default function InvestmentList() {
 
   useEffect(() => {
     loadData();
-
-    // Set up auto-refresh every 5 minutes
-    const interval = setInterval(() => {
-      console.log('Auto-refreshing investments...');
-      loadData();
-    }, 5 * 60 * 1000); // 5 minutes in milliseconds
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval);
     // eslint-disable-next-line
   }, [showCombined]);
 
