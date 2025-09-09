@@ -54,6 +54,9 @@ export function getAverageExitPrice(trade) {
 };
 
 export function getPartialPL(trade) {
+    if (trade.status.toLowerCase() === 'open') {
+        return trade.quantity * Number(trade.currentPrice ? (trade.currentPrice - trade.entryPrice) : 0);
+    }
     const exits = getExitTransactions(trade);
     if (!exits.length || !trade.entryPrice || !trade.direction) return "0";
     let pl = 0;

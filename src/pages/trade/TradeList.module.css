@@ -11,6 +11,105 @@
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Market Overview Cards */
+.marketOverview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.marketCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+}
+
+.marketCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.marketCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.marketTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.currencyBadge {
+  background: var(--btn-primary-bg);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.marketMetrics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metricRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.metricLabel {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.metricValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.metricWithPercentage {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.percentage {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tradeStats {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-primary);
+}
+
+.statItem {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
 .actionBar {
   display: flex;
   justify-content: space-between;
@@ -79,8 +178,29 @@
   margin-bottom: 32px;
 }
 
+.marketSection {
+  margin-bottom: 48px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.marketSectionTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border-primary);
+}
+
 .sectionTitle {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 16px;
@@ -237,28 +357,22 @@
   transition: all 0.3s ease;
 }
 
-.statusBadge.open_profit {
+.statusBadge.open {
   background: var(--success-bg);
   color: var(--success-color);
   border: 1px solid var(--success-color);
 }
 
-.statusBadge.open_loss {
-  background: var(--error-bg);
-  color: var(--error-color);
-  border: 1px solid var(--error-color);
-}
-
-.statusBadge.closed_profit {
-  background: var(--info-bg);
-  color: var(--info-color);
-  border: 1px solid var(--info-color);
-}
-
-.statusBadge.closed_loss {
+.statusBadge.partial {
   background: var(--warning-bg);
   color: var(--warning-color);
   border: 1px solid var(--warning-color);
+}
+
+.statusBadge.closed {
+  background: var(--info-bg);
+  color: var(--info-color);
+  border: 1px solid var(--info-color);
 }
 
 /* Price with Change */
@@ -395,9 +509,105 @@
   }
 }
 
+/* Delete Confirmation Dialog */
+.deleteConfirmOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.deleteConfirmDialog {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  border: 1px solid var(--border-secondary);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.deleteConfirmTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+}
+
+.deleteConfirmMessage {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.deleteConfirmActions {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+}
+
+.deleteConfirmCancel {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deleteConfirmCancel:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.deleteConfirmButton {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  background: var(--status-error);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deleteConfirmButton:hover {
+  background: #B91C1C;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 16px 3%;
+  }
+
+  .marketOverview {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .marketCard {
+    padding: 20px;
+  }
+
+  .marketCardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .marketTitle {
+    font-size: 18px;
   }
   
   .actionBar {

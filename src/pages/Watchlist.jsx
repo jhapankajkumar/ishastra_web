@@ -11,7 +11,7 @@ const Watchlist = () => {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortBy, setSortBy] = useState('priority'); // priority, confidence, symbol
+  const [sortBy, setSortBy] = useState('action'); // action, confidence, grade, symbol
   const navigate = useNavigate();
   const notification = useNotification();
 
@@ -19,15 +19,56 @@ const Watchlist = () => {
     fetchWatchlist();
   }, []);
 
+  // Grade value mapping for proper sorting
+  const getGradeValue = (grade) => {
+    const gradeMap = {
+      'A+': 6,
+      'A': 5,
+      'A-': 4,
+      'B+': 3,
+      'B': 2,
+      'B-': 1,
+      'C': 0
+    };
+    return gradeMap[grade] || 0;
+  };
+
+  // Multi-level sorting function
+  const sortStocks = (stocksData) => {
+    return stocksData.sort((a, b) => {
+      // Level 1: Sort by action (BUY first, then WATCH, then others)
+      const actionA = a.decision?.action || 'UNKNOWN';
+      const actionB = b.decision?.action || 'UNKNOWN';
+      
+      if (actionA === 'BUY' && actionB !== 'BUY') return -1;
+      if (actionA !== 'BUY' && actionB === 'BUY') return 1;
+      if (actionA === 'WATCH' && actionB !== 'WATCH' && actionB !== 'BUY') return -1;
+      if (actionA !== 'WATCH' && actionB === 'WATCH' && actionA !== 'BUY') return 1;
+      
+      // Level 2: Sort by grade (higher grade first)
+      const gradeA = getGradeValue(a.decision?.grade);
+      const gradeB = getGradeValue(b.decision?.grade);
+      
+      if (gradeA !== gradeB) {
+        return gradeB - gradeA; // Higher grade first
+      }
+      
+      // Level 3: Sort by confidence (higher confidence first)
+      const confidenceA = a.decision?.confidence || 0;
+      const confidenceB = b.decision?.confidence || 0;
+      
+      return confidenceB - confidenceA; // Higher confidence first
+    });
+  };
+
   const fetchWatchlist = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await getWatchlist();
-      // Updated to handle new response structure
       const stocksData = response.stocks || response.data || [];
-      // Sort by priority by default (lower number = higher priority)
-      const sortedStocks = stocksData.sort((a, b) => (a.priority || 1) - (b.priority || 1));
+      // Apply multi-level sorting
+      const sortedStocks = sortStocks(stocksData);
       setStocks(sortedStocks);
     } catch (err) {
       setError(err.message || 'Failed to fetch watchlist');
@@ -39,16 +80,32 @@ const Watchlist = () => {
 
   const handleSort = (sortType) => {
     setSortBy(sortType);
-    const sortedStocks = [...stocks].sort((a, b) => {
-      switch (sortType) {
-        case 'confidence':
-          return (b.decision?.confidence || 0) - (a.decision?.confidence || 0);
-        case 'symbol':
-          return a.symbol.localeCompare(b.symbol);
-        default:
-          return 0;
-      }
-    });
+    let sortedStocks = [...stocks];
+    
+    switch (sortType) {
+      case 'action':
+        // Use the multi-level sorting function
+        sortedStocks = sortStocks([...stocks]);
+        break;
+      case 'confidence':
+        sortedStocks = sortedStocks.sort((a, b) => (b.decision?.confidence || 0) - (a.decision?.confidence || 0));
+        break;
+      case 'grade':
+        sortedStocks = sortedStocks.sort((a, b) => {
+          const gradeA = getGradeValue(a.decision?.grade);
+          const gradeB = getGradeValue(b.decision?.grade);
+          return gradeB - gradeA;
+        });
+        break;
+      case 'symbol':
+        sortedStocks = sortedStocks.sort((a, b) => a.symbol.localeCompare(b.symbol));
+        break;
+      default:
+        // Default to multi-level sorting
+        sortedStocks = sortStocks([...stocks]);
+        break;
+    }
+    
     setStocks(sortedStocks);
   };
 
@@ -211,6 +268,20 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
         <p>Monitor your high-priority trading opportunities</p>
         
         <div className={styles.sortControls}>
+          <label>Sort by:</label>
+          <button 
+            className={`${styles.sortButton} ${sortBy === 'action' ? styles.active : ''}`}
+            onClick={() => handleSort('action')}
+            title="Sort by BUY signals first, then by grade and confidence"
+          >
+            Action
+          </button>
+          <button 
+            className={`${styles.sortButton} ${sortBy === 'grade' ? styles.active : ''}`}
+            onClick={() => handleSort('grade')}
+          >
+            Grade
+          </button>
           <button 
             className={`${styles.sortButton} ${sortBy === 'confidence' ? styles.active : ''}`}
             onClick={() => handleSort('confidence')}
@@ -263,14 +334,25 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
                   <span className={`${styles.gradeBadge} ${getGradeBadgeClass(stock.decision?.grade)}`}>
                     {stock.decision?.grade || 'N/A'}
                   </span>
-                  <span className={styles.priorityBadge}>
-                    P{stock.priority || 1}
-                  </span>
                 </div>
               </div>
+              
               <div className={styles.priceSection}>
+                <span className={styles.metricLabel}>Analysis Price:</span>
+                <span className={styles.metricValue}>
+                  {stock.currency === 'INR' ? '₹' : '$'}{(stock.entryPrice || 0).toFixed(2)}
+                </span>
+              </div>
+              <div className={styles.priceSection}>
+                <span className={styles.metricLabel}>Current Price:</span>
+                <span className={styles.metricValue}>
+                  {stock.currency === 'INR' ? '₹' : '$'}{(stock.price || 0).toFixed(2)}
+                </span>
+              </div>
+              <div className={styles.priceSection}>
+                <span className={styles.metricValue}>{stock.inTrade? 'P&L:' : 'Potential P&L:'}</span>
                 <span className={styles.currentPrice}>
-                  {stock.currency === 'INR' ? '₹' : '$'}{(stock.price || stock.currentPrice || 0).toFixed(2)}
+                  {stock.currency === 'INR' ? '₹' : '$'}{((stock.inTrade ? (stock.price || 0) - (stock.entryPrice || 0) : 0) * stock.execution.positionSizing.shares).toFixed(0)}
                 </span>
               </div>
             </div>
@@ -288,10 +370,6 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
                 </span>
               </div>
               <div className={styles.metricItem}>
-                <span className={styles.metricLabel}>AGREEMENT</span>
-                <span className={styles.metricValue}>{stock.decision?.systemsAgreement || 'N/A'}</span>
-              </div>
-              <div className={styles.metricItem}>
                 <span className={styles.metricLabel}>RISK/REWARD</span>
                 <span className={styles.metricValue}>{stock.execution?.positionSizing?.riskReward || 'N/A'}</span>
               </div>
@@ -301,36 +379,27 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
             {stock.execution?.entryStrategy && (
               <div className={styles.entrySection}>
                 <div className={styles.sectionHeader}>
-                  <span className={styles.sectionIcon}>📊</span>
-                  <span className={styles.sectionTitle}>Entry Strategy</span>
+                  <span className={styles.sectionTitle}>Entry</span>
                 </div>
-                
-                <div className={styles.entryContent}>
-                  <div className={styles.strategyType}>
-                    <span className={styles.strategyLabel}>{stock.execution.entryStrategy.type}</span>
-                  </div>
-                  
-                  <div className={styles.priceRanges}>
-                    <div className={styles.priceItem}>
-                      <span className={styles.priceLabel}>Optimal</span>
-                      <span className={styles.priceValue} style={{ color: '#22c55e' }}>
+
+                <div className={styles.positionRow}>
+                  <div className={styles.positionGroup}>
+                    <span className={styles.positionLabel}>Optimal:</span>
+                    <span className={styles.priceValue} style={{ color: '#22c55e' }}>
                         {stock.currency === 'INR' ? '₹' : '$'}{stock.execution.entryStrategy.entryZone?.optimal?.toFixed(2) || 'N/A'}
                       </span>
-                    </div>
-                    <div className={styles.priceItem}>
-                      <span className={styles.priceLabel}>Max</span>
-                      <span className={styles.priceValue} style={{ color: '#f59e0b' }}>
+                  </div>
+                  <div className={styles.positionGroup}>
+                    <span className={styles.positionLabel}>Acceptable:</span>
+                    <span className={styles.priceValue} style={{ color: '#f59e0b' }}>
+                        {stock.currency === 'INR' ? '₹' : '$'}{stock.execution.entryStrategy.entryZone?.acceptable?.toFixed(2) || 'N/A'}
+                      </span>
+                  </div>
+                  <div className={styles.positionGroup}>
+                    <span className={styles.positionLabel}>Maximum:</span>
+                    <span className={styles.priceValue} style={{ color: '#d12525be' }}>
                         {stock.currency === 'INR' ? '₹' : '$'}{stock.execution.entryStrategy.entryZone?.maximum?.toFixed(2) || 'N/A'}
                       </span>
-                    </div>
-                  </div>
-                  
-                  <div className={styles.stopLossRow}>
-                    <span className={styles.stopIcon}>🛡️</span>
-                    <span className={styles.stopLabel}>Stop Loss</span>
-                    <span className={styles.stopValue}>
-                      {stock.currency === 'INR' ? '₹' : '$'}{stock.execution?.exitStrategy?.stopLoss?.initial || 'N/A'}
-                    </span>
                   </div>
                 </div>
               </div>
@@ -340,11 +409,7 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
             {stock.execution?.entryStrategy?.triggerConditions && (
               <div className={styles.triggerSection}>
                 <div className={styles.triggerHeader}>
-                  <span className={styles.triggerIcon}>🎯</span>
-                  <span className={styles.triggerTitle}>Trigger Conditions</span>
-                  <span className={styles.triggerProgress}>
-                    {stock.execution.entryStrategy.triggerConditions.filter(c => c.met).length}/{stock.execution.entryStrategy.triggerConditions.length} Met
-                  </span>
+                  <span className={styles.triggerTitle}>Conditions</span>
                 </div>
                 
                 <div className={styles.triggerList}>
@@ -378,19 +443,12 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
               </div>
             )}
 
-            {/* Strategy Summary */}
-            <div className={styles.strategySummary}>
-              <div className={styles.summaryHeader}>
-                <span className={styles.summaryLabel}>STRATEGY:</span>
-              </div>
-              <div className={styles.summaryText}>
-                {stock.execution?.entryStrategy?.type || 'Monitor'} - {stock.decision?.reasoning || 'Analyzing...'}
-              </div>
-            </div>
-
             {/* Position Info */}
             {stock.execution?.positionSizing && (
               <div className={styles.positionSection}>
+                <div className={styles.triggerHeader}>
+                  <span className={styles.triggerTitle}>Posistions</span>
+                </div>
                 <div className={styles.positionRow}>
                   <div className={styles.positionGroup}>
                     <span className={styles.positionLabel}>SHARES:</span>
@@ -403,8 +461,62 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
                     </span>
                   </div>
                   <div className={styles.positionGroup}>
+                    <span className={styles.positionLabel}>Risk Amount:</span>
+                    <span className={styles.positionValue}>
+                      {stock.currency === 'INR' ? '₹' : '$'}{(stock.execution.positionSizing.riskAmount || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className={styles.positionGroup}>
+                    <span className={styles.positionLabel}>Risk Per Share:</span>
+                    <span className={styles.positionValue}>
+                      {stock.currency === 'INR' ? '₹' : '$'}{(stock.execution.positionSizing.riskPerShare || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className={styles.positionGroup}>
                     <span className={styles.positionLabel}>RISK:</span>
                     <span className={styles.positionValue}>{stock.execution.positionSizing.riskPercent || 'N/A'}%</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Position Info */}
+            {stock.execution?.exitStrategy && (
+              <div className={styles.positionSection}>
+                <div className={styles.triggerHeader}>
+                  <span className={styles.triggerTitle}>Exit</span>
+                </div>
+                
+                <div className={styles.positionRow}>
+                  <div className={styles.positionGroup}>
+                    <span className={styles.positionLabel}>Stop Loss:</span>
+                    <span className={styles.stopValue}>
+                      {stock.currency === 'INR' ? '₹' : '$'}{stock.execution?.exitStrategy?.stopLoss?.initial || 'N/A'}
+                    </span>
+                  </div>
+                  <div className={styles.positionGroup}>
+                    <span className={styles.positionLabel}>Distance:</span>
+                    <span className={styles.positionValue}>
+                      {(stock.execution.positionSizing.stopDistance || 0).toLocaleString()}%
+                    </span>
+                  </div>
+                  <div className={styles.positionGroup}>
+                    <span className={styles.positionLabel}>Target1:</span>
+                    <span className={styles.positionValue}>
+                      {stock.currency === 'INR' ? '₹' : '$'}{(stock.execution.exitStrategy.targets.conservative || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className={styles.positionGroup}>
+                    <span className={styles.positionLabel}>Target2:</span>
+                    <span className={styles.positionValue}>
+                      {stock.currency === 'INR' ? '₹' : '$'}{(stock.execution.exitStrategy.targets.moderate || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className={styles.positionGroup}>
+                    <span className={styles.positionLabel}>Target3:</span>
+                    <span className={styles.positionValue}>
+                      {stock.currency === 'INR' ? '₹' : '$'}{(stock.execution.exitStrategy.targets.moderate || 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -417,13 +529,23 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
               </span>
               <div className={styles.footerActions}>
                 {stock.decision?.action === 'BUY' && (
-                  <button 
-                    className={styles.createTradeButton}
-                    onClick={(e) => handleCreateTrade(stock, e)}
-                    title="Create trade entry from this BUY signal"
-                  >
-                    📝 Create Trade
-                  </button>
+                  stock.inTrade ? (
+                    <button 
+                      className={`${styles.createTradeButton} ${styles.disabled}`}
+                      disabled
+                      title="Already in trade"
+                    >
+                      🚩 In Trade
+                    </button>
+                  ) : (
+                    <button 
+                      className={styles.createTradeButton}
+                      onClick={(e) => handleCreateTrade(stock, e)}
+                      title="Create trade entry from this BUY signal"
+                    >
+                      📝 Create Trade
+                    </button>
+                  )
                 )}
                 <span className={styles.detailsHint}>Click for details →</span>
               </div>

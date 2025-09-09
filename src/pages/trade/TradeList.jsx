@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from "../../api/tradeApi";
+import { getCapitalInfo } from "../../api/capitalApi";
 import TradeAdd from "./TradeAdd";
 import TradeDetailsPopup from "./TradeDetailsPopup";
 import PageHeader from "../../components/PageHeader";
@@ -13,6 +14,7 @@ import { getExitTransactions, getLastExitDate, getAverageExitPrice, getPartialPL
 export default function TradeList() {
   const navigate = useNavigate();
   const [trades, setTrades] = useState([]);
+  const [capitalData, setCapitalData] = useState([]);
   const [sortBy, setSortBy] = useState('entryDate');
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
   const [selectedTrade, setSelectedTrade] = useState(null);
@@ -21,35 +23,47 @@ export default function TradeList() {
   const [popupTrade, setPopupTrade] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingCapital, setLoadingCapital] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [tradeToDelete, setTradeToDelete] = useState(null);
   const notification = useNotification();
 
   useEffect(() => {
-    setLoading(true);
-    getAllTrades()
-      .then(async res => {
-        // For each trade, fetch its exit transactions and attach as exit_transactions
-        const tradesWithExits = await Promise.all(res.data.map(async trade => {
+    const fetchData = async () => {
+      setLoading(true);
+      setLoadingCapital(true);
+      
+      try {
+        // Fetch trades and capital data in parallel
+        const [tradesResponse, capitalResponse] = await Promise.all([
+          getAllTrades(),
+          getCapitalInfo()
+        ]);
+
+        // Process trades with exit transactions
+        const tradesWithExits = await Promise.all(tradesResponse.data.map(async trade => {
           try {
             const txRes = await getTradeTransactions(trade.id);
-            // Only keep exit transactions
             const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
             return { ...trade, exitTransactions: exitTx };
           } catch (e) {
             return { ...trade, exitTransactions: [] };
           }
         }));
+
         setTrades(tradesWithExits);
+        setCapitalData(capitalResponse.data || []);
         setError(null);
-      })
-      .catch(err => {
-        console.error('Failed to fetch trades:', err);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
         setError(err);
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+        setLoadingCapital(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const handleEdit = (id) => {
@@ -131,9 +145,16 @@ export default function TradeList() {
   const handleRetry = () => {
     setError(null);
     setLoading(true);
-    getAllTrades()
-      .then(async res => {
-        const tradesWithExits = await Promise.all(res.data.map(async trade => {
+    setLoadingCapital(true);
+    
+    const fetchData = async () => {
+      try {
+        const [tradesResponse, capitalResponse] = await Promise.all([
+          getAllTrades(),
+          getCapitalInfo()
+        ]);
+
+        const tradesWithExits = await Promise.all(tradesResponse.data.map(async trade => {
           try {
             const txRes = await getTradeTransactions(trade.id);
             const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
@@ -142,17 +163,20 @@ export default function TradeList() {
             return { ...trade, exitTransactions: [] };
           }
         }));
-        const sorted = [...tradesWithExits].sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
-        setTrades(sorted);
+        
+        setTrades(tradesWithExits);
+        setCapitalData(capitalResponse.data || []);
         setError(null);
-      })
-      .catch(err => {
-        console.error('Failed to fetch trades:', err);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
         setError(err);
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+        setLoadingCapital(false);
+      }
+    };
+
+    fetchData();
   };
 
   const formatDate = (dateStr) => {
@@ -165,11 +189,77 @@ export default function TradeList() {
     return `${dd} ${mmm} ${yyyy}`;
   };
 
+  // Currency and Market Detection
+  const getCurrency = (trade) => {
+    return trade.currency || 'USD'; // Default to USD if no currency specified
+  };
+
+  const getMarketType = (trade) => {
+    const currency = getCurrency(trade);
+    return currency === 'INR' ? 'India' : 'US';
+  };
+
+  const getCurrencySymbol = (trade) => {
+    const currency = getCurrency(trade);
+    return currency === 'INR' ? '₹' : '$';
+  };
+
+  const formatCurrency = (amount, currency) => {
+  const symbol = currency === 'INR' ? '₹' : '$';
+  // Format with commas for thousands
+  const formatted = Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${symbol}${formatted}`;
+  };
+
   const getInvested = (trade) => {
     if (trade.entryPrice && trade.quantity) {
       return (Number(trade.entryPrice) * Number(trade.quantity)).toFixed(2);
     }
     return "-";
+  };
+
+  // Enhanced trade status detection
+  const getTradeStatusDetailed = (trade) => {
+
+    if (trade.status.toLowerCase() === 'open') {
+      return 'OPEN';
+    } else if (trade.status.toLowerCase() === 'partial closed') {
+      return 'PARTIAL';
+    } else {
+      return 'CLOSED';
+    }
+  };
+
+  // Get last exit date for partial/closed trades
+  const getLastExitDate = (trade) => {
+    if (!trade.exitTransactions || trade.exitTransactions.length === 0) {
+      return null;
+    }
+    
+    const sortedExits = trade.exitTransactions.sort((a, b) => 
+      new Date(b.transactionDate) - new Date(a.transactionDate)
+    );
+    
+    return sortedExits[0]?.transactionDate;
+  };
+
+  // Calculate average sell price for closed trades
+  const getAverageSellPrice = (trade) => {
+    if (!trade.exitTransactions || trade.exitTransactions.length === 0) {
+      return null;
+    }
+    
+    let totalValue = 0;
+    let totalQuantity = 0;
+    
+    trade.exitTransactions.forEach(tx => {
+      const qty = Number(tx.quantity || 0);
+      const price = Number(tx.price || 0);
+      totalValue += qty * price;
+      totalQuantity += qty;
+    });
+    
+    return totalQuantity > 0 ? (totalValue / totalQuantity).toFixed(2) : null;
   };
 
   const getPL = (trade) => {
@@ -265,6 +355,119 @@ export default function TradeList() {
     return invested === "-" ? 0 : Number(invested);
   };
 
+  // Market calculations
+  const calculateMarketMetrics = (currency) => {
+    const marketTrades = trades.filter(trade => getCurrency(trade) === currency);
+    const capitalInfo = capitalData.find(cap => cap.currency === currency);
+    
+    // Separate trades by status
+    const openTrades = marketTrades.filter(trade => getTradeStatusDetailed(trade) === 'OPEN');
+    const partialTrades = marketTrades.filter(trade => getTradeStatusDetailed(trade) === 'PARTIAL');
+    const closedTrades = marketTrades.filter(trade => getTradeStatusDetailed(trade) === 'CLOSED');
+    
+    // Calculate total invested (open + partial trades)
+    const totalInvested = [...openTrades, ...partialTrades].reduce((sum, trade) => {
+      const status = getTradeStatusDetailed(trade);
+      const entryPrice = Number(trade.entryPrice || 0);
+      
+      if (status === 'OPEN') {
+        const qty = Number(trade.quantity || 0);
+        return sum + (entryPrice * qty);
+      } else if (status === 'PARTIAL') {
+        const remainingQty = Number(trade.remainingQuantity || 0);
+        return sum + (entryPrice * remainingQty);
+      }
+      return sum;
+    }, 0);
+    
+    // Calculate total P&L (open + partial + closed)
+    const totalPL = marketTrades.reduce((sum, trade) => {
+      const pl = getPartialPL(trade);
+      return sum + (pl === "-" ? 0 : Number(pl));
+    }, 0);
+    
+    // Calculate today's P&L (placeholder - would need today's price data)
+    const todaysPL = 0; // TODO: Implement based on today's price changes
+    
+    const totalCapital = capitalInfo?.total || 0;
+    const investedPercentage = totalCapital > 0 ? (totalInvested / totalCapital * 100).toFixed(2) : 0;
+    const plPercentage = totalCapital > 0 ? (totalPL / totalCapital * 100).toFixed(2) : 0;
+    const todaysPlPercentage = totalCapital > 0 ? (todaysPL / totalCapital * 100).toFixed(2) : 0;
+    
+    return {
+      totalCapital,
+      totalInvested,
+      investedPercentage,
+      totalPL,
+      plPercentage,
+      todaysPL,
+      todaysPlPercentage,
+      openTrades: openTrades.length,
+      partialTrades: partialTrades.length,
+      closedTrades: closedTrades.length
+    };
+  };
+
+  // Render Market Card
+  const renderMarketCard = (currency, marketName) => {
+    const metrics = calculateMarketMetrics(currency);
+    const symbol = currency === 'INR' ? '₹' : '$';
+    
+    return (
+      <div key={currency} className={styles.marketCard}>
+        <div className={styles.marketCardHeader}>
+          <h3 className={styles.marketTitle}>{marketName} Market</h3>
+          <span className={styles.currencyBadge}>{currency}</span>
+        </div>
+        
+        <div className={styles.marketMetrics}>
+          <div className={styles.metricRow}>
+            <span className={styles.metricLabel}>Total Capital:</span>
+            <span className={styles.metricValue}>{formatCurrency(metrics.totalCapital, currency)}</span>
+          </div>
+          
+          <div className={styles.metricRow}>
+            <span className={styles.metricLabel}>Total Invested:</span>
+            <div className={styles.metricWithPercentage}>
+              <span className={styles.metricValue}>{formatCurrency(metrics.totalInvested, currency)}</span>
+              <span className={styles.percentage}>({metrics.investedPercentage}%)</span>
+            </div>
+          </div>
+          
+          <div className={styles.metricRow}>
+            <span className={styles.metricLabel}>Profit & Loss:</span>
+            <div className={styles.metricWithPercentage}>
+              <span className={`${styles.metricValue} ${metrics.totalPL >= 0 ? styles.profit : styles.loss}`}>
+                {formatCurrency(metrics.totalPL, currency)}
+              </span>
+              <span className={`${styles.percentage} ${metrics.totalPL >= 0 ? styles.profit : styles.loss}`}>
+                ({metrics.plPercentage >= 0 ? '+' : ''}{metrics.plPercentage}%)
+              </span>
+            </div>
+          </div>
+          
+          <div className={styles.metricRow}>
+            <span className={styles.metricLabel}>Today's P&L:</span>
+            <div className={styles.metricWithPercentage}>
+              <span className={`${styles.metricValue} ${metrics.todaysPL >= 0 ? styles.profit : styles.loss}`}>
+                {formatCurrency(metrics.todaysPL, currency)}
+              </span>
+              <span className={`${styles.percentage} ${metrics.todaysPL >= 0 ? styles.profit : styles.loss}`}>
+                ({metrics.todaysPlPercentage >= 0 ? '+' : ''}{metrics.todaysPlPercentage}%)
+              </span>
+            </div>
+          </div>
+          
+          <div className={styles.tradeStats}>
+            <span className={styles.statItem}>Open: {metrics.openTrades}</span>
+            <span className={styles.statItem}>Partial: {metrics.partialTrades}</span>
+            <span className={styles.statItem}>Closed: {metrics.closedTrades}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const sortedTrades = [...trades].sort((a, b) => {
     let valA, valB;
     switch (sortBy) {
@@ -295,68 +498,205 @@ export default function TradeList() {
     }
   });
 
-  // Check if trade is open using API status field
-  const isTradeOpen = (trade) => {
-    // Use API status field if available, otherwise fallback to quantity calculation
-    if (trade.status) {
-      return trade.status.toLowerCase() === 'open';
-    }
-    // Fallback to quantity calculation
-    const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
-    const remainingQty = trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty;
-    return remainingQty > 0;
+  // Group trades by market and status
+  const groupTradesByMarketAndStatus = () => {
+    const markets = {
+      'USD': { name: 'US', trades: { OPEN: [], PARTIAL: [], CLOSED: [] } },
+      'INR': { name: 'India', trades: { OPEN: [], PARTIAL: [], CLOSED: [] } }
+    };
+
+    sortedTrades.forEach(trade => {
+      const currency = getCurrency(trade);
+      const status = getTradeStatusDetailed(trade);
+      
+      if (markets[currency]) {
+        markets[currency].trades[status].push(trade);
+      }
+    });
+
+    return markets;
   };
 
-  // Sort trades with open trades first, then closed trades
-  const openTrades = sortedTrades.filter(trade => isTradeOpen(trade));
-  const closedTrades = sortedTrades.filter(trade => !isTradeOpen(trade));
-  const combinedTrades = [...openTrades, ...closedTrades];
+  const marketGroups = groupTradesByMarketAndStatus();
 
-  // Get current price from API, fallback to entry price
-  const getCurrentPrice = (trade) => {
-    // Use API currentPrice field if available, otherwise fallback to entryPrice
-    if (trade.currentPrice !== undefined && trade.currentPrice !== null) {
-      return Number(trade.currentPrice).toFixed(2);
-    }
-    if (trade.entryPrice !== undefined && trade.entryPrice !== null) {
-      return Number(trade.entryPrice).toFixed(2);
-    }
-    return null;
-  };
+  // Render trade table based on status
+  const renderTradeTable = (trades, status, currency) => {
+    if (trades.length === 0) return null;
 
-  // Calculate unrealized P&L for open trades using API current price
-  const getUnrealizedPL = (trade) => {
-    if (!isTradeOpen(trade)) return null;
-    
-    const currentPrice = getCurrentPrice(trade);
-    if (!currentPrice || !trade.entryPrice || !trade.remainingQuantity) return null;
-    
-    const originalQty = Number(trade.quantity || 0);
-    const remainingQty = Number(trade.remainingQuantity || originalQty);
-    const entryPrice = Number(trade.entryPrice);
-    const currentPriceNum = Number(currentPrice);
-    
-    const unrealizedPL = (currentPriceNum - entryPrice) * remainingQty;
-    return trade.direction === 'SHORT' ? -unrealizedPL : unrealizedPL;
-  };
+    const symbol = currency === 'INR' ? '₹' : '$';
 
-  // Get trade status from API or determine based on P&L
-  const getTradeStatus = (trade) => {
-    // Use API status if available
-    if (trade.status) {
-      return trade.status.toUpperCase();
-    }
-    
-    // Fallback to calculated status
-    if (isTradeOpen(trade)) {
-      const unrealizedPL = getUnrealizedPL(trade);
-      if (unrealizedPL === null) return 'OPEN';
-      return unrealizedPL > 0 ? 'OPEN_PROFIT' : unrealizedPL < 0 ? 'OPEN_LOSS' : 'OPEN';
-    }
-    
-    const realizedPL = getPartialPL(trade);
-    if (realizedPL === "-") return 'CLOSED';
-    return Number(realizedPL) > 0 ? 'CLOSED_PROFIT' : Number(realizedPL) < 0 ? 'CLOSED_LOSS' : 'CLOSED';
+    return (
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>
+          {status === 'OPEN' ? 'Open Trades' : 
+           status === 'PARTIAL' ? 'Partially Closed Trades' : 
+           'Closed Trades'} ({trades.length})
+        </h3>
+        <div className={styles.tableContainer}>
+          <table className={styles.tradesTable}>
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                {status === 'PARTIAL' ? (
+                  <th>Entry Date & Last Exit Date</th>
+                ) : status === 'CLOSED' ? (
+                  <>
+                    <th>Entry Date</th>
+                    <th>Exit Date</th>
+                  </>
+                ) : (
+                  <th>Entry Date</th>
+                )}
+                <th>BUY AVG</th>
+                {status === 'CLOSED' ? (
+                  <th>SELL AVG</th>
+                ) : (
+                  <th>LTP</th>
+                )}
+                {status === 'PARTIAL' ? (
+                  <th>Remaining/QTY</th>
+                ) : (
+                  <th>QTY</th>
+                )}
+                <th>Invested</th>
+                <th>Current</th>
+                <th>P&L</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trades.map(trade => {
+                const originalQty = Number(trade.quantity || 0);
+                const remainingQty = Number(trade.remainingQuantity || originalQty);
+                const entryPrice = Number(trade.entryPrice || 0);
+                const currentPrice = trade.currentPrice ? Number(trade.currentPrice) : entryPrice;
+                const lastExitDate = getLastExitDate(trade);
+                const avgSellPrice = getAverageSellPrice(trade);
+                
+                const displayQuantity = status === 'PARTIAL' ? 
+                  `${remainingQty.toLocaleString()}/${originalQty.toLocaleString()}` : 
+                  originalQty.toLocaleString();
+                
+                const invested = status === 'OPEN' ? 
+                  (entryPrice * originalQty) : 
+                  status === 'PARTIAL' ? 
+                    (entryPrice * remainingQty) : 
+                    (entryPrice * originalQty);
+                
+                const marketValue = status === 'CLOSED' ? 0 : 
+                  status === 'PARTIAL' ? 
+                    (currentPrice * remainingQty) : 
+                    (currentPrice * originalQty);
+                
+                const pl = getPartialPL(trade);
+                const plValue = pl === "-" ? 0 : Number(pl);
+                const plPercentage = invested > 0 ? (plValue / invested * 100).toFixed(2) : 0;
+                console.log('ticker:', trade.tickerName);
+                return (
+                  <tr 
+                    key={trade.tradeId}
+                    className={`${styles.tradeRow} ${styles[status.toLowerCase()]}`}
+                    onClick={() => handleShowDetails(trade.id)}
+                  >
+                    <td className={styles.tickerCell}>
+                      <div className={styles.tickerInfo}>
+                        <span className={styles.ticker}>{trade.ticker}</span>
+                        <span className={styles.companyName}>
+                          {(trade.tickerName || "")}
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                          <span className={`${styles.direction} ${styles[(trade.direction || 'long').toLowerCase()]}`}>
+                            {trade.direction || 'LONG'}
+                          </span>
+                          <span className={`${styles.statusBadge} ${styles[status.toLowerCase()]}`}>
+                            {status}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    
+                    {status === 'PARTIAL' ? (
+                      <td>
+                        <div>
+                          <div>{formatDate(trade.entryDate)}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            Last Exit: {formatDate(lastExitDate)}
+                          </div>
+                        </div>
+                      </td>
+                    ) : status === 'CLOSED' ? (
+                      <>
+                        <td>{formatDate(trade.entryDate)}</td>
+                        <td>{formatDate(lastExitDate)}</td>
+                      </>
+                    ) : (
+                      <td>{formatDate(trade.entryDate)}</td>
+                    )}
+                    
+                    <td>{formatCurrency(entryPrice, currency)}</td>
+                    
+                    {status === 'CLOSED' ? (
+                      <td>{avgSellPrice ? formatCurrency(avgSellPrice, currency) : 'N/A'}</td>
+                    ) : (
+                      <td>
+                        <div className={styles.priceWithChange}>
+                          <span>{formatCurrency(currentPrice, currency)}</span>
+                          {status !== 'CLOSED' && currentPrice !== entryPrice && (
+                            <span className={`${styles.priceChange} ${currentPrice > entryPrice ? styles.positive : styles.negative}`}>
+                              {((currentPrice - entryPrice) / entryPrice * 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                    
+                    <td>{displayQuantity}</td>
+                    <td>{formatCurrency(invested, currency)}</td>
+                    <td>{formatCurrency(marketValue, currency)}</td>
+                    <td className={plValue > 0 ? styles.profit : plValue < 0 ? styles.loss : ''}>
+                      <div className={styles.priceWithChange}>
+                        <span>{formatCurrency(plValue, currency)}</span>
+                        <span className={`${styles.priceChange} ${plValue > 0 ? styles.positive : styles.negative}`}>
+                          ({plPercentage >= 0 ? '+' : ''}{Number(plPercentage).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
+                        </span>
+                      </div>
+                    </td>
+                    <td className={styles.actionsCell}>
+                      <div className={styles.actionButtons}>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
+                          className={`${styles.actionBtn} ${styles.viewBtn}`}
+                          title="View Details"
+                        >
+                          👁️
+                        </button>
+                        <button
+                          onClick={e => { 
+                            e.stopPropagation(); 
+                            status === 'CLOSED' ? handleReview(trade.id) : handleEdit(trade.id); 
+                          }}
+                          className={`${styles.actionBtn} ${status === 'CLOSED' ? styles.reviewBtn : styles.editBtn}`}
+                          title={status === 'CLOSED' ? "Add Review" : "Edit Trade"}
+                        >
+                          {status === 'CLOSED' ? '📝' : '✏️'}
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}
+                          className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                          title="Delete Trade"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   };
 
   // --- Sorting UI ---
@@ -370,10 +710,18 @@ export default function TradeList() {
 
   return (
     <div className={styles.container}>
-      {/* <PageHeader
-        title="Trade List"
-        subtitle="View and manage all your trades"
-      /> */}
+      <PageHeader
+        title="Trade Management"
+        subtitle="Monitor your portfolio across US and India markets"
+      />
+
+      {/* Market Overview Cards */}
+      {!loadingCapital && capitalData.length > 0 && (
+        <div className={styles.marketOverview}>
+          {renderMarketCard('USD', 'US')}
+          {renderMarketCard('INR', 'India')}
+        </div>
+      )}
 
       {/* Action Bar */}
       <div className={styles.actionBar}>
@@ -403,141 +751,32 @@ export default function TradeList() {
           + Add Trade
         </button>
       </div>
-      {/* Sorting Controls */}
-      
-      {/* Combined Trades Section */}
-      {combinedTrades.length > 0 && (
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            � All Trades ({combinedTrades.length}) - Open: {openTrades.length}, Closed: {closedTrades.length}
-          </h2>
-          <div className={styles.tableContainer}>
-            <table className={styles.tradesTable}>
-              <thead>
-                <tr>
-                  <th>Ticker</th>
-                  <th>Entry Date</th>
-                  <th>BUY AVG</th>
-                  <th>LTP</th>
-                  <th>QTY</th>
-                  <th>Invested</th>
-                  <th>Current</th>
-                  <th>P&L</th>
-                  <th>Exit Strategy</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {combinedTrades.map(trade => {
-                  const isOpen = isTradeOpen(trade);
-                  const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
-                  const remainingQty = isOpen ? (trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty) : originalQty;
-                  const currentPrice = getCurrentPrice(trade);
-                  const entryPrice = Number(trade.entryPrice || 0);
-                  const isExitRecommended = trade.impulseAnalysis?.exitRecommended || false;
-                  
-                  // For open trades: use remaining quantity calculations
-                  // For closed trades: use original quantity and realized P&L
-                  const displayQuantity = remainingQty;
-                  const invested = isOpen ? (entryPrice * remainingQty).toFixed(2) : getInvested(trade);
-                  const marketValue = isOpen ? (currentPrice ? Number(currentPrice) * remainingQty : 0).toFixed(2) : "0.00";
-                  
-                  // Always calculate unrealized P&L
-                  let unrealizedPL;
-                  if (isOpen) {
-                    unrealizedPL = getUnrealizedPL(trade);
-                  } else {
-                    // For closed trades, show realized P&L as "unrealized" (actual profit/loss)
-                    const realizedPL = getPartialPL(trade);
-                    unrealizedPL = realizedPL !== "-" ? Number(realizedPL) : 0;
-                  }
-                  
-                  const status = getTradeStatus(trade);
-                  const direction = trade.direction || "N/A";
-                  
-                  return (
-                    <tr 
-                      key={trade.tradeId}
-                      className={`${styles.tradeRow} ${styles[status.toLowerCase()]}`}
-                      onClick={() => handleShowDetails(trade.id)}
-                    >
-                      <td className={styles.tickerCell}>
-                        <div className={styles.tickerInfo}>
-                          <span className={styles.ticker}>{trade.ticker}</span>
-                          <span className={styles.companyName}>
-                            {(trade.tickerName || trade.companyName || "").substring(0, 15)}
-                            {(trade.tickerName || trade.companyName || "").length > 15 ? "..." : ""}
-                          </span>
-                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                            <span className={`${styles.direction} ${styles[direction.toLowerCase()]}`}>
-                              {direction}
-                            </span>
-                            <span className={`${styles.statusBadge} ${styles[status.toLowerCase()]}`}>
-                              {isOpen ? 'OPEN' : 'CLOSED'}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td>{trade.entryDate ? formatDate(trade.entryDate) : "N/A"}</td>
-                      <td>${entryPrice.toFixed(2)}</td>
-                      <td>
-                        <div className={styles.priceWithChange}>
-                          <span>${currentPrice || 'N/A'}</span>
-                          {currentPrice && trade.entryPrice && isOpen && (
-                            <span className={`${styles.priceChange} ${Number(currentPrice) > Number(trade.entryPrice) ? styles.positive : styles.negative}`}>
-                              {((Number(currentPrice) - Number(trade.entryPrice)) / Number(trade.entryPrice) * 100).toFixed(2)}%
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td>{displayQuantity.toLocaleString()}</td>
-                      <td>${invested}</td>
-                      <td>${isOpen ? marketValue : "0.00"}</td>
-                      <td className={unrealizedPL && unrealizedPL > 0 ? styles.profit : unrealizedPL && unrealizedPL < 0 ? styles.loss : ''}>
-                        {unrealizedPL !== null && unrealizedPL !== undefined ? `$${unrealizedPL.toFixed(2)}` : 'N/A'}
-                      </td>
-                      <td className={styles.strategyCell}>
-                        {isOpen ? (
-                          isExitRecommended ? 'YES' : 'NO'
-                        ) : (
-                          'DONE'
-                        )}
-                      </td>
-                      <td className={styles.actionsCell}>
-                        <div className={styles.actionButtons}>
-                          <button
-                            onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
-                            className={`${styles.actionBtn} ${styles.viewBtn}`}
-                            title="View Details"
-                          >
-                            👁️
-                          </button>
-                          <button
-                            onClick={e => { e.stopPropagation(); isOpen ? handleEdit(trade.id) : handleReview(trade.id); }}
-                            className={`${styles.actionBtn} ${isOpen ? styles.editBtn : styles.reviewBtn}`}
-                            title={isOpen ? "Edit Trade" : "Add Review"}
-                          >
-                            {isOpen ? '✏️' : '📝'}
-                          </button>
-                          <button
-                            onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}
-                            className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                            title="Delete Trade"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
-      {trades.length === 0 && (
+      {/* Market-Based Trade Sections */}
+      {Object.entries(marketGroups).map(([currency, marketData]) => {
+        const totalTrades = Object.values(marketData.trades).flat().length;
+        if (totalTrades === 0) return null;
+
+        return (
+          <div key={currency} className={styles.marketSection}>
+            <h2 className={styles.marketSectionTitle}>
+              {marketData.name} Market ({currency}) - {totalTrades} Trades
+            </h2>
+            
+            {/* Open Trades */}
+            {renderTradeTable(marketData.trades.OPEN, 'OPEN', currency)}
+            
+            {/* Partial Trades */}
+            {renderTradeTable(marketData.trades.PARTIAL, 'PARTIAL', currency)}
+            
+            {/* Closed Trades */}
+            {renderTradeTable(marketData.trades.CLOSED, 'CLOSED', currency)}
+          </div>
+        );
+      })}
+
+      {/* Empty State */}
+      {trades.length === 0 && !loading && (
         <div className={styles.emptyState}>
           <h3>No trades found</h3>
           <p>Start by adding your first trade to track your portfolio.</p>
@@ -560,94 +799,24 @@ export default function TradeList() {
 
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && tradeToDelete && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.75)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: 12,
-            padding: 32,
-            maxWidth: 500,
-            width: '90%',
-            border: '1px solid var(--border-secondary)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-          }}>
-            <h3 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              color: 'var(--text-primary)',
-              margin: '0 0 16px 0'
-            }}>
-              Delete Trade
-            </h3>
-
-            <p style={{
-              fontSize: '16px',
-              color: 'var(--text-secondary)',
-              margin: '0 0 24px 0',
-              lineHeight: '1.5'
-            }}>
-              Are you sure you want to delete the trade for <strong style={{ color: 'var(--text-primary)' }}>{tradeToDelete.ticker}</strong>?
-              This action cannot be undone and will permanently remove all trade data including charts and analysis.
+        <div className={styles.deleteConfirmOverlay}>
+          <div className={styles.deleteConfirmDialog}>
+            <h3 className={styles.deleteConfirmTitle}>Delete Trade</h3>
+            <p className={styles.deleteConfirmMessage}>
+              Are you sure you want to delete the trade for{' '}
+              <strong>{tradeToDelete.ticker}</strong>? This action cannot be undone and will
+              permanently remove all trade data including charts and analysis.
             </p>
-
-            <div style={{
-              display: 'flex',
-              gap: 16,
-              justifyContent: 'flex-end'
-            }}>
+            <div className={styles.deleteConfirmActions}>
               <button
                 onClick={handleDeleteCancel}
-                style={{
-                  padding: '12px 24px',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  backgroundColor: 'transparent',
-                  color: 'var(--text-secondary)',
-                  border: '1px solid var(--border-secondary)',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={e => {
-                  e.target.style.backgroundColor = 'var(--bg-tertiary)';
-                  e.target.style.color = 'var(--text-primary)';
-                }}
-                onMouseOut={e => {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = 'var(--text-secondary)';
-                }}
+                className={styles.deleteConfirmCancel}
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                style={{
-                  padding: '12px 24px',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  backgroundColor: 'var(--status-error)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={e => {
-                  e.target.style.backgroundColor = '#B91C1C';
-                }}
-                onMouseOut={e => {
-                  e.target.style.backgroundColor = 'var(--status-error)';
-                }}
+                className={styles.deleteConfirmButton}
               >
                 Delete Trade
               </button>
