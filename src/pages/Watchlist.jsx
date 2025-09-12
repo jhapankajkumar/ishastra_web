@@ -515,7 +515,7 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
                   <div className={styles.positionGroup}>
                     <span className={styles.positionLabel}>Target3:</span>
                     <span className={styles.positionValue}>
-                      {stock.currency === 'INR' ? '₹' : '$'}{(stock.execution.exitStrategy.targets.moderate || 0).toLocaleString()}
+                      {stock.currency === 'INR' ? '₹' : '$'}{(stock.execution.exitStrategy.targets.aggressive || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>

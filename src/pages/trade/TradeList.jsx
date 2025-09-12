@@ -12,6 +12,26 @@ import styles from "./TradeList.module.css";
 import { getExitTransactions, getLastExitDate, getAverageExitPrice, getPartialPL } from '../../common/Helper';
 
 export default function TradeList() {
+  // Expand/collapse state for each table, key: `${currency}_${status}`
+  const [tableExpanded, setTableExpanded] = useState(() => {
+    // Load from localStorage
+    try {
+      const saved = localStorage.getItem('tradeTableExpanded');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Helper to toggle table state and persist
+  const toggleTable = (currency, status) => {
+    setTableExpanded(prev => {
+      const key = `${currency}_${status}`;
+      const updated = { ...prev, [key]: !prev[key] };
+      localStorage.setItem('tradeTableExpanded', JSON.stringify(updated));
+      return updated;
+    });
+  };
   const navigate = useNavigate();
   const [trades, setTrades] = useState([]);
   const [capitalData, setCapitalData] = useState([]);
@@ -408,62 +428,52 @@ export default function TradeList() {
     };
   };
 
-  // Render Market Card
-  const renderMarketCard = (currency, marketName) => {
+  // Render compact market summary row (like InvestmentList)
+  const renderMarketSummaryRow = (currency, marketName) => {
     const metrics = calculateMarketMetrics(currency);
     const symbol = currency === 'INR' ? '₹' : '$';
-    
     return (
-      <div key={currency} className={styles.marketCard}>
-        <div className={styles.marketCardHeader}>
-          <h3 className={styles.marketTitle}>{marketName} Market</h3>
+      <div key={currency} className={styles.summaryCard}>
+        <span className={styles.summaryItem}>
+          <span className={styles.summaryIcon}>{marketName === 'US' ? '🇺🇸' : '🇮🇳'}</span>
+          <span className={styles.summaryLabel}>{marketName} Market</span>
           <span className={styles.currencyBadge}>{currency}</span>
-        </div>
-        
-        <div className={styles.marketMetrics}>
-          <div className={styles.metricRow}>
-            <span className={styles.metricLabel}>Total Capital:</span>
-            <span className={styles.metricValue}>{formatCurrency(metrics.totalCapital, currency)}</span>
-          </div>
-          
-          <div className={styles.metricRow}>
-            <span className={styles.metricLabel}>Total Invested:</span>
-            <div className={styles.metricWithPercentage}>
-              <span className={styles.metricValue}>{formatCurrency(metrics.totalInvested, currency)}</span>
-              <span className={styles.percentage}>({metrics.investedPercentage}%)</span>
-            </div>
-          </div>
-          
-          <div className={styles.metricRow}>
-            <span className={styles.metricLabel}>Profit & Loss:</span>
-            <div className={styles.metricWithPercentage}>
-              <span className={`${styles.metricValue} ${metrics.totalPL >= 0 ? styles.profit : styles.loss}`}>
-                {formatCurrency(metrics.totalPL, currency)}
-              </span>
-              <span className={`${styles.percentage} ${metrics.totalPL >= 0 ? styles.profit : styles.loss}`}>
-                ({metrics.plPercentage >= 0 ? '+' : ''}{metrics.plPercentage}%)
-              </span>
-            </div>
-          </div>
-          
-          <div className={styles.metricRow}>
-            <span className={styles.metricLabel}>Today's P&L:</span>
-            <div className={styles.metricWithPercentage}>
-              <span className={`${styles.metricValue} ${metrics.todaysPL >= 0 ? styles.profit : styles.loss}`}>
-                {formatCurrency(metrics.todaysPL, currency)}
-              </span>
-              <span className={`${styles.percentage} ${metrics.todaysPL >= 0 ? styles.profit : styles.loss}`}>
-                ({metrics.todaysPlPercentage >= 0 ? '+' : ''}{metrics.todaysPlPercentage}%)
-              </span>
-            </div>
-          </div>
-          
-          <div className={styles.tradeStats}>
-            <span className={styles.statItem}>Open: {metrics.openTrades}</span>
-            <span className={styles.statItem}>Partial: {metrics.partialTrades}</span>
-            <span className={styles.statItem}>Closed: {metrics.closedTrades}</span>
-          </div>
-        </div>
+        </span>
+        <span className={styles.summaryItem}>
+          <span className={styles.summaryLabel}>Total Capital:</span>
+          <strong className={styles.summaryValue}>{formatCurrency(metrics.totalCapital, currency)}</strong>
+        </span>
+        <span className={styles.summaryItem}>
+          <span className={styles.summaryLabel}>Total Invested:</span>
+          <strong className={styles.summaryValue}>{formatCurrency(metrics.totalInvested, currency)}</strong>
+          <span className={styles.summaryPercent}>({metrics.investedPercentage}%)</span>
+        </span>
+        <span className={styles.summaryItem}>
+          <span className={styles.summaryLabel}>Profit/Loss:</span>
+          <strong className={`${styles.summaryValue} ${metrics.totalPL >= 0 ? styles.summarySuccess : styles.summaryError}`}>
+            {metrics.totalPL >= 0 ? '+' : ''}{formatCurrency(metrics.totalPL, currency)}
+            <span className={styles.summaryPercent}>({metrics.plPercentage >= 0 ? '+' : ''}{metrics.plPercentage}%)</span>
+          </strong>
+        </span>
+        <span className={styles.summaryItem}>
+          <span className={styles.summaryLabel}>Today's P&L:</span>
+          <strong className={`${styles.summaryValue} ${metrics.todaysPL >= 0 ? styles.summarySuccess : styles.summaryError}`}>
+            {metrics.todaysPL >= 0 ? '+' : ''}{formatCurrency(metrics.todaysPL, currency)}
+            <span className={styles.summaryPercent}>({metrics.todaysPlPercentage >= 0 ? '+' : ''}{metrics.todaysPlPercentage}%)</span>
+          </strong>
+        </span>
+        <span className={styles.summaryItem}>
+          <span className={styles.summaryLabel}>Open:</span>
+          <strong className={styles.summaryValue}>{metrics.openTrades}</strong>
+        </span>
+        <span className={styles.summaryItem}>
+          <span className={styles.summaryLabel}>Partial:</span>
+          <strong className={styles.summaryValue}>{metrics.partialTrades}</strong>
+        </span>
+        <span className={styles.summaryItem}>
+          <span className={styles.summaryLabel}>Closed:</span>
+          <strong className={styles.summaryValue}>{metrics.closedTrades}</strong>
+        </span>
       </div>
     );
   };
@@ -519,19 +529,41 @@ export default function TradeList() {
 
   const marketGroups = groupTradesByMarketAndStatus();
 
+  // Calculate Today's P&L for a trade
+  const getTodaysPL = (trade) => {
+    const currentPrice = trade.currentPrice !== undefined ? Number(trade.currentPrice) : Number(trade.entryPrice || 0);
+    const lastDayPrice = trade.lastDayPrice !== undefined ? Number(trade.lastDayPrice) : Number(trade.entryPrice || 0);
+    const qty = Number(trade.quantity || 0);
+    if (!qty || !currentPrice || !lastDayPrice) return { value: 0, percent: 0 };
+    const value = (currentPrice - lastDayPrice) * qty;
+    const percent = lastDayPrice ? ((currentPrice - lastDayPrice) / lastDayPrice * 100) : 0;
+    return { value, percent };
+  };
+
   // Render trade table based on status
   const renderTradeTable = (trades, status, currency) => {
     if (trades.length === 0) return null;
-
     const symbol = currency === 'INR' ? '₹' : '$';
-
+    const key = `${currency}_${status}`;
+    const expanded = tableExpanded[key] || false;
     return (
       <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>
-          {status === 'OPEN' ? 'Open Trades' : 
-           status === 'PARTIAL' ? 'Partially Closed Trades' : 
-           'Closed Trades'} ({trades.length})
-        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 className={styles.sectionTitle}>
+            {status === 'OPEN' ? 'Open Trades' : 
+             status === 'PARTIAL' ? 'Partially Closed Trades' : 
+             'Closed Trades'} ({trades.length}) {currency}
+          </h3>
+          <button
+            className={styles.expandCollapseBtn}
+            onClick={() => toggleTable(currency, status)}
+            title={expanded ? 'Collapse Table' : 'Expand Table'}
+            style={{ marginLeft: '1rem', padding: '0.3rem 0.8rem', fontSize: '1rem', borderRadius: '6px', border: '1px solid #ccc', background: '#f3f4f6', cursor: 'pointer' }}
+          >
+            {expanded ? '− Collapse' : '+ Expand'}
+          </button>
+        </div>
+        {expanded && (
         <div className={styles.tableContainer}>
           <table className={styles.tradesTable}>
             <thead>
@@ -561,9 +593,11 @@ export default function TradeList() {
                 <th>Invested</th>
                 <th>Current</th>
                 <th>P&L</th>
+                <th>Today's P&L</th>
                 <th>Actions</th>
               </tr>
             </thead>
+            
             <tbody>
               {trades.map(trade => {
                 const originalQty = Number(trade.quantity || 0);
@@ -572,26 +606,23 @@ export default function TradeList() {
                 const currentPrice = trade.currentPrice ? Number(trade.currentPrice) : entryPrice;
                 const lastExitDate = getLastExitDate(trade);
                 const avgSellPrice = getAverageSellPrice(trade);
-                
                 const displayQuantity = status === 'PARTIAL' ? 
                   `${remainingQty.toLocaleString()}/${originalQty.toLocaleString()}` : 
                   originalQty.toLocaleString();
-                
                 const invested = status === 'OPEN' ? 
                   (entryPrice * originalQty) : 
                   status === 'PARTIAL' ? 
                     (entryPrice * remainingQty) : 
                     (entryPrice * originalQty);
-                
                 const marketValue = status === 'CLOSED' ? 0 : 
                   status === 'PARTIAL' ? 
                     (currentPrice * remainingQty) : 
                     (currentPrice * originalQty);
-                
                 const pl = getPartialPL(trade);
                 const plValue = pl === "-" ? 0 : Number(pl);
                 const plPercentage = invested > 0 ? (plValue / invested * 100).toFixed(2) : 0;
-                console.log('ticker:', trade.tickerName);
+                // Today's P&L
+                const todaysPL = getTodaysPL(trade);
                 return (
                   <tr 
                     key={trade.tradeId}
@@ -614,7 +645,6 @@ export default function TradeList() {
                         </div>
                       </div>
                     </td>
-                    
                     {status === 'PARTIAL' ? (
                       <td>
                         <div>
@@ -632,9 +662,7 @@ export default function TradeList() {
                     ) : (
                       <td>{formatDate(trade.entryDate)}</td>
                     )}
-                    
                     <td>{formatCurrency(entryPrice, currency)}</td>
-                    
                     {status === 'CLOSED' ? (
                       <td>{avgSellPrice ? formatCurrency(avgSellPrice, currency) : 'N/A'}</td>
                     ) : (
@@ -649,7 +677,6 @@ export default function TradeList() {
                         </div>
                       </td>
                     )}
-                    
                     <td>{displayQuantity}</td>
                     <td>{formatCurrency(invested, currency)}</td>
                     <td>{formatCurrency(marketValue, currency)}</td>
@@ -660,6 +687,19 @@ export default function TradeList() {
                           ({plPercentage >= 0 ? '+' : ''}{Number(plPercentage).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
                         </span>
                       </div>
+                    </td>
+                    {/* Today's P&L */}
+                    <td>
+                      {status === 'CLOSED' ? '-' : (  
+                      <div className={styles.priceWithChange}>
+                        <span className={todaysPL.value >= 0 ? styles.profit : styles.loss}>
+                          {todaysPL.value >= 0 ? '+' : ''}{formatCurrency(todaysPL.value, currency)}
+                        </span>
+                        <span className={`${styles.priceChange} ${todaysPL.percent >= 0 ? styles.positive : styles.negative}`}>
+                          ({todaysPL.percent >= 0 ? '+' : ''}{todaysPL.percent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
+                        </span>
+                      </div>
+                      )}
                     </td>
                     <td className={styles.actionsCell}>
                       <div className={styles.actionButtons}>
@@ -695,6 +735,7 @@ export default function TradeList() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     );
   };
@@ -710,16 +751,62 @@ export default function TradeList() {
 
   return (
     <div className={styles.container}>
-      <PageHeader
-        title="Trade Management"
-        subtitle="Monitor your portfolio across US and India markets"
-      />
-
-      {/* Market Overview Cards */}
+      {/* Market Overview Summary Row */}
+      {/* Market Overview: Both markets in a single row */}
+      {/* Market Overview: Single card with both market data */}
       {!loadingCapital && capitalData.length > 0 && (
         <div className={styles.marketOverview}>
-          {renderMarketCard('USD', 'US')}
-          {renderMarketCard('INR', 'India')}
+          <div className={styles.summaryCard} style={{ width: '100%', flexDirection: 'column', gap: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
+            {/* US Market Data */}
+            <div style={{ marginBottom: '0.5rem' }}>
+              <span className={styles.summaryIcon}>🇺🇸</span>
+              <span className={styles.summaryLabel} style={{ fontWeight: 600, fontSize: '1.1em', marginRight: '1.2em' }}>US Market <span className={styles.currencyBadge}>USD</span></span>
+              <span className={styles.summaryLabel}>Total Capital:</span>
+              <strong className={styles.summaryValue}>{formatCurrency(calculateMarketMetrics('USD').totalCapital, 'USD')}</strong>
+              <span className={styles.summaryLabel} style={{ marginLeft: '1.2em' }}>Total Invested:</span>
+              <strong className={styles.summaryValue}>{formatCurrency(calculateMarketMetrics('USD').totalInvested, 'USD')}</strong>
+              <span className={styles.summaryPercent}>({calculateMarketMetrics('USD').investedPercentage}%)</span>
+              <span className={styles.summaryLabel} style={{ marginLeft: '1.2em' }}>Profit/Loss:</span>
+              <strong className={`${styles.summaryValue} ${calculateMarketMetrics('USD').totalPL >= 0 ? styles.summarySuccess : styles.summaryError}`}>
+                {calculateMarketMetrics('USD').totalPL >= 0 ? '+' : ''}{formatCurrency(calculateMarketMetrics('USD').totalPL, 'USD')}
+                <span className={styles.summaryPercent}>({calculateMarketMetrics('USD').plPercentage >= 0 ? '+' : ''}{calculateMarketMetrics('USD').plPercentage}%)</span>
+              </strong>
+              {/* Only show Today's P&L if there are open or partial trades */}
+              {(calculateMarketMetrics('USD').openTrades > 0 || calculateMarketMetrics('USD').partialTrades > 0) && (
+                <>
+                  <span className={styles.summaryLabel} style={{ marginLeft: '1.2em' }}>Today's P&L:</span>
+                  <strong className={`${styles.summaryValue} ${calculateMarketMetrics('USD').todaysPL >= 0 ? styles.summarySuccess : styles.summaryError}`}>
+                    {calculateMarketMetrics('USD').todaysPL >= 0 ? '+' : ''}{formatCurrency(calculateMarketMetrics('USD').todaysPL, 'USD')}
+                    <span className={styles.summaryPercent}>({calculateMarketMetrics('USD').todaysPlPercentage >= 0 ? '+' : ''}{calculateMarketMetrics('USD').todaysPlPercentage}%)</span>
+                  </strong>
+                </>
+              )}
+            </div>
+            {/* India Market Data */}
+            <div>
+              <span className={styles.summaryIcon}>🇮🇳</span>
+              <span className={styles.summaryLabel} style={{ fontWeight: 600, fontSize: '1.1em', marginRight: '1.2em' }}>India Market <span className={styles.currencyBadge}>INR</span></span>
+              <span className={styles.summaryLabel}>Total Capital:</span>
+              <strong className={styles.summaryValue}>{formatCurrency(calculateMarketMetrics('INR').totalCapital, 'INR')}</strong>
+              <span className={styles.summaryLabel} style={{ marginLeft: '1.2em' }}>Total Invested:</span>
+              <strong className={styles.summaryValue}>{formatCurrency(calculateMarketMetrics('INR').totalInvested, 'INR')}</strong>
+              <span className={styles.summaryPercent}>({calculateMarketMetrics('INR').investedPercentage}%)</span>
+              <span className={styles.summaryLabel} style={{ marginLeft: '1.2em' }}>Profit/Loss:</span>
+              <strong className={`${styles.summaryValue} ${calculateMarketMetrics('INR').totalPL >= 0 ? styles.summarySuccess : styles.summaryError}`}>
+                {calculateMarketMetrics('INR').totalPL >= 0 ? '+' : ''}{formatCurrency(calculateMarketMetrics('INR').totalPL, 'INR')}
+                <span className={styles.summaryPercent}>({calculateMarketMetrics('INR').plPercentage >= 0 ? '+' : ''}{calculateMarketMetrics('INR').plPercentage}%)</span>
+              </strong>
+              {(calculateMarketMetrics('INR').openTrades > 0 || calculateMarketMetrics('INR').partialTrades > 0) && (
+                <>
+                  <span className={styles.summaryLabel} style={{ marginLeft: '1.2em' }}>Today's P&L:</span>
+                  <strong className={`${styles.summaryValue} ${calculateMarketMetrics('INR').todaysPL >= 0 ? styles.summarySuccess : styles.summaryError}`}>
+                    {calculateMarketMetrics('INR').todaysPL >= 0 ? '+' : ''}{formatCurrency(calculateMarketMetrics('INR').todaysPL, 'INR')}
+                    <span className={styles.summaryPercent}>({calculateMarketMetrics('INR').todaysPlPercentage >= 0 ? '+' : ''}{calculateMarketMetrics('INR').todaysPlPercentage}%)</span>
+                  </strong>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -759,9 +846,9 @@ export default function TradeList() {
 
         return (
           <div key={currency} className={styles.marketSection}>
-            <h2 className={styles.marketSectionTitle}>
+            {/* <h2 className={styles.marketSectionTitle}>
               {marketData.name} Market ({currency}) - {totalTrades} Trades
-            </h2>
+            </h2> */}
             
             {/* Open Trades */}
             {renderTradeTable(marketData.trades.OPEN, 'OPEN', currency)}
