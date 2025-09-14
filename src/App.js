@@ -23,6 +23,7 @@ import UpdateInvestmentForm from './pages/investment/UpdateInvestmentForm'; // I
 import Watchlist from './pages/Watchlist'; // Import Watchlist component
 import StockDetail from './pages/StockDetail'; // Import StockDetail component
 import './styles/themes.css'; // Import global theme styles
+import Chart from './pages/Chart'; // Import Chart component
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
             <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/analysis" element={<TickerAnalysis />} />
+            <Route path="/chart" element={<Chart />} />
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/stock-detail/:symbol" element={<StockDetail />} />
             <Route path="/trades" element={<TradeList />} />

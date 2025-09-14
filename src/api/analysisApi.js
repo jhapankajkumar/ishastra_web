@@ -42,14 +42,31 @@ AnalysisAPI_Instance.interceptors.response.use(
 export const getUnifiedAnalysis = async (symbol, period = '3mo', capital = 120000) => {
   try {
     const params = new URLSearchParams({
-      symbols: symbol,
+      symbol: symbol,
       period: period,
-      capital: capital
+      capital: capital,
+      isRequiredChartData: true
     });
     const response = await AnalysisAPI_Instance.get(`/trading/signal-analysis?${params}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching unified analysis:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get unified AI analysis combining all services
+ */
+export const getChartData = async (symbol) => {
+  try {
+    const params = new URLSearchParams({
+      symbol: symbol,
+    });
+    const response = await AnalysisAPI_Instance.get(`/trading/chart?${params}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching chart data:', error);
     throw error;
   }
 };

@@ -11,9 +11,29 @@ const Watchlist = () => {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortBy, setSortBy] = useState('action'); // action, confidence, grade, symbol
+  const [sortBy, setSortBy] = useState('grade'); // grade, confidence, symbol
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('watchlistActiveTab') || 'ALL';
+  });
   const navigate = useNavigate();
   const notification = useNotification();
+
+  const setActiveTabWithPersist = (tab) => {
+    setActiveTab(tab);
+    localStorage.setItem('watchlistActiveTab', tab);
+  };
+
+  // Filter stocks based on active tab
+  const getFilteredStocks = () => {
+    switch (activeTab) {
+      case 'BUY':
+        return stocks.filter(stock => stock.decision?.action === 'BUY');
+      case 'WATCH':
+        return stocks.filter(stock => stock.decision?.action === 'WATCH');
+      default:
+        return stocks;
+    }
+  };
 
   useEffect(() => {
     fetchWatchlist();
@@ -83,26 +103,56 @@ const Watchlist = () => {
     let sortedStocks = [...stocks];
     
     switch (sortType) {
-      case 'action':
-        // Use the multi-level sorting function
-        sortedStocks = sortStocks([...stocks]);
-        break;
       case 'confidence':
-        sortedStocks = sortedStocks.sort((a, b) => (b.decision?.confidence || 0) - (a.decision?.confidence || 0));
+        // Sort by confidence first, then by grade as secondary
+        sortedStocks = sortedStocks.sort((a, b) => {
+          const confidenceA = a.decision?.confidence || 0;
+          const confidenceB = b.decision?.confidence || 0;
+          
+          if (confidenceA !== confidenceB) {
+            return confidenceB - confidenceA; // Higher confidence first
+          }
+          
+          // Secondary sort by grade
+          const gradeA = getGradeValue(a.decision?.grade);
+          const gradeB = getGradeValue(b.decision?.grade);
+          return gradeB - gradeA; // Higher grade first
+        });
         break;
       case 'grade':
+        // Sort by grade first, then by confidence as secondary
         sortedStocks = sortedStocks.sort((a, b) => {
           const gradeA = getGradeValue(a.decision?.grade);
           const gradeB = getGradeValue(b.decision?.grade);
-          return gradeB - gradeA;
+          
+          if (gradeA !== gradeB) {
+            return gradeB - gradeA; // Higher grade first
+          }
+          
+          // Secondary sort by confidence  
+          const confidenceA = a.decision?.confidence || 0;
+          const confidenceB = b.decision?.confidence || 0;
+          return confidenceB - confidenceA; // Higher confidence first
         });
         break;
       case 'symbol':
         sortedStocks = sortedStocks.sort((a, b) => a.symbol.localeCompare(b.symbol));
         break;
       default:
-        // Default to multi-level sorting
-        sortedStocks = sortStocks([...stocks]);
+        // Default to grade then confidence sorting
+        sortedStocks = sortedStocks.sort((a, b) => {
+          const gradeA = getGradeValue(a.decision?.grade);
+          const gradeB = getGradeValue(b.decision?.grade);
+          
+          if (gradeA !== gradeB) {
+            return gradeB - gradeA; // Higher grade first
+          }
+          
+          // Secondary sort by confidence  
+          const confidenceA = a.decision?.confidence || 0;
+          const confidenceB = b.decision?.confidence || 0;
+          return confidenceB - confidenceA; // Higher confidence first
+        });
         break;
     }
     
@@ -270,13 +320,6 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
         <div className={styles.sortControls}>
           <label>Sort by:</label>
           <button 
-            className={`${styles.sortButton} ${sortBy === 'action' ? styles.active : ''}`}
-            onClick={() => handleSort('action')}
-            title="Sort by BUY signals first, then by grade and confidence"
-          >
-            Action
-          </button>
-          <button 
             className={`${styles.sortButton} ${sortBy === 'grade' ? styles.active : ''}`}
             onClick={() => handleSort('grade')}
           >
@@ -297,19 +340,45 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
         </div>
       </div>
 
+      {/* Watchlist Tabs */}
+      <div className={styles.tabContainer}>
+        <button 
+          className={`${styles.tab} ${activeTab === 'ALL' ? styles.active : ''}`}
+          onClick={() => setActiveTabWithPersist('ALL')}
+        >
+          📊 All Stocks
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'BUY' ? styles.active : ''}`}
+          onClick={() => setActiveTabWithPersist('BUY')}
+        >
+          🟢 BUY Signals
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'WATCH' ? styles.active : ''}`}
+          onClick={() => setActiveTabWithPersist('WATCH')}
+        >
+          👁️ WATCH List
+        </button>
+      </div>
+
       <div className={styles.statsBar}>
         <div className={styles.stat}>
-          <span className={styles.statLabel}>Total Stocks</span>
-          <span className={styles.statValue}>{stocks.length}</span>
+          <span className={styles.statLabel}>
+            {activeTab === 'ALL' ? 'Total Stocks' : 
+             activeTab === 'BUY' ? 'BUY Signals' : 
+             'WATCH Signals'}
+          </span>
+          <span className={styles.statValue}>{getFilteredStocks().length}</span>
         </div>
         <div className={styles.stat}>
-          <span className={styles.statLabel}>BUY Signals</span>
+          <span className={styles.statLabel}>All BUY Signals</span>
           <span className={styles.statValue}>
             {stocks.filter(s => s.decision?.action === 'BUY').length}
           </span>
         </div>
         <div className={styles.stat}>
-          <span className={styles.statLabel}>WATCH Signals</span>
+          <span className={styles.statLabel}>All WATCH Signals</span>
           <span className={styles.statValue}>
             {stocks.filter(s => s.decision?.action === 'WATCH').length}
           </span>
@@ -317,7 +386,7 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
       </div>
 
       <div className={styles.stockList}>
-        {stocks.map((stock) => (
+        {getFilteredStocks().map((stock) => (
           <div 
             key={stock.symbol} 
             className={styles.stockCard}
@@ -554,10 +623,18 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
         ))}
       </div>
 
-      {stocks.length === 0 && (
+      {getFilteredStocks().length === 0 && (
         <div className={styles.emptyState}>
-          <h3>No stocks in watchlist</h3>
-          <p>Your watchlist is empty. Add some stocks to get started!</p>
+          <h3>
+            {activeTab === 'ALL' ? 'No stocks in watchlist' :
+             activeTab === 'BUY' ? 'No BUY signals found' :
+             'No WATCH signals found'}
+          </h3>
+          <p>
+            {activeTab === 'ALL' ? 'Your watchlist is empty. Add some stocks to get started!' :
+             activeTab === 'BUY' ? 'No stocks currently have BUY signals. Check back later!' :
+             'No stocks currently have WATCH signals. Check back later!'}
+          </p>
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@ import TickerSearch from '../components/TickerSearch';
 import { getUnifiedAnalysis } from '../api/analysisApi';
 import { useTheme } from '../contexts/ThemeContext';
 import styles from './TickerAnalysis.module.css';
+import LightweightChart from '../components/LightweightChart';
 
 const TickerAnalysis = () => {
   const { theme } = useTheme();
@@ -46,9 +47,10 @@ const TickerAnalysis = () => {
       }
       const response = await getUnifiedAnalysis(tickerData.symbol, '3mo', capital);
       console.log('API Response:', response);
-      setAnalysisData(response);
+      const result = response.result ? response.result : response;
+      setAnalysisData(result);
       // Save to localStorage for recent searches
-      if (response && response.symbol) {
+      if (result && result.symbol) {
         let recent = [];
         try {
           recent = JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
@@ -83,7 +85,7 @@ const TickerAnalysis = () => {
     console.log('Rendering analysis data:', analysisData);
 
     // Handle new array-based response structure - use first result
-    const firstResult = analysisData.results ? analysisData.results[0] : analysisData;
+    const result = analysisData.result ? analysisData.result : analysisData;
     
     const {
       symbol,
@@ -91,15 +93,12 @@ const TickerAnalysis = () => {
       timestamp,
       decision,
       execution,
-      riskReward,
-      context,
       scenarios,
       risk,
       nextStepSummary,
       whyAvoid,
-      flipToReady,
       systems
-    } = firstResult;
+    } = result;
 
     const getStatusColor = (status) => {
       switch (status) {
@@ -128,87 +127,6 @@ const TickerAnalysis = () => {
           return 'AVOID';
         default:
           return status?.replace?.(/_/g, ' ') || 'Unknown';
-      }
-    };
-
-    const getReasonCodeMessage = (code) => {
-      // Handle parameterized codes with regex patterns
-      if (code.includes('PRICE_') && code.includes('_BELOW_TREND')) {
-        const match = code.match(/PRICE_(\d+)%_BELOW_TREND/);
-        const percentage = match ? match[1] : 'X';
-        return `🔴 Price is ${percentage}% below trend support - bearish signal`;
-      }
-
-      if (code.includes('VOLUME_') && code.includes('_OF_AVERAGE')) {
-        const match = code.match(/VOLUME_(\d+)%_OF_AVERAGE/);
-        const percentage = match ? match[1] : 'X';
-        return `🔴 Volume only ${percentage}% of average - weak participation`;
-      }
-
-      if (code.includes('RISK_REWARD_') && code.includes('_TOO_LOW')) {
-        const match = code.match(/RISK_REWARD_(\d+\.?\d*)%_TOO_LOW/);
-        const percentage = match ? match[1] : 'X';
-        return `🔴 Risk/reward ratio ${percentage}% too low (minimum 2.0 required)`;
-      }
-
-      if (code.includes('SIGNAL_GRADE_')) {
-        const match = code.match(/SIGNAL_GRADE_([A-F][+-]?)/);
-        const grade = match ? match[1] : 'X';
-        return `🔴 Technical signal quality grade ${grade} - below minimum standard`;
-      }
-
-      if (code.includes('CONFIDENCE_') && code.includes('_LOW')) {
-        const match = code.match(/CONFIDENCE_(\d+)%_LOW/);
-        const percentage = match ? match[1] : 'X';
-        return `🔴 AI confidence only ${percentage}% - below 80% threshold`;
-      }
-
-      if (code.includes('EARNINGS_IN_') && code.includes('_DAYS')) {
-        const match = code.match(/EARNINGS_IN_(\d+)_DAYS/);
-        const days = match ? match[1] : 'X';
-        return `🔴 Earnings announcement in ${days} days - event risk present`;
-      }
-
-      if (code.includes('OVERHEAD_RESISTANCE_') && code.includes('_AWAY')) {
-        const match = code.match(/OVERHEAD_RESISTANCE_(\d+)%_AWAY/);
-        const percentage = match ? match[1] : 'X';
-        return `🔴 Strong resistance only ${percentage}% away - limited upside`;
-      }
-
-      if (code.includes('STRONG_VOLUME_') && code.includes('_AVERAGE')) {
-        const match = code.match(/STRONG_VOLUME_(\d+)%_AVERAGE/);
-        const percentage = match ? match[1] : 'X';
-        return `🟢 Strong volume at ${percentage}% of average - good participation`;
-      }
-
-      if (code.includes('HIGH_QUALITY_GRADE_')) {
-        const match = code.match(/HIGH_QUALITY_GRADE_([A-F][+-]?)/);
-        const grade = match ? match[1] : 'X';
-        return `🟢 High quality technical setup - Grade ${grade}`;
-      }
-
-      if (code.includes('EXCELLENT_RISK_REWARD_')) {
-        const match = code.match(/EXCELLENT_RISK_REWARD_(\d+\.?\d*)%/);
-        const percentage = match ? match[1] : 'X';
-        return `🟢 Excellent risk/reward ratio ${percentage}% (≥3.0)`;
-      }
-
-      if (code.includes('HIGH_CONFIDENCE_')) {
-        const match = code.match(/HIGH_CONFIDENCE_(\d+)%/);
-        const percentage = match ? match[1] : 'X';
-        return `🟢 High AI confidence ${percentage}% (≥80%)`;
-      }
-
-      // Static reason codes
-      switch (code) {
-        case 'PRICE_BELOW_200EMA':
-          return '🔴 Price below 200 EMA - bearish long-term trend';
-        case 'PRICE_ABOVE_200EMA':
-          return '🟢 Price above 200 EMA - bullish trend confirmed';
-        case 'ANALYSIS_COMPLETE':
-          return '✅ Analysis completed successfully';
-        default:
-          return `📊 ${code.replace(/_/g, ' ').toLowerCase()}`;
       }
     };
 
@@ -774,6 +692,12 @@ const TickerAnalysis = () => {
     );
   };
 
+  // Get historical OHLCV data from analysisData if available
+  let ohlcv = [];
+  if (analysisData?.historicalData) {
+    ohlcv = analysisData.historicalData;
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
@@ -809,6 +733,17 @@ const TickerAnalysis = () => {
       )}
 
       {renderAnalysisResults()}
+
+      {analysisData && analysisData.historicalData && analysisData.historicalData.length > 0 && (
+        <div style={{ width: '100%', margin: '32px 0 0 0', minHeight: 320 }}>
+          <LightweightChart 
+            ohlcv={analysisData.historicalData}
+            showIndicators={true}
+            emaPeriods={[13, 20, 50]}
+            showSupertrend={true}
+          />
+        </div>
+      )}
     </div>
   );
 };
