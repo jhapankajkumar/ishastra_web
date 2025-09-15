@@ -387,50 +387,49 @@ const LightweightChart = ({ ohlcv }) => {
         break;
 
       case 'supertrend': {
-  const { supertrend, trend } = calculateSupertrend(data, 10, 3);
+        const { supertrend, trend } = calculateSupertrend(data, 10, 3);
 
-  const lineData = [];
-  let lastPoint = null;
+        const upperBandData = [];
+        const lowerBandData = [];
 
-  for (let i = 0; i < data.length; i++) {
-    const time = data[i].date ? data[i].date.substring(0, 10) : "";
-    if (supertrend[i] === null || isNaN(supertrend[i])) continue;
+        for (let i = 0; i < data.length; i++) {
+          const time = data[i].date ? data[i].date.substring(0, 10) : "";
+          if (supertrend[i] === null || isNaN(supertrend[i])) continue;
 
-    const color = trend[i] === 1 ? 'green' : 'red';
+          if (trend[i] === 1) {
+            // Bullish → green lower band only
+            lowerBandData.push({ time, value: supertrend[i] });
+          } else {
+            // Bearish → red upper band only
+            upperBandData.push({ time, value: supertrend[i] });
+          }
+        }
 
-    // If trend flipped, duplicate the last point with old color
-    if (lastPoint && lastPoint.color !== color) {
-      lineData.push({
-        time,
-        value: lastPoint.value, // duplicate last value
-        color,
-      });
-    }
+        // Cleanup old series
+        if (seriesRefs.current[indicator]) {
+          chart.removeSeries(seriesRefs.current[indicator].upper);
+          chart.removeSeries(seriesRefs.current[indicator].lower);
+        }
 
-    lineData.push({
-      time,
-      value: supertrend[i],
-      color,
-    });
+        // Add the two line series
+        const upperSeries = chart.addSeries(LineSeries, {
+          color: 'red',
+          lineWidth: 2,
+          priceScaleId,
+        });
 
-    lastPoint = { value: supertrend[i], color };
-  }
+        const lowerSeries = chart.addSeries(LineSeries, {
+          color: 'green',
+          lineWidth: 2,
+          priceScaleId,
+        });
 
-  if (seriesRefs.current[indicator]) {
-    chart.removeSeries(seriesRefs.current[indicator]);
-  }
+        upperSeries.setData(upperBandData);
+        lowerSeries.setData(lowerBandData);
 
-  const stSeries = chart.addSeries(LineSeries, {
-    lineWidth: 2,
-    priceScaleId,
-    lastValueVisible: true,
-    crossHairMarkerVisible: true,
-  });
-
-  stSeries.setData(lineData);
-  seriesRefs.current[indicator] = stSeries;
-  return;
-}
+        seriesRefs.current[indicator] = { upper: upperSeries, lower: lowerSeries };
+        return;
+      }
     }
 
     if (seriesRefs.current[indicator]) {
