@@ -54,21 +54,42 @@ export function getAverageExitPrice(trade) {
 };
 
 export function getPartialPL(trade) {
-    if (trade.status.toLowerCase() === 'open') {
-        return trade.quantity * Number(trade.currentPrice ? (trade.currentPrice - trade.entryPrice) : 0);
-    }
+
+    if (!trade || !trade.entryPrice) return "0";
+
+    const entryPrice = Number(trade.entryPrice);
+    const direction = trade.direction.toLowerCase();
+
+    // Get all exit transactions (if any)
     const exits = getExitTransactions(trade);
-    if (!exits.length || !trade.entryPrice || !trade.direction) return "0";
-    let pl = 0;
+    let realizedPL = 0;
+
     exits.forEach(tx => {
         if (tx.price !== undefined && tx.quantity !== undefined) {
-            const priceDiff = trade.direction.toLowerCase() === 'long'
-                ? Number(tx.price) - Number(trade.entryPrice)
-                : Number(trade.entryPrice) - Number(tx.price);
-            pl += priceDiff * Number(tx.quantity);
+            const txPrice = Number(tx.price);
+            const txQty = Number(tx.quantity);
+            const diff = (txPrice - entryPrice)
+            realizedPL += diff * txQty;
         }
     });
-    return pl.toFixed(0);
+
+    // Handle remaining open quantity
+    const openQty = trade.remainingQuantity ?? (
+        trade.quantity - exits.reduce((sum, tx) => sum + Number(tx.quantity), 0)
+    );
+
+    let unrealizedPL = 0;
+    if (openQty > 0 && trade.currentPrice) {
+        const currentPrice = Number(trade.currentPrice);
+        const diff =  (currentPrice - entryPrice)
+        unrealizedPL = diff * openQty;
+    }
+
+    const totalPL = realizedPL + unrealizedPL;
+    if (trade.currency && trade.currency.toUpperCase() === 'USD') {
+        // console.log("Realized PL:", realizedPL, "Unrealized PL:", unrealizedPL, "Total PL:", totalPL);
+    }
+    return totalPL.toFixed(2);
 };
 
 
