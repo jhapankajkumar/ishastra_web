@@ -26,6 +26,7 @@ const palette = [
 ];
 
 const MarketCapPieChart = ({ investments }) => {
+  const isSmall = typeof window !== 'undefined' && window.innerWidth < 700;
   const { labels, data } = getMarketCapData(investments);
   if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 13 }}>No market cap data</div>;
   return (
@@ -46,15 +47,16 @@ const MarketCapPieChart = ({ investments }) => {
         plugins: {
           legend: {
             display: true,
-            position: 'right',
-            labels: { color: '#E5E7EB', font: { size: 10 } }
+            position: isSmall ? 'bottom' : 'right',
+            align: 'center',
+            labels: { color: '#E5E7EB', font: { size: isSmall ? 9 : 10 } }
           },
           tooltip: { callbacks: { label: ctx => `${ctx.label}: ₹${ctx.parsed.toLocaleString()}` } }
         },
         responsive: true,
-        maintainAspectRatio: false
+        maintainAspectRatio: false,
+        layout: { padding: { right: isSmall ? 0 : 8 } }
       }}
-      height={220}
     />
   );
 };

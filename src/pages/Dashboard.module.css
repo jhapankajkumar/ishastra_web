@@ -1,3 +1,152 @@
+/* Investment charts stack: grid on desktop, stacked on mobile */
+.investmentChartsStack {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+  .investmentChartsStack {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 700px) {
+  .investmentChartsStack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .investmentChartsStack > div {
+    width: 100% !important;
+    max-width: 100vw;
+    min-width: 0;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+}
+/* --- Prevent Chart/Card Overlap and Enable Horizontal Scroll on Mobile --- */
+@media (max-width: 900px) {
+  .card {
+    overflow-x: auto;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+@media (max-width: 700px) {
+  .mainGrid, .topGrid, .bottomGrid {
+    display: block;
+    grid-template-columns: none;
+    gap: 12px;
+  }
+  .card {
+    width: 100vw;
+    min-width: 0;
+    margin-bottom: 12px;
+    padding: 10px 0 10px 0;
+    box-sizing: border-box;
+    overflow-x: auto;
+  }
+  .card h3 {
+    font-size: 1rem;
+  }
+  .chartContainer {
+    width: 100vw;
+    min-width: 320px;
+    max-width: 100vw;
+    overflow-x: auto;
+    box-sizing: border-box;
+    margin: 0 auto;
+  }
+}
+@media (max-width: 480px) {
+  .dashboardContainer {
+    padding: 6px 0;
+    width: 100vw;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .card {
+    padding: 6px 0 6px 0;
+    width: 100vw;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .chartContainer {
+    min-width: 280px;
+    width: 100vw;
+    max-width: 100vw;
+    overflow-x: auto;
+    box-sizing: border-box;
+  }
+}
+/* --- Responsive Design Improvements --- */
+@media (max-width: 900px) {
+  .dashboardContainer {
+    padding: 12px 2%;
+  }
+  .heading {
+    font-size: 1.3rem;
+  }
+  .statsRow {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .statsRow > div {
+    min-width: 0;
+    max-width: 100%;
+    align-items: flex-start;
+    text-align: left;
+    padding: 0;
+  }
+  .statValue {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .mainGrid, .topGrid, .bottomGrid {
+    display: block;
+    grid-template-columns: none;
+    gap: 12px;
+  }
+  .card {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 12px;
+    padding: 10px;
+  }
+  .card h3 {
+    font-size: 1rem;
+  }
+  .chartContainer {
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboardContainer {
+    padding: 6px 1%;
+  }
+  .heading {
+    font-size: 1.1rem;
+  }
+  .card {
+    padding: 6px;
+  }
+  .statLabel {
+    font-size: 0.8rem;
+  }
+  .statValue {
+    font-size: 1rem;
+  }
+}
 /* Dashboard specific styles */
 .dashboardContainer {
   max-width: none;
@@ -128,6 +277,7 @@
   padding-bottom: 24px;
   padding-right: 24px;
   box-sizing: border-box;
+  min-width: 0;
   width: 100%;
   border: 1px solid var(--border-primary);
   transition: background-color 0.3s ease, border-color 0.3s ease;
@@ -156,6 +306,9 @@
   width: 100%;
   min-width: 900px;
   border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 .tradesTableWrapper th, .tradesTableWrapper td {
@@ -225,6 +378,16 @@
   }
 }
 
+/* Responsive header adjustments */
+@media (max-width: 600px) {
+  .headerContainer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    height: auto;
+  }
+}
+
 @media (max-width: 700px) {
   .topGrid,
   .bottomGrid,
@@ -250,6 +413,11 @@
   .card textarea {
     font-size: 1rem;
   }
+  .card button {
+    width: 100%;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
 }
 @media (max-width: 700px) {
   .card {
@@ -263,9 +431,19 @@
 
 .chartContainer {
   width: 100%;
-  height: 250px;
-  /* background: none; */
-  /* border-radius: 0; */
+  height: 340px;
+  overflow: hidden;
+  contain: layout paint size;
+}
+@media (max-width: 900px) {
+  .chartContainer {
+    height: 300px;
+  }
+}
+@media (max-width: 600px) {
+  .chartContainer {
+    height: 260px;
+  }
 }
 
 /* You can reuse this class for header inner container */
@@ -293,4 +471,8 @@
 .chartContainer {
   width: 100%;
   height: 250px;
+}
+
+body {
+  overflow-x: hidden;
 }

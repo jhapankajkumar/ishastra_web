@@ -55,21 +55,45 @@ export default function Header() {
   
   return (
     <header className={styles.header}>
-      <div className={styles.headerContainer}>
+      {/* Market Indices Bar (always visible, scrollable) */}
+      <div className={styles.indicesBarWrapper}>
+        <div
+          className={styles.indicesContainer}
+          role="region"
+          aria-label="Market Indices"
+        >
+          <div className={styles.indexItem}><span className={styles.indexName}>NIFTY</span><span className={styles.indexValue}>{loading ? '...' : (indices.nifty50.value ? indices.nifty50.value.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '---')}</span><span className={`${styles.indexChange} ${indices.nifty50.changePercent >= 0 ? styles.positive : styles.negative}`}>{loading ? '...' : `${indices.nifty50.changePercent >= 0 ? '+' : ''}${indices.nifty50.changePercent?.toFixed(2) || '0.00'}%`}</span></div>
+          <div className={styles.indexItem}><span className={styles.indexName}>SENSEX</span><span className={styles.indexValue}>{loading ? '...' : (indices.sensex.value ? indices.sensex.value.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '---')}</span><span className={`${styles.indexChange} ${indices.sensex.changePercent >= 0 ? styles.positive : styles.negative}`}>{loading ? '...' : `${indices.sensex.changePercent >= 0 ? '+' : ''}${indices.sensex.changePercent?.toFixed(2) || '0.00'}%`}</span></div>
+          <div className={styles.indexItem}><span className={styles.indexName}>NASDAQ</span><span className={styles.indexValue}>{loading ? '...' : (indices.nasdaq.value ? indices.nasdaq.value.toLocaleString('en-US', {maximumFractionDigits: 2}) : '---')}</span><span className={`${styles.indexChange} ${indices.nasdaq.changePercent >= 0 ? styles.positive : styles.negative}`}>{loading ? '...' : `${indices.nasdaq.changePercent >= 0 ? '+' : ''}${indices.nasdaq.changePercent?.toFixed(2) || '0.00'}%`}</span></div>
+          <div className={styles.indexItem}><span className={styles.indexName}>DOW</span><span className={styles.indexValue}>{loading ? '...' : (indices.dowjones.value ? indices.dowjones.value.toLocaleString('en-US', {maximumFractionDigits: 2}) : '---')}</span><span className={`${styles.indexChange} ${indices.dowjones.changePercent >= 0 ? styles.positive : styles.negative}`}>{loading ? '...' : `${indices.dowjones.changePercent >= 0 ? '+' : ''}${indices.dowjones.changePercent?.toFixed(2) || '0.00'}%`}</span></div>
+        </div>
+      </div>
+
+      {/* Mobile Header Row: logo left, burger right (visible only on mobile) */}
+      <div className={styles.headerRow}>
+        <div className={styles.headerLogoGroup}>
+          <span className={styles.logoIcon}>📈</span>
+          <span className={styles.logoText}>Ishastra</span>
+        </div>
+        <button
+          className={styles.sideMenuButton}
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          title="Open menu"
+        >
+          <span className={styles.navIcon}>☰</span>
+        </button>
+      </div>
+
+      {/* Desktop Header: logo, nav, theme toggle, burger (hidden on mobile) */}
+      <div
+        className={styles.headerContainer}
+        style={{ width: '100vw', minWidth: 0, boxSizing: 'border-box', ...(mobileMenuOpen ? {} : { overflowX: 'hidden' }) }}
+      >
         <div className={styles.leftSection}>
           <div className={styles.logo}>
             <span className={styles.logoText}>Ishastra</span>
           </div>
-          <div className={styles.indicesContainer}>
-            {/* ...existing index code... */}
-            {/* ...existing code for indices... */}
-            <div className={styles.indexItem}><span className={styles.indexName}>NIFTY</span><span className={styles.indexValue}>{loading ? '...' : (indices.nifty50.value ? indices.nifty50.value.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '---')}</span><span className={`${styles.indexChange} ${indices.nifty50.changePercent >= 0 ? styles.positive : styles.negative}`}>{loading ? '...' : `${indices.nifty50.changePercent >= 0 ? '+' : ''}${indices.nifty50.changePercent?.toFixed(2) || '0.00'}%`}</span></div>
-            <div className={styles.indexItem}><span className={styles.indexName}>SENSEX</span><span className={styles.indexValue}>{loading ? '...' : (indices.sensex.value ? indices.sensex.value.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '---')}</span><span className={`${styles.indexChange} ${indices.sensex.changePercent >= 0 ? styles.positive : styles.negative}`}>{loading ? '...' : `${indices.sensex.changePercent >= 0 ? '+' : ''}${indices.sensex.changePercent?.toFixed(2) || '0.00'}%`}</span></div>
-            <div className={styles.indexItem}><span className={styles.indexName}>NASDAQ</span><span className={styles.indexValue}>{loading ? '...' : (indices.nasdaq.value ? indices.nasdaq.value.toLocaleString('en-US', {maximumFractionDigits: 2}) : '---')}</span><span className={`${styles.indexChange} ${indices.nasdaq.changePercent >= 0 ? styles.positive : styles.negative}`}>{loading ? '...' : `${indices.nasdaq.changePercent >= 0 ? '+' : ''}${indices.nasdaq.changePercent?.toFixed(2) || '0.00'}%`}</span></div>
-            <div className={styles.indexItem}><span className={styles.indexName}>DOW</span><span className={styles.indexValue}>{loading ? '...' : (indices.dowjones.value ? indices.dowjones.value.toLocaleString('en-US', {maximumFractionDigits: 2}) : '---')}</span><span className={`${styles.indexChange} ${indices.dowjones.changePercent >= 0 ? styles.positive : styles.negative}`}>{loading ? '...' : `${indices.dowjones.changePercent >= 0 ? '+' : ''}${indices.dowjones.changePercent?.toFixed(2) || '0.00'}%`}</span></div>
-          </div>
         </div>
-        {/* Top Navigation: Dashboard, Trades, Watchlist */}
         <nav className={styles.nav}>
           {navLinks.slice(0, 3).map(link => (
             <Link
@@ -84,16 +108,14 @@ export default function Header() {
               )}
             </Link>
           ))}
-          {/* Side Menu Toggle Button */}
-          <button 
+          <button
             className={styles.sideMenuButton}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             title="Open menu"
           >
             <span className={styles.navIcon}>☰</span>
           </button>
-          {/* Theme Toggle Button */}
-          <button 
+          <button
             className={styles.themeToggle}
             onClick={toggleTheme}
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
@@ -101,31 +123,75 @@ export default function Header() {
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
         </nav>
-        {/* Side Menu Overlay */}
-        {mobileMenuOpen && (
-          <div className={styles.sideMenuOverlay} onClick={() => setMobileMenuOpen(false)}>
-            <nav className={`${styles.sideMenu} ${styles.sideMenuRight}`} onClick={e => e.stopPropagation()}>
-              <div className={styles.sideMenuHeader}>
-                <span className={styles.logoText}>Menu</span>
-                <button className={styles.closeButton} onClick={() => setMobileMenuOpen(false)}>✕</button>
-              </div>
-              <div className={styles.sideMenuItems}>
-                {navLinks.map(link => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`${styles.sideMenuItem} ${location.pathname === link.to ? styles.sideMenuItemActive : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span className={styles.navIcon}>{link.icon}</span>
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </nav>
-          </div>
-        )}
       </div>
+
+      {/* Render side menu overlay at the end of header, outside headerContainer, for proper stacking */}
+      {mobileMenuOpen && (
+        <div
+          className={styles.sideMenuOverlay}
+          onClick={() => setMobileMenuOpen(false)}
+          aria-modal="true"
+          role="dialog"
+        >
+          <nav
+            className={`${styles.sideMenu} ${styles.sideMenuRight}`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className={styles.sideMenuHeader}>
+              <span className={styles.logoText}>Menu</span>
+              <button className={styles.closeButton} onClick={() => setMobileMenuOpen(false)}>✕</button>
+            </div>
+            <div className={styles.sideMenuItems}>
+              {navLinks.map(link => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`${styles.sideMenuItem} ${location.pathname === link.to ? styles.sideMenuItemActive : ''}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className={styles.navIcon}>{link.icon}</span>
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+            <div className={styles.sideMenuFooter}>
+              <button
+                className={styles.sideMenuThemeButton}
+                onClick={toggleTheme}
+                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              >
+                {theme === 'dark' ? '☀️' : '🌙'}
+                {theme === 'dark' ? ' Light Mode' : ' Dark Mode'}
+              </button>
+            </div>
+          </nav>
+        </div>
+      )}
+
+      {/* Mobile Bottom Navigation Bar (unchanged) */}
+      <nav className={styles.bottomNav}>
+        <Link
+          to="/"
+          className={`${styles.bottomNavItem} ${location.pathname === '/' ? styles.bottomNavItemActive : ''}`}
+        >
+          <span className={styles.bottomNavIcon}>📊</span>
+          Dashboard
+        </Link>
+        <Link
+          to="/watchlist"
+          className={`${styles.bottomNavItem} ${location.pathname === '/watchlist' ? styles.bottomNavItemActive : ''}`}
+        >
+          <span className={styles.bottomNavIcon}>👀</span>
+          Watchlist
+        </Link>
+        <Link
+          to="/trades"
+          className={`${styles.bottomNavItem} ${location.pathname === '/trades' ? styles.bottomNavItemActive : ''}`}
+        >
+          <span className={styles.bottomNavIcon}>💼</span>
+          Trades
+        </Link>
+      </nav>
     </header>
   );
 }

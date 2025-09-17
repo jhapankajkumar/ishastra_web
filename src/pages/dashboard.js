@@ -28,6 +28,7 @@ import { getUnifiedAnalysis } from '../api/analysisApi';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 700 : false);
   const [trades, setTrades] = useState([]);
   const [stats, setStats] = useState(null);
   const [tags, setTags] = useState([]);
@@ -35,12 +36,18 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // Tabs: 'trading' or 'investment'
-  const [activeTab, setActiveTab] = useState('investment');
+  const [activeTab, setActiveTab] = useState('trading');
   // Investment tab state
   const [investmentSummary, setInvestmentSummary] = useState(null);
   const [investments, setInvestments] = useState([]);
   const [investmentLoading, setInvestmentLoading] = useState(false);
   const [investmentError, setInvestmentError] = useState(null);
+  // Track viewport for responsive font sizing
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 700);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   // Load investment data when tab is switched to 'investment'
   useEffect(() => {
     if (activeTab !== 'investment') return;
@@ -102,20 +109,10 @@ const Dashboard = () => {
       setLoading(true);
       let hasNetworkError = false;
       try {
-        const [dashboardRes, tradesRes, setupsRes] = await Promise.allSettled([
-          getDashboardSummary(),
+        const [tradesRes, setupsRes] = await Promise.allSettled([
           getAllTrades(),
           fetchSetups() // <-- Fetch setups from API
         ]);
-
-        if (dashboardRes.status === 'fulfilled') {
-          setStats(dashboardRes.value.data);
-        } else {
-
-          if (dashboardRes.reason?.type === 'NETWORK_ERROR') {
-            hasNetworkError = true;
-          }
-        }
 
         if (tradesRes.status === 'fulfilled') {
           const tradesWithExits = await Promise.all(tradesRes.value.data.map(async trade => {
@@ -193,6 +190,25 @@ const Dashboard = () => {
     const totalLosses = losingTrades.reduce((sum, trade) => sum + calculatePnl(trade), 0);
     return totalLosses / losingTrades.length;
   }, [losingTrades]);
+
+  // --- Trading currency sub-tabs (INR/USD) ---
+  const [tradingCurrency, setTradingCurrency] = useState('INR');
+  const tradesINR = React.useMemo(() => trades.filter(t => (t.currency || 'INR').toUpperCase() === 'INR'), [trades]);
+  const tradesUSD = React.useMemo(() => trades.filter(t => (t.currency || 'INR').toUpperCase() === 'USD'), [trades]);
+  const currencyTrades = tradingCurrency === 'USD' ? tradesUSD : tradesINR;
+  const currencySymbol = tradingCurrency === 'USD' ? '$' : '₹';
+  const currencyTotalPnL = React.useMemo(() => (currencyTrades || []).reduce((total, trade) => total + Number(getPartialPL(trade)), 0), [currencyTrades]);
+  const currencyInvested = React.useMemo(() => (currencyTrades || []).reduce((sum, t) => {
+    const qty = t.quantity != null ? Number(t.quantity) : 0;
+    return sum + (t.entryPrice ? t.entryPrice * qty : 0);
+  }, 0), [currencyTrades]);
+  const currencyCurrentValue = React.useMemo(() => (currencyTrades || []).reduce((sum, t) => {
+    const qty = t.quantity != null ? Number(t.quantity) : 0;
+    const entryVal = qty * (t.entryPrice || 0);
+    const pnl = Number(getPartialPL(t));
+    return sum + (entryVal + pnl);
+  }, 0), [currencyTrades]);
+  const currencyPnLPercent = React.useMemo(() => (currencyInvested > 0 ? (currencyTotalPnL / currencyInvested) * 100 : 0), [currencyTotalPnL, currencyInvested]);
 
   // ---- Move all hooks above any return ----
   const tagIdToName = React.useMemo(
@@ -331,8 +347,22 @@ const Dashboard = () => {
     transition: 'all 0.2s ease',
     borderBottom: 'none',
     position: 'relative',
-    zIndex: 1
+    zIndex: 1,
+    width: 'auto',
+    boxSizing: 'border-box',
   });
+
+  // --- Responsive wrappers for charts/cards ---
+  const ResponsiveCard = ({ children, ...props }) => (
+    <div style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'auto', margin: '0 auto' }} {...props}>
+      {children}
+    </div>
+  );
+  const ResponsiveChart = ({ children, ...props }) => (
+    <div style={{ width: '100%', minWidth: 320, maxWidth: '100%', overflowX: 'auto', boxSizing: 'border-box', margin: '0 auto' }} {...props}>
+      {children}
+    </div>
+  );
 
   if (error && error.type === 'NETWORK_ERROR') {
     return (
@@ -372,13 +402,13 @@ const Dashboard = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 0,
+        gap: 12,
         marginBottom: 36,
         background: theme === 'light' 
           ? 'var(--bg-secondary)'
           : 'linear-gradient(90deg, #181F2A 60%, #1A2332 100%)',
         borderRadius: 32,
-        padding: '8px 0',
+        padding: '8px 12px',
         boxShadow: 'var(--shadow-md)',
         border: theme === 'light' 
           ? '1px solid var(--border-primary)'
@@ -395,17 +425,41 @@ const Dashboard = () => {
       {/* Tab Content */}
       {activeTab === 'trading' ? (
         <>
+          {/* Currency sub-tabs inside Trading */}
+          <div style={{
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
+            marginBottom: 16
+          }}>
+            <button
+              onClick={() => setTradingCurrency('INR')}
+              style={{
+                padding: '8px 16px', borderRadius: 18, border: '1px solid var(--border-primary)',
+                background: tradingCurrency === 'INR' ? 'var(--gradient-primary)' : 'var(--bg-tertiary)',
+                color: tradingCurrency === 'INR' ? '#fff' : 'var(--text-secondary)',
+                fontWeight: 700, cursor: 'pointer'
+              }}
+            >INR</button>
+            <button
+              onClick={() => setTradingCurrency('USD')}
+              style={{
+                padding: '8px 16px', borderRadius: 18, border: '1px solid var(--border-primary)',
+                background: tradingCurrency === 'USD' ? 'var(--gradient-primary)' : 'var(--bg-tertiary)',
+                color: tradingCurrency === 'USD' ? '#fff' : 'var(--text-secondary)',
+                fontWeight: 700, cursor: 'pointer'
+              }}
+            >USD</button>
+          </div>
           {/* Trading Summary Cards */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: 28,
-            marginBottom: 40,
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: isMobile ? 10 : 28,
+            marginBottom: isMobile ? 16 : 40,
             background: theme === 'light' 
               ? 'var(--bg-secondary)'
               : "linear-gradient(90deg, #181F2A 60%, #1A2332 100%)",
-            borderRadius: 18,
-            padding: 16,
+            borderRadius: isMobile ? 12 : 18,
+            padding: isMobile ? 8 : 16,
             border: theme === 'light' ? '1px solid var(--border-primary)' : 'none'
           }}>
             {/* Card: Total Trades */}
@@ -413,54 +467,53 @@ const Dashboard = () => {
               background: theme === 'light' 
                 ? 'var(--bg-primary)'
                 : "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
-              borderRadius: 16,
-              padding: 28,
+              borderRadius: isMobile ? 10 : 16,
+              padding: isMobile ? 10 : 28,
               border: theme === 'light' 
                 ? '1px solid var(--border-primary)'
                 : "1px solid #2A3441",
               textAlign: "center",
               boxShadow: "var(--shadow-lg)",
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              minHeight: isMobile ? 90 : undefined
             }}>
               <span style={{
                 position: 'absolute',
-                top: 18, left: 18,
-                fontSize: 28,
+                top: isMobile ? 8 : 18, left: isMobile ? 8 : 18,
+                fontSize: isMobile ? 16 : 28,
                 color: 'var(--accent-secondary)',
                 opacity: 0.18
               }}>🔄</span>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Total Trades</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: "var(--accent-secondary)", letterSpacing: 1 }}>{trades.length}</div>
+              <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>Total Trades</div>
+              <div style={{ fontSize: isMobile ? 22 : 36, fontWeight: 800, color: "var(--accent-secondary)", letterSpacing: 0.5 }}>{currencyTrades.length}</div>
             </div>
             {/* Card: Total Trade Value */}
             <div style={{
               background: theme === 'light' 
                 ? 'var(--bg-primary)'
                 : "linear-gradient(135deg, #1A2332 60%, #193C3A 100%)",
-              borderRadius: 16,
-              padding: 28,
+              borderRadius: isMobile ? 10 : 16,
+              padding: isMobile ? 10 : 28,
               border: theme === 'light' 
                 ? '1px solid var(--border-primary)'
                 : "1px solid #2A3441",
               textAlign: "center",
               boxShadow: "var(--shadow-lg)",
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              minHeight: isMobile ? 90 : undefined
             }}>
               <span style={{
                 position: 'absolute',
-                top: 18, left: 18,
-                fontSize: 28,
+                top: isMobile ? 8 : 18, left: isMobile ? 8 : 18,
+                fontSize: isMobile ? 16 : 28,
                 color: 'var(--success-color)',
                 opacity: 0.18
               }}>💰</span>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Total Invested</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: "var(--success-color)", letterSpacing: 1 }}>
-                ₹{trades && trades.length ? trades.reduce((sum, t) => {
-                  const originalQty = t.quantity !== undefined && t.quantity !== null ? Number(t.quantity) : 0;
-                  return sum + (t.entryPrice ? t.entryPrice * originalQty : 0);
-                }, 0).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'}
+              <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>Total Invested</div>
+              <div style={{ fontSize: isMobile ? 20 : 30, fontWeight: 800, color: "var(--success-color)", letterSpacing: 0.5 }}>
+                {currencySymbol}{(currencyTrades && currencyTrades.length ? currencyInvested : 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
             </div>
             {/* Card: Current Value of All Investments */}
@@ -468,32 +521,27 @@ const Dashboard = () => {
               background: theme === 'light' 
                 ? 'var(--bg-primary)'
                 : "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
-              borderRadius: 16,
-              padding: 28,
+              borderRadius: isMobile ? 10 : 16,
+              padding: isMobile ? 10 : 28,
               border: theme === 'light' 
                 ? '1px solid var(--border-primary)'
                 : "1px solid #2A3441",
               textAlign: "center",
               boxShadow: "var(--shadow-lg)",
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              minHeight: isMobile ? 90 : undefined
             }}>
               <span style={{
                 position: 'absolute',
-                top: 18, left: 18,
-                fontSize: 28,
+                top: isMobile ? 8 : 18, left: isMobile ? 8 : 18,
+                fontSize: isMobile ? 16 : 28,
                 color: 'var(--accent-primary)',
                 opacity: 0.18
               }}>📈</span>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Current Value</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: "var(--accent-primary)", letterSpacing: 1 }}>
-                ₹{trades && trades.length ? trades.reduce((sum, t) => {
-                  const originalQty = t.quantity !== undefined && t.quantity !== null ? Number(t.quantity) : 0;
-                  const entryVal = originalQty * (t.entryPrice || 0);
-                  const pnl = Number(getPartialPL(t));
-                  const value = entryVal + pnl;
-                  return sum + value;;
-                }, 0).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'}
+              <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>Current Value</div>
+              <div style={{ fontSize: isMobile ? 20 : 30, fontWeight: 800, color: "var(--accent-primary)", letterSpacing: 0.5 }}>
+                {currencySymbol}{currencyCurrentValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
             </div>
             {/* Card: Total P&L */}
@@ -501,25 +549,31 @@ const Dashboard = () => {
               background: theme === 'light' 
                 ? 'var(--bg-primary)'
                 : "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
-              borderRadius: 16,
-              padding: 28,
-              border: theme === 'light' 
-                ? '1px solid var(--border-primary)'
-                : "1px solid #2A3441",
+              borderRadius: isMobile ? 10 : 16,
+              padding: isMobile ? 10 : 28,
+              border: isMobile
+                ? `2px solid ${currencyTotalPnL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'}`
+                : (theme === 'light' ? '1px solid var(--border-primary)' : '1px solid #2A3441'),
               textAlign: "center",
               boxShadow: "var(--shadow-lg)",
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              minHeight: isMobile ? 90 : undefined
             }}>
               <span style={{
                 position: 'absolute',
-                top: 18, left: 18,
-                fontSize: 28,
+                top: isMobile ? 8 : 18, left: isMobile ? 8 : 18,
+                fontSize: isMobile ? 16 : 28,
                 color: 'var(--warning-color)',
                 opacity: 0.18
               }}>💹</span>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Total P&L</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: totalPnL >= 0 ? "var(--profit-color)" : "var(--loss-color)", letterSpacing: 1 }}>{totalPnL >= 0 ? '+' : ''}₹{totalPnL.toLocaleString()}</div>
+              <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>Total P&L</div>
+              <div style={{ fontSize: isMobile ? 20 : 30, fontWeight: 800, color: currencyTotalPnL >= 0 ? "var(--profit-color)" : "var(--loss-color)", letterSpacing: 0.5, whiteSpace: 'nowrap' }}>
+                {currencyTotalPnL >= 0 ? `${currencySymbol}${currencyTotalPnL.toLocaleString()}` : `-${currencySymbol}${Math.abs(currencyTotalPnL).toLocaleString()}`}
+              </div>
+              <div style={{ fontSize: isMobile ? 10 : 13, fontWeight: 700, marginTop: 4, color: currencyTotalPnL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)' }}>
+                ({currencyInvested > 0 ? currencyPnLPercent.toFixed(2) : '0.00'}%)
+              </div>
             </div>
 
           </div>
@@ -527,8 +581,8 @@ const Dashboard = () => {
           {/* Trading Analytics Section */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 18,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 24,
             marginBottom: 20,
             alignItems: 'stretch',
             flexWrap: 'wrap'
@@ -545,7 +599,7 @@ const Dashboard = () => {
                 : "1px solid #2A3441",
               minHeight: 220,
               maxHeight: 220,
-              width: '95%',
+              width: '100%',
               boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden',
@@ -564,17 +618,19 @@ const Dashboard = () => {
               border: theme === 'light' 
                 ? '1px solid var(--border-primary)'
                 : "1px solid #2A3441",
-              minHeight: 320,
+              minHeight: isMobile ? undefined : 320,
               // maxWidth: 400,
-              maxHeight: 220,
-              width: '95%',
+              width: '100%',
+              boxSizing: 'border-box',
               boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden',
               display: 'flex', flexDirection: 'column', justifyContent: 'center'
             }}>
               <div style={{ fontWeight: 700, color: 'var(--accent-primary)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Trading Value Over Time</div>
-              <InvestmentValueChart investments={Array.isArray(trades) ? trades : []} isTrade={true} />
+              <div className={styles.chartContainer}>
+                <InvestmentValueChart investments={Array.isArray(currencyTrades) ? currencyTrades : []} isTrade={true} />
+              </div>
             </div>
             {/* Performance Chart */}
             <div style={{
@@ -587,55 +643,20 @@ const Dashboard = () => {
                 ? '1px solid var(--border-primary)'
                 : "1px solid #2A3441",
               minHeight: 220,
-              width: '95%',
+              width: '100%',
+              boxSizing: 'border-box',
               boxShadow: "var(--shadow-lg)",
               position: 'relative',
               overflow: 'hidden',
               display: 'flex', flexDirection: 'column', justifyContent: 'center'
             }}>
               <div style={{ fontWeight: 700, color: 'var(--warning-color)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Performance by Month</div>
-              <PerformanceChart trades={Array.isArray(trades) ? trades : []} />
+              <div className={styles.chartContainer}>
+                <PerformanceChart trades={Array.isArray(currencyTrades) ? currencyTrades : []} />
+              </div>
             </div>
-            <div style={{
-              background: theme === 'light' 
-                ? 'var(--bg-primary)'
-                : "linear-gradient(120deg, #1A2332 70%, #233554 100%)",
-              borderRadius: 10,
-              padding: 18,
-              border: theme === 'light' 
-                ? '1px solid var(--border-primary)'
-                : "1px solid #2A3441",
-              minHeight: 220,
-              width: '95%',
-              boxShadow: "var(--shadow-lg)",
-              position: 'relative',
-              overflow: 'hidden',
-              display: 'flex', flexDirection: 'column', justifyContent: 'center',
-              marginTop: 18
-            }}>
-              <div style={{ fontWeight: 700, color: 'var(--success-color)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Trades by Setup</div>
-              <SetupPerformanceChart trades={Array.isArray(trades) ? trades : []} setups={Array.isArray(setups) ? setups : []} />
-            </div>
-            <div style={{
-              background: theme === 'light' 
-                ? 'var(--bg-primary)'
-                : "linear-gradient(120deg, #233554 70%, #1A2332 100%)",
-              borderRadius: 10,
-              padding: 18,
-              border: theme === 'light' 
-                ? '1px solid var(--border-primary)'
-                : "1px solid #2A3441",
-              minHeight: 220,
-              width: '95%',
-              boxShadow: "var(--shadow-lg)",
-              position: 'relative',
-              overflow: 'hidden',
-              display: 'flex', flexDirection: 'column', justifyContent: 'center',
-              marginTop: 18
-            }}>
-              <div style={{ fontWeight: 700, color: 'var(--accent-secondary)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Timeframe Distribution</div>
-              <TimeframePieChart trades={Array.isArray(trades) ? trades : []} />
-            </div>
+            {/* Trades by Setup hidden as requested */}
+            {/* Timeframe Distribution hidden as requested */}
           </div>
 
           {/* Recent Trades Table */}
@@ -681,11 +702,16 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentTrades && recentTrades.length > 0 ? recentTrades.map((trade, idx) => {
-                    const pnl = calculatePnl(trade);
-                    const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
-                    const remainingQty = trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty;
-                    const soldQty = originalQty - remainingQty;
+                  {(() => {
+                    const recent = (currencyTrades || [])
+                      .slice()
+                      .sort((a, b) => new Date(b.exitDate) - new Date(a.exitDate))
+                      .slice(0, 6);
+                    return recent && recent.length > 0 ? recent.map((trade, idx) => {
+                      const pnl = calculatePnl(trade);
+                      const originalQty = trade.quantity !== undefined && trade.quantity !== null ? Number(trade.quantity) : 0;
+                      const remainingQty = trade.remainingQuantity !== undefined && trade.remainingQuantity !== null ? Number(trade.remainingQuantity) : originalQty;
+                      const soldQty = originalQty - remainingQty;
                     
                     const evenRowBg = theme === 'light' 
                       ? 'var(--bg-primary)' 
@@ -711,23 +737,23 @@ const Dashboard = () => {
                       >
                         <td style={{ padding: '12px 14px', fontWeight: 700 }}>{trade.ticker}</td>
                         <td style={{ padding: '12px 14px', fontWeight: 700 }}>{trade.entryDate ? formatDate(trade.entryDate) : "-"}</td>
-                        <td style={{ padding: '12px 14px', }}>₹{trade.entryPrice?.toFixed(2).toLocaleString() ?? '-'}</td>
+                        <td style={{ padding: '12px 14px', }}>{currencySymbol}{trade.entryPrice?.toFixed(2).toLocaleString() ?? '-'}</td>
                         <td style={{ padding: '12px 14px', }}>{trade.quantity}</td>
                         <td style={{ padding: '12px 14px', }}>{soldQty}</td>
                         <td style={{ padding: '12px 14px', }}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exitPrice !== undefined && trade.exitPrice !== null ? Number(trade.exitPrice).toFixed(2) : "-")) : '-'}</td>
-                        <td style={{ padding: '12px 14px', }}>{getInvested(trade) !== "-" ? `$${getInvested(trade)}` : "-"}</td>
+                        <td style={{ padding: '12px 14px', }}>{getInvested(trade) !== "-" ? `${currencySymbol}${getInvested(trade)}` : "-"}</td>
                         <td style={{ 
                           padding: '12px 14px', 
                           color: soldQty > 0 && Number(getPartialPL(trade)) > 0 ? 'var(--profit-color)' : 'var(--loss-color)', 
                           fontWeight: 800 
                         }}>
-                          {soldQty > 0 && getPartialPL(trade) !== "0" ? `$${getPartialPL(trade)}` : "0"}
+                          {soldQty > 0 && getPartialPL(trade) !== "0" ? `${currencySymbol}${getPartialPL(trade)}` : "0"}
                         </td>
                       </tr>
                     );
                   }) : (
                     <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 28 }}>No trades found</td></tr>
-                  )}
+                  )})()}
                 </tbody>
               </table>
             </div>
@@ -748,14 +774,14 @@ const Dashboard = () => {
               {/* Enhanced Investment Summary Cards */}
               <div style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                gap: 28,
-                marginBottom: 40,
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: isMobile ? 10 : 28,
+                marginBottom: isMobile ? 16 : 40,
                 background: theme === 'light' 
                   ? 'var(--bg-secondary)'
                   : "linear-gradient(90deg, #181F2A 60%, #1A2332 100%)",
-                borderRadius: 18,
-                padding: 16,
+                borderRadius: isMobile ? 12 : 18,
+                padding: isMobile ? 8 : 16,
                 border: theme === 'light' ? '1px solid var(--border-primary)' : 'none'
               }}>
                 {/* Card: Total Invested */}
@@ -763,76 +789,79 @@ const Dashboard = () => {
                   background: theme === 'light' 
                     ? 'var(--bg-primary)'
                     : "linear-gradient(135deg, #233554 60%, #1A2332 100%)",
-                  borderRadius: 16,
-                  padding: 28,
+                  borderRadius: isMobile ? 10 : 16,
+                  padding: isMobile ? 10 : 28,
                   border: theme === 'light' 
                     ? '1px solid var(--border-primary)'
                     : "1px solid #2A3441",
                   textAlign: "center",
                   boxShadow: "var(--shadow-lg)",
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  minHeight: isMobile ? 90 : undefined
                 }}>
                   <span style={{
                     position: 'absolute',
-                    top: 18, left: 18,
-                    fontSize: 28,
+                    top: isMobile ? 8 : 18, left: isMobile ? 8 : 18,
+                    fontSize: isMobile ? 16 : 28,
                     color: 'var(--accent-primary)',
                     opacity: 0.18
                   }}>💰</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Total Investment</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: "var(--accent-primary)", letterSpacing: 1 }}>₹{investmentSummary?.totalInvested?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>Total Investment</div>
+                  <div style={{ fontSize: isMobile ? 20 : 30, fontWeight: 800, color: "var(--accent-primary)", letterSpacing: 0.5 }}>₹{investmentSummary?.totalInvested?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
                 </div>
                 {/* Card: Total Holdings */}
                 <div style={{
                   background: theme === 'light' 
                     ? 'var(--bg-primary)'
                     : "linear-gradient(135deg, #1A2332 60%, #193C3A 100%)",
-                  borderRadius: 16,
-                  padding: 28,
+                  borderRadius: isMobile ? 10 : 16,
+                  padding: isMobile ? 10 : 28,
                   border: theme === 'light' 
                     ? '1px solid var(--border-primary)'
                     : "1px solid #2A3441",
                   textAlign: "center",
                   boxShadow: "var(--shadow-lg)",
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  minHeight: isMobile ? 90 : undefined
                 }}>
                   <span style={{
                     position: 'absolute',
-                    top: 18, left: 18,
-                    fontSize: 28,
+                    top: isMobile ? 8 : 18, left: isMobile ? 8 : 18,
+                    fontSize: isMobile ? 16 : 28,
                     color: 'var(--success-color)',
                     opacity: 0.18
                   }}>📈</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Current Value</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: "var(--success-color)", letterSpacing: 1 }}>₹{investmentSummary?.totalHoldings?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>Current Value</div>
+                  <div style={{ fontSize: isMobile ? 20 : 30, fontWeight: 800, color: "var(--success-color)", letterSpacing: 0.5 }}>₹{investmentSummary?.totalHoldings?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
                 </div>
                 {/* Card: Unrealized P&L */}
                 <div style={{
                   background: theme === 'light' 
                     ? 'var(--bg-primary)'
                     : "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
-                  borderRadius: 16,
-                  padding: 28,
-                  border: theme === 'light' 
-                    ? '1px solid var(--border-primary)'
-                    : "1px solid #2A3441",
+                  borderRadius: isMobile ? 10 : 16,
+                  padding: isMobile ? 10 : 28,
+                  border: isMobile
+                    ? `2px solid ${investmentSummary?.todaysPnL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'}`
+                    : (theme === 'light' ? '1px solid var(--border-primary)' : '1px solid #2A3441'),
                   textAlign: "center",
                   boxShadow: "var(--shadow-lg)",
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  minHeight: isMobile ? 90 : undefined
                 }}>
                   <span style={{
                     position: 'absolute',
-                    top: 18, left: 18,
-                    fontSize: 28,
+                    top: isMobile ? 8 : 18, left: isMobile ? 8 : 18,
+                    fontSize: isMobile ? 16 : 28,
                     color: 'var(--warning-color)',
                     opacity: 0.18
                   }}>💹</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Today's P&L</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.todaysPnL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', letterSpacing: 1 }}>{investmentSummary?.todaysPnL >= 0 ? '+' : ''}₹{investmentSummary?.todaysPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.todaysPnLPercent >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', marginTop: 10 }}>({investmentSummary?.todaysPnLPercent?.toFixed(2) ?? '-'}%)</div>
+                  <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>Today's P&L</div>
+                  <div style={{ fontSize: isMobile ? 20 : 30, fontWeight: 800, color: investmentSummary?.todaysPnL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', letterSpacing: 0.5 }}>{investmentSummary?.todaysPnL >= 0 ? '+' : ''}₹{investmentSummary?.todaysPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: isMobile ? 10 : 14, fontWeight: 600, color: investmentSummary?.todaysPnLPercent >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', marginTop: isMobile ? 4 : 10 }}>({investmentSummary?.todaysPnLPercent?.toFixed(2) ?? '-' }%)</div>
                 </div>
                 {/* Card: Avg Buy Price */}
                 {/* Card: Unrealized P&L */}
@@ -840,26 +869,27 @@ const Dashboard = () => {
                   background: theme === 'light' 
                     ? 'var(--bg-primary)'
                     : "linear-gradient(135deg, #1A2332 60%, #3B2F1A 100%)",
-                  borderRadius: 16,
-                  padding: 28,
-                  border: theme === 'light' 
-                    ? '1px solid var(--border-primary)'
-                    : "1px solid #2A3441",
+                  borderRadius: isMobile ? 10 : 16,
+                  padding: isMobile ? 10 : 28,
+                  border: isMobile
+                    ? `2px solid ${investmentSummary?.unrealizedPnL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'}`
+                    : (theme === 'light' ? '1px solid var(--border-primary)' : '1px solid #2A3441'),
                   textAlign: "center",
                   boxShadow: "var(--shadow-lg)",
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  minHeight: isMobile ? 90 : undefined
                 }}>
                   <span style={{
                     position: 'absolute',
-                    top: 18, left: 18,
-                    fontSize: 28,
+                    top: isMobile ? 8 : 18, left: isMobile ? 8 : 18,
+                    fontSize: isMobile ? 16 : 28,
                     color: 'var(--warning-color)',
                     opacity: 0.18
                   }}>💹</span>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>Unrealized P&L</div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: investmentSummary?.unrealizedPnL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', letterSpacing: 1 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: investmentSummary?.pnlPercent >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', marginTop: 10 }}>({investmentSummary?.pnlPercent?.toFixed(2) ?? '-'}%)</div>
+                  <div style={{ fontSize: isMobile ? 12 : 15, fontWeight: 600, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>Unrealized P&L</div>
+                  <div style={{ fontSize: isMobile ? 20 : 30, fontWeight: 800, color: investmentSummary?.unrealizedPnL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', letterSpacing: 0.5 }}>{investmentSummary?.unrealizedPnL >= 0 ? '+' : ''}₹{investmentSummary?.unrealizedPnL?.toLocaleString("en-IN", { maximumFractionDigits: 2 }) ?? '-'}</div>
+                  <div style={{ fontSize: isMobile ? 10 : 14, fontWeight: 600, color: investmentSummary?.pnlPercent >= 0 ? 'var(--profit-color)' : 'var(--loss-color)', marginTop: isMobile ? 4 : 10 }}>({investmentSummary?.pnlPercent?.toFixed(2) ?? '-' }%)</div>
                 </div>
                 {/* Card: Avg Buy Price */}
 
@@ -868,8 +898,8 @@ const Dashboard = () => {
               {/* Investment Analytics Section (compact) */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 18,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: 24,
                 marginBottom: 20,
                 alignItems: 'stretch',
                 flexWrap: 'wrap'
@@ -884,17 +914,19 @@ const Dashboard = () => {
                   border: theme === 'light' 
                     ? '1px solid var(--border-primary)'
                     : "1px solid #2A3441",
-                  minHeight: 320,
+                  minHeight: isMobile ? undefined : 320,
                   // maxWidth: 400,
-                  maxHeight: 220,
-                  width: '95%',
+                  width: '100%',
+                  boxSizing: 'border-box',
                   boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
                   <div style={{ fontWeight: 700, color: 'var(--accent-primary)', fontSize: 15, marginBottom: 10, letterSpacing: 0.3 }}>Investment Value Over Time</div>
-                  <InvestmentValueChart investments={Array.isArray(investments) ? investments : []} />
+                  <div className={styles.chartContainer}>
+                    <InvestmentValueChart investments={Array.isArray(investments) ? investments : []} />
+                  </div>
                 </div>
                 {/* Top Holdings Bar Chart */}
                 <div style={{
@@ -906,17 +938,19 @@ const Dashboard = () => {
                   border: theme === 'light' 
                     ? '1px solid var(--border-primary)'
                     : "1px solid #2A3441",
-                  minHeight: 320,
+                  minHeight: isMobile ? undefined : 320,
                   // maxWidth: 320,
-                  maxHeight: 180,
-                  width: '95%',
+                  width: '100%',
+                  boxSizing: 'border-box',
                   boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
                   <div style={{ fontWeight: 700, color: 'var(--warning-color)', fontSize: 13, marginBottom: 8, letterSpacing: 0.2 }}>Top Holdings by Value</div>
-                  <TopHoldingsBarChart investments={Array.isArray(investments) ? investments : []} />
+                  <div className={styles.chartContainer}>
+                    <TopHoldingsBarChart investments={Array.isArray(investments) ? investments : []} />
+                  </div>
                 </div>
 
               </div>
@@ -924,8 +958,8 @@ const Dashboard = () => {
               {/* Deeper Analytics Section (compact) */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr',
-                gap: 18,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gap: 24,
                 marginBottom: 20,
                 alignItems: 'stretch',
                 flexWrap: 'wrap'
@@ -942,15 +976,18 @@ const Dashboard = () => {
                     : "1px solid #2A3441",
                   minHeight: 120,
                   // maxWidth: 400,
-                  maxHeight: 200,
-                  width: '95%',
+                  // allow chart to size itself without clipping
+                  width: '100%',
+                  boxSizing: 'border-box',
                   boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
                   <div style={{ fontWeight: 700, color: 'var(--success-color)', fontSize: 13, marginBottom: 10, letterSpacing: 0.3 }}>Sector Allocation</div>
-                  <SectorDonutChart investments={Array.isArray(investments) ? investments : []} />
+                  <div className={styles.chartContainer}>
+                    <SectorDonutChart investments={Array.isArray(investments) ? investments : []} />
+                  </div>
                 </div>
                 {/* Market Cap Pie Chart */}
                 <div style={{
@@ -964,15 +1001,18 @@ const Dashboard = () => {
                     : "1px solid #2A3441",
                   minHeight: 120,
                   // maxWidth: 320,
-                  maxHeight: 200,
-                  width: '90%',
+                  // allow chart to size itself without clipping
+                  width: '100%',
+                  boxSizing: 'border-box',
                   boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', justifyContent: 'center'
                 }}>
                   <div style={{ fontWeight: 700, color: 'var(--accent-secondary)', fontSize: 13, marginBottom: 8, letterSpacing: 0.2 }}>Market Cap Allocation</div>
-                  <MarketCapPieChart investments={Array.isArray(investments) ? investments : []} />
+                  <div className={styles.chartContainer}>
+                    <MarketCapPieChart investments={Array.isArray(investments) ? investments : []} />
+                  </div>
                 </div>
                 {/* Key Stats & CAGR (compact) */}
                 <div style={{
@@ -986,8 +1026,9 @@ const Dashboard = () => {
                     : "1.5px solid #2A3441",
                   minHeight: 120,
                   // maxWidth: 320,
-                  maxHeight: 200,
-                  width: '90%',
+                  // allow content to size without clipping
+                  width: '100%',
+                  boxSizing: 'border-box',
                   boxShadow: "var(--shadow-lg)",
                   position: 'relative',
                   overflow: 'hidden',
@@ -1013,7 +1054,7 @@ const Dashboard = () => {
                     <span style={{ fontWeight: 800, color: '#3B82F6', fontSize: 14, letterSpacing: 0.2 }}>Key Investment Stats</span>
                     <span title="Compound Annual Growth Rate" style={{ cursor: 'help', color: '#9CA3AF', fontSize: 12, marginLeft: 6 }}>ℹ️</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 4 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 8, marginBottom: 4 }}>
 
                     <div style={{ fontSize: 11, color: '#A1A7B3', fontWeight: 600 }}>Total Return</div>
                     <div style={{ fontSize: 13, color: '#10B981', fontWeight: 800, textAlign: 'right' }}>{(() => {
@@ -1539,5 +1580,3 @@ function calculatePnl(trade) {
 // }
 
 export default Dashboard;
-
-

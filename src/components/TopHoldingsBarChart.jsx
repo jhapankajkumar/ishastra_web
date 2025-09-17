@@ -95,10 +95,8 @@ const TopHoldingsBarChart = ({ investments }) => {
           }
         },
         responsive: true,
-        maintainAspectRatio: false,
-        height: 220
+        maintainAspectRatio: false
       }}
-      height={220}
     />
   );
 };

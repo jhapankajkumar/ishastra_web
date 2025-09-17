@@ -15,6 +15,9 @@ const Watchlist = () => {
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('watchlistActiveTab') || 'ALL';
   });
+  // Responsive compact mode controls
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 700 : false);
+  const [expandedCards, setExpandedCards] = useState({});
   const navigate = useNavigate();
   const notification = useNotification();
 
@@ -37,6 +40,12 @@ const Watchlist = () => {
 
   useEffect(() => {
     fetchWatchlist();
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 700);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   // Grade value mapping for proper sorting
@@ -386,7 +395,7 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
       </div>
 
       <div className={styles.stockList}>
-        {getFilteredStocks().map((stock) => (
+        {getFilteredStocks().map((stock, index) => (
           <div 
             key={stock.symbol} 
             className={styles.stockCard}
@@ -474,8 +483,8 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
               </div>
             )}
 
-            {/* Trigger Conditions */}
-            {stock.execution?.entryStrategy?.triggerConditions && (
+            {/* Trigger Conditions (hidden on mobile by default; toggled via button) */}
+            {stock.execution?.entryStrategy?.triggerConditions && (!isMobile ? true : !!expandedCards[index]) && (
               <div className={styles.triggerSection}>
                 <div className={styles.triggerHeader}>
                   <span className={styles.triggerTitle}>Conditions</span>
@@ -616,7 +625,20 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
                     </button>
                   )
                 )}
-                <span className={styles.detailsHint}>Click for details →</span>
+                {!isMobile && (
+                  <span className={styles.detailsHint}>Click for details →</span>
+                )}
+                {isMobile && (
+                  <button
+                    className={styles.detailsToggle}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedCards(prev => ({ ...prev, [index]: !prev[index] }));
+                    }}
+                  >
+                    {expandedCards[index] ? 'Hide conditions' : 'Show conditions'}
+                  </button>
+                )}
               </div>
             </div>
           </div>

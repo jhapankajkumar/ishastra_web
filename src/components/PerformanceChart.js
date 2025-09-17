@@ -80,11 +80,11 @@ const PerformanceChart = (props) => {
   // Defensive: always use an array
   data = Array.isArray(data) ? data : [];
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="99%" height="100%" debounce={200}>
       <BarChart data={data}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#232e42" />
         <XAxis dataKey="month" stroke="#9CA3AF" fontSize={12} />
-        <YAxis stroke="#9CA3AF" fontSize={12} tickFormatter={formatYAxisTick} />
+        <YAxis stroke="#9CA3AF" fontSize={12} tickFormatter={formatYAxisTick} width={56} allowDecimals={false} />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
         <Bar dataKey="pnl" radius={[6, 6, 0, 0]} isAnimationActive={false} >
           {data.map((entry, index) => (

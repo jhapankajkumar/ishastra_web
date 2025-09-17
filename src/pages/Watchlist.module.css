@@ -7,6 +7,8 @@
   min-height: 100vh;
   background: var(--bg-primary);
   transition: background-color 0.3s ease;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .header {
@@ -602,6 +604,16 @@
   gap: 12px;
 }
 
+.detailsToggle {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .createTradeButton {
   padding: 6px 12px;
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
@@ -795,12 +807,12 @@
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .positionItem {
     flex-direction: row;
     justify-content: space-between;
   }
-  
+
   .stockFooter {
     flex-direction: column;
     gap: 0.5rem;
@@ -828,13 +840,132 @@
   }
   
   .positionRow {
-    flex-direction: column;
-    gap: 8px;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 6px 8px;
+    overflow-x: visible; /* fit items on a single row */
+    justify-content: space-between;
   }
+  .positionGroup { min-width: 0; flex: 1 1 0; }
   
   .cardFooter {
     flex-direction: column;
     gap: 8px;
     align-items: flex-start;
   }
+}
+
+/* Additional mobile refinements */
+@media (max-width: 700px) {
+  /* Hide high-level metrics row to make card compact */
+  .metricsRow { display: none; }
+  .header h1 { font-size: 1.4rem; }
+  .header p { font-size: 0.95rem; }
+
+  .tabContainer {
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab { 
+    font-size: 0.95rem; 
+    padding: 10px 16px; 
+    flex: 0 0 auto; 
+  }
+
+  .sortControls {
+    justify-content: space-between;
+    gap: 6px;
+    padding: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+  .sortControls label { padding-left: 8px; margin-right: 6px; }
+  .sortButton { padding: 10px 14px; font-size: 0.9rem; flex: 0 0 auto; }
+
+  .stockCard { padding: 12px; border-radius: 10px; }
+  .cardHeader { align-items: center; }
+  .symbolSection { gap: 6px; }
+  .stockSymbol { font-size: 20px; }
+
+  .metricsRow { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .priceRanges { flex-direction: column; gap: 8px; }
+
+  /* Make Positions and Exit a single horizontal row with scroll */
+  .positionRow {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 6px 8px;
+    overflow-x: visible; /* remove scroll, fit on one row */
+    justify-content: space-between;
+  }
+  .positionGroup { min-width: 0; flex: 1 1 0; align-items: flex-start; }
+  .positionGroup { gap: 2px; }
+  .positionLabel { font-size: 10px; }
+  .positionValue, .stopValue { font-size: 13px; }
+  .footerActions { width: 100%; justify-content: space-between; }
+  .createTradeButton { width: 100%; }
+  .cardFooter { padding-top: 8px; }
+  .addedDate { font-size: 11px; }
+  .detailsHint { display: none; }
+
+  /* Compact paddings and fonts */
+  .stockCard { padding: 12px 12px; margin-bottom: 10px; }
+  .cardHeader { margin-bottom: 8px; }
+  .badgeGroup { gap: 4px; }
+  .actionBadge, .gradeBadge { padding: 3px 6px; font-size: 10px; }
+  .sectionHeader { margin-bottom: 6px; }
+  .sectionTitle { font-size: 13px; }
+  .triggerTitle { font-size: 13px; }
+  .metricsRow { padding: 8px 0; gap: 10px; }
+  .metricLabel { font-size: 9px; }
+  .metricValue { font-size: 13px; }
+  .triggerItem { padding: 6px 8px; }
+  .triggerDetails { grid-template-columns: 1fr 1fr; gap: 6px; font-size: 10px; }
+  .stopLossRow { padding: 6px 8px; border-left-width: 2px; }
+  .positionRow { padding: 8px; }
+}
+
+@media (max-width: 420px) {
+  .positionRow { display: flex; }
+  .stockSymbol { font-size: 18px; }
+  .tab { padding: 8px 12px; }
+  .sortControls label { display: none; }
+  .metricValue { font-size: 12px; }
+  .priceRanges { gap: 6px; }
+  .triggerItem { padding: 6px; }
+  .positionGroup { align-items: flex-start; }
+}
+/* Compact spacing when cards render two per row (common mid-width desktop) */
+@media (min-width: 901px) and (max-width: 1400px) {
+  .stockCard { padding: 12px 14px; margin-bottom: 12px; }
+  .cardHeader { margin-bottom: 8px; }
+  .symbolSection { gap: 6px; }
+  .stockSymbol { font-size: 20px; }
+  .badgeGroup { gap: 4px; }
+  .actionBadge, .gradeBadge { padding: 3px 6px; font-size: 10px; }
+
+  .metricsRow { gap: 12px; padding: 8px 0; }
+  .metricLabel { font-size: 10px; }
+  .metricValue { font-size: 13.5px; }
+
+  .sectionHeader { margin-bottom: 6px; }
+  .sectionTitle, .triggerTitle { font-size: 13px; }
+
+  .positionRow { padding: 8px; }
+  .positionGroup { gap: 2px; }
+  .positionLabel { font-size: 10px; }
+  .positionValue, .priceValue, .stopValue { font-size: 13.5px; }
+
+  .priceRanges { gap: 10px; }
+  .triggerItem { padding: 8px 10px; }
+  .triggerDetails { gap: 6px; font-size: 11px; }
+
+  .cardFooter { padding-top: 10px; }
+  .addedDate { font-size: 11.5px; }
 }
