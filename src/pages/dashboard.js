@@ -216,7 +216,7 @@ const Dashboard = () => {
       return total + (Number(trade.remainingQuantity) * (Number(trade.currentPrice) - Number(trade.entryPrice)));
      }, 0), [currencyTrades]);
   const currencyCurrentValue = React.useMemo(() => (currencyTrades || []).reduce((sum, t) => {
-    if (t.status === 'closed') return sum; // Closed trades do not contribute to current value
+    if (t.status.toLowerCase() === 'closed') return sum; // Closed trades do not contribute to current value
     return sum + (t.currentPrice ? Number(t.currentPrice) * getRemainingQtySafe(t) : 0);
   }, 0), [currencyTrades]);
 

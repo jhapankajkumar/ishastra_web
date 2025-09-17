@@ -34,19 +34,19 @@ export default function TradeList() {
 
   const renderSortableHeader = (title, sortKey) => {
     const isActive = sortBy === sortKey;
-    
+
     return (
-      <th 
+      <th
         className={styles.tableHeaderCell}
-        style={{cursor: 'pointer'}}
+        style={{ cursor: 'pointer' }}
         onClick={() => handleSort(sortKey)}
         title={`Sort by ${title}`}
       >
         {title}
         <span className={styles.sortArrow}>
           {isActive ? (
-            sortOrder === 'asc' ? 
-              <span className={styles.sortArrowActive}>▲</span> : 
+            sortOrder === 'asc' ?
+              <span className={styles.sortArrowActive}>▲</span> :
               <span className={styles.sortArrowActive}>▼</span>
           ) : (
             <span className={styles.sortArrowInactive}>▲</span>
@@ -66,8 +66,8 @@ export default function TradeList() {
         case 'ticker':
           aValue = a.ticker || '';
           bValue = b.ticker || '';
-          return sortOrder === 'asc' 
-            ? aValue.localeCompare(bValue) 
+          return sortOrder === 'asc'
+            ? aValue.localeCompare(bValue)
             : bValue.localeCompare(aValue);
 
         case 'entryDate':
@@ -137,7 +137,7 @@ export default function TradeList() {
     const fetchData = async () => {
       setLoading(true);
       setLoadingCapital(true);
-      
+
       try {
         // Fetch trades and capital data in parallel
         const [tradesResponse, capitalResponse] = await Promise.all([
@@ -251,7 +251,7 @@ export default function TradeList() {
     setError(null);
     setLoading(true);
     setLoadingCapital(true);
-    
+
     const fetchData = async () => {
       try {
         const [tradesResponse, capitalResponse] = await Promise.all([
@@ -268,7 +268,7 @@ export default function TradeList() {
             return { ...trade, exitTransactions: [] };
           }
         }));
-        
+
         setTrades(tradesWithExits);
         setCapitalData(capitalResponse.data || []);
         setError(null);
@@ -310,10 +310,10 @@ export default function TradeList() {
   };
 
   const formatCurrency = (amount, currency) => {
-  const symbol = currency === 'INR' ? '₹' : '$';
-  // Format with commas for thousands
-  const formatted = Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return `${symbol}${formatted}`;
+    const symbol = currency === 'INR' ? '₹' : '$';
+    // Format with commas for thousands
+    const formatted = Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `${symbol}${formatted}`;
   };
 
   const getInvested = (trade) => {
@@ -340,11 +340,11 @@ export default function TradeList() {
     if (!trade.exitTransactions || trade.exitTransactions.length === 0) {
       return null;
     }
-    
-    const sortedExits = trade.exitTransactions.sort((a, b) => 
+
+    const sortedExits = trade.exitTransactions.sort((a, b) =>
       new Date(b.transactionDate) - new Date(a.transactionDate)
     );
-    
+
     return sortedExits[0]?.transactionDate;
   };
 
@@ -353,17 +353,17 @@ export default function TradeList() {
     if (!trade.exitTransactions || trade.exitTransactions.length === 0) {
       return null;
     }
-    
+
     let totalValue = 0;
     let totalQuantity = 0;
-    
+
     trade.exitTransactions.forEach(tx => {
       const qty = Number(tx.quantity || 0);
       const price = Number(tx.price || 0);
       totalValue += qty * price;
       totalQuantity += qty;
     });
-    
+
     return totalQuantity > 0 ? (totalValue / totalQuantity).toFixed(2) : null;
   };
 
@@ -464,17 +464,17 @@ export default function TradeList() {
   const calculateMarketMetrics = (currency) => {
     const marketTrades = trades.filter(trade => getCurrency(trade) === currency);
     const capitalInfo = capitalData.find(cap => cap.currency === currency);
-    
+
     // Separate trades by status
     const openTrades = marketTrades.filter(trade => getTradeStatusDetailed(trade) === 'OPEN');
     const partialTrades = marketTrades.filter(trade => getTradeStatusDetailed(trade) === 'PARTIAL');
     const closedTrades = marketTrades.filter(trade => getTradeStatusDetailed(trade) === 'CLOSED');
-    
+
     // Calculate total invested (open + partial trades)
     const totalInvested = [...openTrades, ...partialTrades].reduce((sum, trade) => {
       const status = getTradeStatusDetailed(trade);
       const entryPrice = Number(trade.entryPrice || 0);
-      
+
       if (status === 'OPEN') {
         const qty = Number(trade.quantity || 0);
         return sum + (entryPrice * qty);
@@ -484,21 +484,37 @@ export default function TradeList() {
       }
       return sum;
     }, 0);
-    
+
     // Calculate total P&L (open + partial + closed)
     const totalPL = marketTrades.reduce((sum, trade) => {
+      if (trade.status.toUpperCase() === 'CLOSED') return sum;
       const pl = getPartialPL(trade);
       return sum + (pl === "-" ? 0 : Number(pl));
     }, 0);
-    
+
     // Calculate today's P&L (placeholder - would need today's price data)
-    const todaysPL = 0; // TODO: Implement based on today's price changes
-    
+    let todaysPL = 0; // TODO: Implement based on today's price changes
+
+    // Today change
+    let todayChange = 0, todayBase = 0;
+    (marketTrades || []).forEach(t => {
+      if (t.status.toUpperCase() === 'CLOSED') return;
+      
+      if (t.remainingQuantity > 0 && t.lastDayPrice != null && t.currentPrice != null) {
+        const sign = (t.direction || 'long').toLowerCase() === 'short' ? -1 : 1;
+        todayChange += sign * (Number(t.currentPrice) - Number(t.lastDayPrice)) * t.remainingQuantity;
+        todayBase += Number(t.lastDayPrice) * t.remainingQuantity;
+      }
+    });
+    const todayPct = todayBase > 0 ? (todayChange / todayBase) * 100 : null;
+    todaysPL = todayChange;
+
+
     const totalCapital = capitalInfo?.total || 0;
     const investedPercentage = totalCapital > 0 ? (totalInvested / totalCapital * 100).toFixed(2) : 0;
     const plPercentage = totalCapital > 0 ? (totalPL / totalCapital * 100).toFixed(2) : 0;
-    const todaysPlPercentage = totalCapital > 0 ? (todaysPL / totalCapital * 100).toFixed(2) : 0;
-    
+    const todaysPlPercentage = Number(todayPct).toFixed(2);
+
     return {
       totalCapital,
       totalInvested,
@@ -511,56 +527,6 @@ export default function TradeList() {
       partialTrades: partialTrades.length,
       closedTrades: closedTrades.length
     };
-  };
-
-  // Render compact market summary row (like InvestmentList)
-  const renderMarketSummaryRow = (currency, marketName) => {
-    const metrics = calculateMarketMetrics(currency);
-    const symbol = currency === 'INR' ? '₹' : '$';
-    return (
-      <div key={currency} className={styles.summaryCard}>
-        <span className={styles.summaryItem}>
-          <span className={styles.summaryIcon}>{marketName === 'US' ? '🇺🇸' : '🇮🇳'}</span>
-          <span className={styles.summaryLabel}>{marketName} Market</span>
-          <span className={styles.currencyBadge}>{currency}</span>
-        </span>
-        <span className={styles.summaryItem}>
-          <span className={styles.summaryLabel}>Total Capital:</span>
-          <strong className={styles.summaryValue}>{formatCurrency(metrics.totalCapital, currency)}</strong>
-        </span>
-        <span className={styles.summaryItem}>
-          <span className={styles.summaryLabel}>Total Invested:</span>
-          <strong className={styles.summaryValue}>{formatCurrency(metrics.totalInvested, currency)}</strong>
-          <span className={styles.summaryPercent}>({metrics.investedPercentage}%)</span>
-        </span>
-        <span className={styles.summaryItem}>
-          <span className={styles.summaryLabel}>Profit/Loss:</span>
-          <strong className={`${styles.summaryValue} ${metrics.totalPL >= 0 ? styles.summarySuccess : styles.summaryError}`}>
-            {metrics.totalPL >= 0 ? '+' : ''}{formatCurrency(metrics.totalPL, currency)}
-            <span className={styles.summaryPercent}>({metrics.plPercentage >= 0 ? '+' : ''}{metrics.plPercentage}%)</span>
-          </strong>
-        </span>
-        <span className={styles.summaryItem}>
-          <span className={styles.summaryLabel}>Today's P&L:</span>
-          <strong className={`${styles.summaryValue} ${metrics.todaysPL >= 0 ? styles.summarySuccess : styles.summaryError}`}>
-            {metrics.todaysPL >= 0 ? '+' : ''}{formatCurrency(metrics.todaysPL, currency)}
-            <span className={styles.summaryPercent}>({metrics.todaysPlPercentage >= 0 ? '+' : ''}{metrics.todaysPlPercentage}%)</span>
-          </strong>
-        </span>
-        <span className={styles.summaryItem}>
-          <span className={styles.summaryLabel}>Open:</span>
-          <strong className={styles.summaryValue}>{metrics.openTrades}</strong>
-        </span>
-        <span className={styles.summaryItem}>
-          <span className={styles.summaryLabel}>Partial:</span>
-          <strong className={styles.summaryValue}>{metrics.partialTrades}</strong>
-        </span>
-        <span className={styles.summaryItem}>
-          <span className={styles.summaryLabel}>Closed:</span>
-          <strong className={styles.summaryValue}>{metrics.closedTrades}</strong>
-        </span>
-      </div>
-    );
   };
 
   const sortedTrades = [...trades].sort((a, b) => {
@@ -603,7 +569,7 @@ export default function TradeList() {
     sortedTrades.forEach(trade => {
       const currency = getCurrency(trade);
       const status = getTradeStatusDetailed(trade);
-      
+
       if (markets[currency]) {
         markets[currency].trades[status].push(trade);
       }
@@ -634,9 +600,9 @@ export default function TradeList() {
       <div className={styles.section}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 className={styles.sectionTitle}>
-            {status === 'OPEN' ? 'Open Trades' : 
-             status === 'PARTIAL' ? 'Partially Closed Trades' : 
-             'Closed Trades'} ({trades.length}) {currency}
+            {status === 'OPEN' ? 'Open Trades' :
+              status === 'PARTIAL' ? 'Partially Closed Trades' :
+                'Closed Trades'} ({trades.length}) {currency}
           </h3>
         </div>
         <div className={styles.tableContainer}>
@@ -672,7 +638,7 @@ export default function TradeList() {
                 <th className={styles.tableHeaderCell}>Actions</th>
               </tr>
             </thead>
-            
+
             <tbody>
               {sortedTrades.map(trade => {
                 const originalQty = Number(trade.quantity || 0);
@@ -681,17 +647,17 @@ export default function TradeList() {
                 const currentPrice = trade.currentPrice ? Number(trade.currentPrice) : entryPrice;
                 const lastExitDate = getLastExitDate(trade);
                 const avgSellPrice = getAverageSellPrice(trade);
-                const displayQuantity = status === 'PARTIAL' ? 
-                  `${remainingQty.toLocaleString()}/${originalQty.toLocaleString()}` : 
+                const displayQuantity = status === 'PARTIAL' ?
+                  `${remainingQty.toLocaleString()}/${originalQty.toLocaleString()}` :
                   originalQty.toLocaleString();
-                const invested = status === 'OPEN' ? 
-                  (entryPrice * originalQty) : 
-                  status === 'PARTIAL' ? 
-                    (entryPrice * remainingQty) : 
+                const invested = status === 'OPEN' ?
+                  (entryPrice * originalQty) :
+                  status === 'PARTIAL' ?
+                    (entryPrice * remainingQty) :
                     (entryPrice * originalQty);
-                const marketValue = status === 'CLOSED' ? 0 : 
-                  status === 'PARTIAL' ? 
-                    (currentPrice * remainingQty) : 
+                const marketValue = status === 'CLOSED' ? 0 :
+                  status === 'PARTIAL' ?
+                    (currentPrice * remainingQty) :
                     (currentPrice * originalQty);
                 const pl = getPartialPL(trade);
                 const plValue = pl === "-" ? 0 : Number(pl);
@@ -699,7 +665,7 @@ export default function TradeList() {
                 // Today's P&L
                 const todaysPL = getTodaysPL(trade);
                 return (
-                  <tr 
+                  <tr
                     key={trade.tradeId}
                     className={`${styles.tradeRow} ${styles[status.toLowerCase()]}`}
                     onClick={() => handleShowDetails(trade.id)}
@@ -765,15 +731,15 @@ export default function TradeList() {
                     </td>
                     {/* Today's P&L */}
                     <td>
-                      {status === 'CLOSED' ? '-' : (  
-                      <div className={styles.priceWithChange}>
-                        <span className={todaysPL.value >= 0 ? styles.profit : styles.loss}>
-                          {todaysPL.value >= 0 ? '+' : ''}{formatCurrency(todaysPL.value, currency)}
-                        </span>
-                        <span className={`${styles.priceChange} ${todaysPL.percent >= 0 ? styles.positive : styles.negative}`}>
-                          ({todaysPL.percent >= 0 ? '+' : ''}{todaysPL.percent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
-                        </span>
-                      </div>
+                      {status === 'CLOSED' ? '-' : (
+                        <div className={styles.priceWithChange}>
+                          <span className={todaysPL.value >= 0 ? styles.profit : styles.loss}>
+                            {todaysPL.value >= 0 ? '+' : ''}{formatCurrency(todaysPL.value, currency)}
+                          </span>
+                          <span className={`${styles.priceChange} ${todaysPL.percent >= 0 ? styles.positive : styles.negative}`}>
+                            ({todaysPL.percent >= 0 ? '+' : ''}{todaysPL.percent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
+                          </span>
+                        </div>
                       )}
                     </td>
                     <td className={styles.actionsCell}>
@@ -786,9 +752,9 @@ export default function TradeList() {
                           👁️
                         </button>
                         <button
-                          onClick={e => { 
-                            e.stopPropagation(); 
-                            status === 'CLOSED' ? handleReview(trade.id) : handleEdit(trade.id); 
+                          onClick={e => {
+                            e.stopPropagation();
+                            status === 'CLOSED' ? handleReview(trade.id) : handleEdit(trade.id);
                           }}
                           className={`${styles.actionBtn} ${status === 'CLOSED' ? styles.reviewBtn : styles.editBtn}`}
                           title={status === 'CLOSED' ? "Add Review" : "Edit Trade"}
@@ -836,12 +802,12 @@ export default function TradeList() {
               <span className={styles.currencyBadge}>USD</span>
             </div>
             <div className={styles.marketMetrics}>
-              <div className={styles.metric}>
+              {/* <div className={styles.metric}>
                 <span className={styles.metricLabel}>Total Capital</span>
                 <span className={styles.metricValue}>
                   {formatCurrency(calculateMarketMetrics('USD').totalCapital, 'USD')}
                 </span>
-              </div>
+              </div> */}
               <div className={styles.metric}>
                 <span className={styles.metricLabel}>Total Invested</span>
                 <span className={styles.metricValue}>
@@ -941,13 +907,13 @@ export default function TradeList() {
 
       {/* Market Tabs */}
       <div className={styles.tabContainer}>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeTab === 'NASDAQ' ? styles.active : ''}`}
           onClick={() => setActiveTabWithPersist('NASDAQ')}
         >
           🇺🇸 US (NASDAQ/NYSE)
         </button>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeTab === 'NSE' ? styles.active : ''}`}
           onClick={() => setActiveTabWithPersist('NSE')}
         >
@@ -960,7 +926,7 @@ export default function TradeList() {
         // Filter by active tab
         if (activeTab === 'NASDAQ' && currency !== 'USD') return null;
         if (activeTab === 'NSE' && currency !== 'INR') return null;
-        
+
         const totalTrades = Object.values(marketData.trades).flat().length;
         if (totalTrades === 0) return null;
 
@@ -969,13 +935,13 @@ export default function TradeList() {
             {/* <h2 className={styles.marketSectionTitle}>
               {marketData.name} Market ({currency}) - {totalTrades} Trades
             </h2> */}
-            
+
             {/* Open Trades */}
             {renderTradeTable(marketData.trades.OPEN, 'OPEN', currency)}
-            
+
             {/* Partial Trades */}
             {renderTradeTable(marketData.trades.PARTIAL, 'PARTIAL', currency)}
-            
+
             {/* Closed Trades */}
             {renderTradeTable(marketData.trades.CLOSED, 'CLOSED', currency)}
           </div>
