@@ -9,6 +9,12 @@ import { useTheme } from "../../contexts/ThemeContext";
 import styles from "./InvestmentList.module.css";
 
 export default function InvestmentList() {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 700 : false);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 700);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   const { theme } = useTheme();
   const [investments, setInvestments] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
@@ -317,8 +323,41 @@ export default function InvestmentList() {
         </div>
       )}
 
-      {/* Investments Display */}
-      {Object.entries(groupedInvestments).map(([groupKey, groupInvestments]) => (
+      {/* Mobile card list */}
+      {isMobile && (
+        <div className={styles.mobileList}>
+          {[...filteredInvestments]
+            .sort((a,b)=> (a.ticker||'').localeCompare(b.ticker||''))
+            .map(inv => {
+              const m = calculateMetrics(inv);
+              const ltpPct = inv.lastDayPrice ? (( (inv.currentPrice||inv.avgBuyPrice) - inv.lastDayPrice) / inv.lastDayPrice)*100 : null;
+              return (
+                <div key={inv.id} className={styles.mobileCard} onClick={() => navigate(`/investments/update/${inv.id}`)}>
+                  <div className={styles.mobileTopRow}>
+                    <div className={styles.mobileTicker}>{inv.ticker}</div>
+                    <button className={styles.editIconBtn} onClick={(e)=>{e.stopPropagation(); navigate(`/investments/update/${inv.id}`);}}>✏️ Edit</button>
+                  </div>
+                  <div className={styles.mobileMeta}>Qty. {inv.quantity?.toLocaleString()} <span style={{opacity:.6, margin:'0 6px'}}>•</span> Avg. {inv.avgBuyPrice?.toLocaleString()}</div>
+                  <div className={styles.mobileRow}>
+                    <div className={styles.left}>
+                      <div>Invested ₹{m.investedAmount.toLocaleString('en-IN')}</div>
+                      <div>LTP ₹{(inv.currentPrice||inv.avgBuyPrice)?.toLocaleString('en-IN')} {ltpPct==null?'':(
+                        <span className={ltpPct>=0? styles.plPositive: styles.plNegative}>({ltpPct>=0?'+':''}{ltpPct.toFixed(2)}%)</span>
+                      )}</div>
+                    </div>
+                    <div className={styles.right}>
+                      <div className={`${styles.plValue} ${m.gainLoss>=0? styles.plPositive: styles.plNegative}`}>₹{Math.abs(m.gainLoss).toLocaleString('en-IN')}</div>
+                      <div className={m.gainLoss>=0? styles.plPositive: styles.plNegative}>{m.gainLossPercent>=0?'+':''}{m.gainLossPercent}%</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      )}
+
+      {/* Desktop Investments Display */}
+      {!isMobile && Object.entries(groupedInvestments).map(([groupKey, groupInvestments]) => (
         <div key={groupKey} className={styles.investmentGroup}>
           {/* {groupBy === 'ticker' && (
             <h3 className={styles.groupHeader}>
@@ -622,4 +661,3 @@ export default function InvestmentList() {
     </div>
   );
 }
-

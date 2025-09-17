@@ -457,6 +457,8 @@
     flex-direction: column;
     gap: 4px;
   }
+  .summaryCard { padding: 10px 12px; gap: 1rem; font-size: 0.95rem; }
+  .summaryIcon { font-size: 1.1em; }
 }
 
 /* Theme-aware components */
@@ -470,13 +472,13 @@
 .summaryCard {
   background: linear-gradient(90deg, var(--bg-secondary), var(--bg-primary));
   border-radius: 14px;
-  padding: 18px 24px;
-  margin-bottom: 18px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
   display: flex;
   flex-wrap: wrap;
-  gap: 2.5rem;
+  gap: 1.5rem;
   font-weight: 600;
-  font-size: 1.08rem;
+  font-size: 1rem;
   color: var(--text-primary);
   align-items: center;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -499,10 +501,7 @@
   color: var(--text-muted);
 }
 
-.summaryValue {
-  font-size: 1.1em;
-  color: var(--text-primary);
-}
+.summaryValue { font-size: 1.02em; color: var(--text-primary); }
 
 .summarySuccess {
   color: var(--status-success) !important;
@@ -515,6 +514,22 @@
 .summaryPercent {
   font-weight: 400;
   margin-left: 0.3em;
+}
+
+/* ---- Mobile Card View ---- */
+@media (max-width: 700px) {
+  .mobileList { display: flex; flex-direction: column; gap: 10px; }
+  .mobileCard { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 8px 10px; box-shadow: var(--shadow-sm); }
+  .mobileTopRow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .mobileTicker { font-size: 14px; font-weight: 800; color: var(--text-primary); }
+  .editIconBtn { background: var(--btn-primary-bg); color: #fff; border: none; border-radius: 8px; padding: 3px 6px; font-size: 11px; }
+  .mobileMeta { font-size: 11px; color: var(--text-secondary); margin-bottom: 2px; }
+  .mobileRow { display: flex; justify-content: space-between; align-items: flex-end; }
+  .left { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--text-secondary); }
+  .right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .plValue { font-size: 13px; font-weight: 800; }
+  .plPositive { color: var(--status-success); }
+  .plNegative { color: var(--status-error); }
 }
 
 .sortArrowActive {

@@ -387,6 +387,21 @@
   font-weight: 500;
 }
 
+/* ---- Mobile Card View ---- */
+@media (max-width: 700px) {
+  .mobileList { display: flex; flex-direction: column; gap: 10px; }
+  .mobileCard { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 10px 12px; box-shadow: var(--shadow-sm); }
+  .mobileTopRow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .mobileTicker { font-size: 15px; font-weight: 800; color: var(--text-primary); }
+  .editIconBtn { background: var(--btn-primary-bg); color: #fff; border: none; border-radius: 8px; padding: 4px 8px; font-size: 12px; }
+  .mobileMeta { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+  .mobileRow { display: flex; justify-content: space-between; align-items: flex-end; }
+  .left { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--text-secondary); }
+  .right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .opportunityBadge { font-size: 12px; font-weight: 700; color: var(--status-success); }
+  .noOpportunityBadge { font-size: 12px; font-weight: 700; color: var(--status-error); }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .container {

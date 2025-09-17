@@ -8,6 +8,12 @@ import { useTheme } from "../../contexts/ThemeContext";
 import styles from "./RecommendationList.module.css";
 
 export default function RecommendationList() {
+    const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 700 : false);
+    useEffect(() => {
+        const onResize = () => setIsMobile(window.innerWidth <= 700);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
     const { theme } = useTheme();
     const [recommendations, setRecommendations] = useState([]);
     const [prices, setPrices] = useState({});
@@ -164,7 +170,36 @@ export default function RecommendationList() {
                 </button>
             </div>
 
-            {/* Recommendations Table */}
+            {/* Mobile card list */}
+            {isMobile ? (
+                <div className={styles.mobileList}>
+                    {[...sortedRecommendations]
+                      .sort((a,b)=> (a.ticker||'').localeCompare(b.ticker||''))
+                      .map(rec => {
+                        const diffPct = rec.differencePercentage ?? null;
+                        return (
+                          <div key={rec.id} className={styles.mobileCard} onClick={() => navigate(`/recommendations/edit/${rec.id}`)}>
+                            <div className={styles.mobileTopRow}>
+                              <div className={styles.mobileTicker}>{rec.ticker}</div>
+                              <button className={styles.editIconBtn} onClick={(e)=>{e.stopPropagation(); navigate(`/recommendations/edit/${rec.id}`);}}>✏️ Edit</button>
+                            </div>
+                            <div className={styles.mobileMeta}>Market Cap: <span className={styles.badge}>{rec.marketCap || '—'}</span></div>
+                            <div className={styles.mobileRow}>
+                              <div className={styles.left}>
+                                <div>Buy Below: ₹{rec.buyBelow?.toLocaleString() || '-'}</div>
+                                <div>Current: {rec.currentPrice ? `₹${rec.currentPrice.toFixed(2)}` : '-'}</div>
+                              </div>
+                              <div className={styles.right}>
+                                <div className={diffPct!=null && diffPct>7 ? styles.opportunityBadge : styles.noOpportunityBadge}>
+                                  {diffPct!=null ? `${diffPct>0?'+':''}${diffPct}%` : '—'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                </div>
+            ) : (
             <div className={styles.tableContainer}>
                 <table className={styles.table}>
                     <thead className={styles.tableHeader}>
@@ -262,6 +297,7 @@ export default function RecommendationList() {
                     </tbody>
                 </table>
             </div>
+            )}
 
             {recommendations.length === 0 && (
                 <div className={styles.emptyState}>

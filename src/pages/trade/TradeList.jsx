@@ -12,10 +12,18 @@ import styles from "./TradeList.module.css";
 import { getExitTransactions, getLastExitDate, getAverageExitPrice, getPartialPL } from '../../common/Helper';
 
 export default function TradeList() {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 700 : false);
   // Tab state for NASDAQ/NSE separation
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('tradeListActiveTab') || 'NASDAQ';
   });
+
+  // Track viewport for responsive font sizing
+    useEffect(() => {
+      const onResize = () => setIsMobile(window.innerWidth <= 700);
+      window.addEventListener('resize', onResize);
+      return () => window.removeEventListener('resize', onResize);
+    }, []);
 
   const setActiveTabWithPersist = (tab) => {
     setActiveTab(tab);
@@ -605,6 +613,65 @@ export default function TradeList() {
                 'Closed Trades'} ({trades.length}) {currency}
           </h3>
         </div>
+        {isMobile ? (
+          <div className={styles.mobileList}>
+            {[...sortedTrades]
+              .sort((a,b)=> (a.ticker||'').localeCompare(b.ticker||''))
+              .map((trade)=>{
+                const currency = getCurrency(trade);
+                const symbol = getCurrencySymbol(trade);
+                const invested = Number(trade.entryPrice||0)*Number(trade.quantity||0);
+                const plValue = Number(getPartialPL(trade)||0);
+                const plPct = invested>0? (plValue/invested)*100:0;
+                const ltp = Number(trade.currentPrice ?? trade.entryPrice ?? 0);
+                const ltpPct = (trade.lastDayPrice!=null && Number(trade.lastDayPrice)>0)
+                  ? ((ltp-Number(trade.lastDayPrice))/Number(trade.lastDayPrice))*100
+                  : null;
+                return (
+                  <div key={trade.id} className={styles.mobileCard}>
+                    <div className={styles.mobileTopRow}>
+                      <div className={styles.mobileTicker}>{trade.ticker}</div>
+                      {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
+                        <button
+                          className={styles.editIconBtn}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(trade.id); }}
+                          title="Edit Trade"
+                        >
+                          ✏️ Edit
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles.mobileTopRow}>
+                      <div>
+                        <span className={styles.dim}>Qty.</span> {Number(trade.quantity||0).toLocaleString()}
+                        <span className={styles.dot}>•</span>
+                        <span className={styles.dim}>Avg.</span> {Number(trade.entryPrice||0).toLocaleString(undefined,{maximumFractionDigits:2})}
+                      </div>
+                    </div>
+                    <div className={styles.mobileRow}>
+                      <div className={styles.mobileLeft}>
+                        <div>Invested {symbol}{invested.toLocaleString()}</div>
+                        <div className={styles.ltpRow}>LTP {symbol}{ltp.toLocaleString()} {ltpPct==null? '' : (
+                          <span className={ltpPct>=0? styles.plPositive: styles.plNegative}>
+                            ({ltpPct>=0?'+':''}{ltpPct.toFixed(2)}%)
+                          </span>
+                        )}
+                        </div>
+                      </div>
+                      <div className={styles.mobileRight}>
+                        <div className={`${styles.plValue} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
+                          {symbol}{Math.abs(plValue).toLocaleString()}
+                        </div>
+                        <div className={plPct>=0? styles.plPositive: styles.plNegative}>
+                          {plPct>=0?'+':''}{plPct.toFixed(2)}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+        ) : (
         <div className={styles.tableContainer}>
           <table className={styles.tradesTable}>
             <thead>
@@ -776,6 +843,7 @@ export default function TradeList() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     );
   };
@@ -802,12 +870,7 @@ export default function TradeList() {
               <span className={styles.currencyBadge}>USD</span>
             </div>
             <div className={styles.marketMetrics}>
-              {/* <div className={styles.metric}>
-                <span className={styles.metricLabel}>Total Capital</span>
-                <span className={styles.metricValue}>
-                  {formatCurrency(calculateMarketMetrics('USD').totalCapital, 'USD')}
-                </span>
-              </div> */}
+              {/* Removed Total Capital for compact mobile view */}
               <div className={styles.metric}>
                 <span className={styles.metricLabel}>Total Invested</span>
                 <span className={styles.metricValue}>
@@ -842,12 +905,7 @@ export default function TradeList() {
               <span className={styles.currencyBadge}>INR</span>
             </div>
             <div className={styles.marketMetrics}>
-              <div className={styles.metric}>
-                <span className={styles.metricLabel}>Total Capital</span>
-                <span className={styles.metricValue}>
-                  {formatCurrency(calculateMarketMetrics('INR').totalCapital, 'INR')}
-                </span>
-              </div>
+              {/* Removed Total Capital for compact mobile view */}
               <div className={styles.metric}>
                 <span className={styles.metricLabel}>Total Invested</span>
                 <span className={styles.metricValue}>
