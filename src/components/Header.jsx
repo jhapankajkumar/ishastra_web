@@ -71,10 +71,10 @@ export default function Header() {
 
       {/* Mobile Header Row: logo left, burger right (visible only on mobile) */}
       <div className={styles.headerRow}>
-        <div className={styles.headerLogoGroup}>
-          <span className={styles.logoIcon}>📈</span>
-          <span className={styles.logoText}>Ishastra</span>
-        </div>
+        <div className={styles.logo}>
+            <img src="/ishastra_icon.png" alt="Ishastra Logo" className={styles.logoIcon} style={{height: '32px', marginRight: '8px', verticalAlign: 'middle'}} />
+            <span className={styles.logoText}>Ishastra</span>
+          </div>
         <button
           className={styles.sideMenuButton}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -91,6 +91,7 @@ export default function Header() {
       >
         <div className={styles.leftSection}>
           <div className={styles.logo}>
+            <img src="/ishastra_icon.png" alt="Ishastra Logo" className={styles.logoIcon} style={{height: '32px', marginRight: '8px', verticalAlign: 'middle'}} />
             <span className={styles.logoText}>Ishastra</span>
           </div>
         </div>
