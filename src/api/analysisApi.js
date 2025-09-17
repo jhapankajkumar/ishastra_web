@@ -85,10 +85,25 @@ export const getWatchlist = async () => {
   }
 };
 
+/**
+ * Trigger daily scan for watchlist (POST)
+ * No input required
+ */
+export const runWatchlistDailyScan = async () => {
+  try {
+    const response = await AnalysisAPI_Instance.post('/watchlist/daily-scan');
+    return response.data;
+  } catch (error) {
+    console.error('Error running daily scan:', error);
+    throw error;
+  }
+};
+
 // Export all analysis functions as a default object for convenience
 const AnalysisAPI = {
   getUnifiedAnalysis,
   getWatchlist,
+  runWatchlistDailyScan,
 };
 
 const getWatchlistData = () => {

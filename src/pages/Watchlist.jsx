@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getWatchlist } from '../api/analysisApi';
+import { getWatchlist, runWatchlistDailyScan } from '../api/analysisApi';
 import { convertWatchlistToTradeEntryForm, validateWatchlistForConversion, hasBuySignal } from '../common/WatchlistToTradeConverter';
 import { createTrade } from '../api/tradeApi';
 import { getCurrentPrice } from '../api/tickerApi';
@@ -12,6 +12,21 @@ const Watchlist = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('grade'); // grade, confidence, symbol
+  const [refreshing, setRefreshing] = useState(false);
+  // Refresh handler for daily scan
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    notification.info('Running daily scan. This may take a few seconds...');
+    try {
+      await runWatchlistDailyScan();
+      notification.success('Daily scan complete! Watchlist refreshed.');
+      await fetchWatchlist();
+    } catch (err) {
+      notification.error('Failed to run daily scan. Please try again.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('watchlistActiveTab') || 'ALL';
   });
@@ -295,6 +310,10 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
     return styles.gradeD;
   };
 
+  const handleChartClick = (symbol) => {
+    navigate(`/chart/${symbol}`);
+  };
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -412,6 +431,9 @@ Max Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A
                   <span className={`${styles.gradeBadge} ${getGradeBadgeClass(stock.decision?.grade)}`}>
                     {stock.decision?.grade || 'N/A'}
                   </span>
+                  <div className={styles.chartLink} onClick={(e) => { e.stopPropagation(); handleChartClick(stock.symbol); }}>
+                    <span className={styles.chartIcon}>📈</span>
+                  </div>
                 </div>
               </div>
               

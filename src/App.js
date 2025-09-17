@@ -36,6 +36,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/analysis" element={<TickerAnalysis />} />
             <Route path="/chart" element={<Chart />} />
+            <Route path="/chart/:symbol" element={<Chart />} />
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/stock-detail/:symbol" element={<StockDetail />} />
             <Route path="/trades" element={<TradeList />} />

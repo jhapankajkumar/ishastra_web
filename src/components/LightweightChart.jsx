@@ -232,6 +232,15 @@ const LightweightChart = ({ ohlcv }) => {
   const volumeChartRef = useRef();
   const seriesRefs = useRef({});
 
+  const cleanedData = ohlcv.filter(candle =>
+  typeof candle.open === 'number' &&
+  typeof candle.high === 'number' &&
+  typeof candle.low === 'number' &&
+  typeof candle.close === 'number' &&
+  !isNaN(candle.open) && !isNaN(candle.high) &&
+  !isNaN(candle.low) && !isNaN(candle.close)
+);
+
   // State for controls
   const [timeframe, setTimeframe] = useState('daily');
   const [indicators, setIndicators] = useState({
@@ -252,7 +261,7 @@ const LightweightChart = ({ ohlcv }) => {
   });
 
   // Process data based on timeframe
-  const processedData = timeframe === 'weekly' ? convertToWeekly(ohlcv) : ohlcv;
+  const processedData = timeframe === 'weekly' ? convertToWeekly(cleanedData) : cleanedData;
 
   const handleIndicatorToggle = (indicator) => {
     setIndicators(prev => ({

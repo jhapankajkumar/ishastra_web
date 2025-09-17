@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getChartData } from "../api/analysisApi";
 import LightweightChart from "../components/LightweightChart";
 import TickerSearch from "../components/TickerSearch";
 import styles from "./Chart.module.css";
+import { useParams } from "react-router-dom";
 
 export default function ChartPage() {
-  const [selectedTicker, setSelectedTicker] = useState("");
+  const { symbol } = useParams();
+  const [selectedTicker, setSelectedTicker] = useState(symbol || "");
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,6 +33,15 @@ export default function ChartPage() {
       setLoading(false);
     }
   };
+
+  // Auto-load chart if symbol param is present
+  useEffect(() => {
+    if (symbol) {
+      const tickerData = { symbol }; // Create an object to pass
+      handleTickerSelect(tickerData);
+    }
+    // eslint-disable-next-line
+  }, [symbol]);
 
   return (
     <div className={styles.fullPageChartContainer}>
