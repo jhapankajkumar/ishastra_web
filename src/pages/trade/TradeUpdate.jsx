@@ -333,13 +333,15 @@ const TradeUpdate = () => {
               <span className={styles.summaryValue}>{trade.ticker}</span>
             </div>
             <div className={styles.summaryItem}>
-              <span className={styles.summaryLabel}>Direction:</span>
-              <span className={styles.summaryValue}>{trade.direction}</span>
-            </div>
-            <div className={styles.summaryItem}>
               <span className={styles.summaryLabel}>Entry Price:</span>
               <span className={styles.summaryValue}>
-                {trade.market === "India" ? "₹" : "$"}{trade.entryPrice || 'N/A'}
+                {trade.market === "India" ? "₹" : "$"}{(trade.entryPrice).toLocaleString(undefined, { maximumFractionDigits: 0 }) || 'N/A'}
+              </span>
+            </div>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>StopLoss:</span>
+              <span className={`${styles.summaryValue} ${styles.statusValue}`}>
+                {trade.stopLoss >= trade.currentPrice ? (trade.stopLoss).toLocaleString(undefined, { maximumFractionDigits: 0 }) : (trade.stopLoss).toLocaleString(undefined, { maximumFractionDigits: 0 })}{trade.stopLoss >= trade.entryPrice ? ' ^' : ''}
               </span>
             </div>
             <div className={styles.summaryItem}>
@@ -360,17 +362,19 @@ const TradeUpdate = () => {
             </div>
             <div className={styles.summaryItem}>
               <span className={styles.summaryLabel}>Invested:</span>
-              <span className={`${styles.summaryValue} ${styles.statusValue}`}>
-                {trade.entryPrice * trade.remainingQuantity}
+              <span className={`${styles.summaryValue} `}>
+                {(trade.entryPrice * trade.remainingQuantity).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
             </div>
 
             <div className={styles.summaryItem}>
               <span className={styles.summaryLabel}>Current:</span>
-              <span className={`${styles.summaryValue} ${styles.statusValue}`}>
-                {trade.currentPrice * trade.remainingQuantity}
+              <span className={`${styles.statusValue}`}>
+                {(trade.currentPrice * trade.remainingQuantity).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
             </div>
+
+            
           </div>
 
           {/* Live Calculated Metrics */}

@@ -108,11 +108,26 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     return "-";
   };
 
+  const getCurrentValue = () => {
+    if (trade.status?.toLowerCase() === 'closed') {
+      return `${getCurrencySymbol()}${(Number(trade.exitPrice) * Number(trade.quantity)).toFixed(2)}`;
+    } else {
+      return `${getCurrencySymbol()}${(Number(trade.currentPrice) * trade.quantity).toFixed(2)}`;
+    }
+    
+  };
+
+  const getCurrencySymbol = () => {
+    return trade.currency === "INR" ? "₹" : "$";
+  };
+
   const getPL = () => {
     // If we have partial exits, use partial P&L calculation
     if (exitTransactions.length > 0) {
       const partialPL = getPartialPL();
-      return partialPL !== "-" ? `$${partialPL}` : "-";
+      return partialPL !== "-" ? `${getCurrencySymbol()}${partialPL}` : "-";
+    } else {
+      return `${getCurrencySymbol()}${((trade.currentPrice - trade.entryPrice) * trade.quantity).toFixed(2)}`;
     }
     
     // Fallback to original calculation for legacy trades
@@ -169,17 +184,6 @@ export default function TradeDetailsPopup({ trade, onClose }) {
 
           {/* Main Content */}
           <div className={styles.body}>
-            {/* Entry Section */}
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Entry Analysis</h3>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Reason for Entry</label>
-                <div className={styles.textareaField}>
-                  {trade.reasonForEntry || "No reason provided"}
-                </div>
-              </div>
-            </div>
-
             {/* Entry Details */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitleAccent}>Entry Details</h3>
@@ -187,12 +191,6 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                 <div className={styles.fieldItem}>
                   <label className={styles.label}>Date</label>
                   <span className={styles.value}>{formatDate(trade.entryDate)}</span>
-                </div>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Average Price</label>
-                  <span className={styles.value}>
-                    {trade.entryPrice !== undefined && trade.entryPrice !== null ? `$${Number(trade.entryPrice).toFixed(2)}` : "-"}
-                  </span>
                 </div>
                 <div className={styles.fieldItem}>
                   <label className={styles.label}>Original Quantity</label>
@@ -207,15 +205,24 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                   </span>
                 </div>
                 <div className={styles.fieldItem}>
-                  <label className={styles.label}>Setup</label>
-                  <span className={styles.value}>{getSetupName(trade.tradeSetupId)}</span>
+                  <label className={styles.label}>Average Price</label>
+                  <span className={styles.value}>
+                    {trade.entryPrice !== undefined && trade.entryPrice !== null ? `${getCurrencySymbol()}${Number(trade.entryPrice).toFixed(2)}` : "-"}
+                  </span>
+                </div>
+
+                 <div className={styles.fieldItem}>
+                  <label className={styles.label}>Current Price</label>
+                  <span className={styles.value}>
+                    {trade.currentPrice !== undefined && trade.currentPrice !== null ? `${getCurrencySymbol()}${Number(trade.currentPrice).toFixed(2)}` : "-"}
+                  </span>
                 </div>
                 <div className={styles.fieldItem}>
                   <label className={styles.label}>Stop Loss</label>
                   <span className={styles.value} style={{
                     color: "var(--status-error)"
                   }}>
-                    {trade.stopLoss !== undefined && trade.stopLoss !== null ? `$${Number(trade.stopLoss).toFixed(2)}` : "-"}
+                    {getCurrencySymbol()}{trade.stopLoss >= trade.currentPrice ? (trade.stopLoss).toLocaleString(undefined, { maximumFractionDigits: 2 }) : (trade.stopLoss).toLocaleString(undefined, { maximumFractionDigits: 2 })}{trade.stopLoss >= trade.entryPrice ? ' ^' : ''}
                   </span>
                 </div>
                 <div className={styles.fieldItem}>
@@ -223,7 +230,23 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                   <span className={styles.value} style={{
                     color: "var(--status-success)"
                   }}>
-                    {trade.target1 !== undefined && trade.target1 !== null ? `$${Number(trade.target1).toFixed(2)}` : "-"}
+                    {trade.target1 !== undefined && trade.target1 !== null ? `${getCurrencySymbol()}${Number(trade.target1).toFixed(2)}` : "-"}
+                  </span>
+                </div>
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Target 2</label>
+                  <span className={styles.value} style={{
+                    color: "var(--status-success)"
+                  }}>
+                    {trade.target2 !== undefined && trade.target2 !== null ? `${getCurrencySymbol()}${Number(trade.target2).toFixed(2)}` : "-"}
+                  </span>
+                </div>
+                <div className={styles.fieldItem}>
+                  <label className={styles.label}>Target 3</label>
+                  <span className={styles.value} style={{
+                    color: "var(--status-success)"
+                  }}>
+                    {trade.target3 !== undefined && trade.target3 !== null ? `${getCurrencySymbol()}${Number(trade.target3).toFixed(2)}` : "-"}
                   </span>
                 </div>
               </div>
@@ -234,12 +257,27 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                   <span className={styles.valueFinancial}>{getInvested()}</span>
                 </div>
                 <div className={styles.fieldItem}>
+                  <label className={styles.label}>Total Value</label>
+                  <span className={styles.valueFinancial}>{getCurrentValue()}</span>
+                </div>
+                <div className={styles.fieldItem}>
                   <label className={styles.label}>Profit & Loss</label>
                   <span className={styles.valueFinancial} style={{
                     color: getPL() === "-" ? "var(--text-muted)" : getPL().includes("-") ? "var(--status-error)" : "var(--status-success)"
                   }}>
                     {getPL()}
                   </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Entry Section */}
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Entry Analysis</h3>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Reason for Entry</label>
+                <div className={styles.textareaField}>
+                  {trade.reasonForEntry || "No reason provided"}
                 </div>
               </div>
             </div>
@@ -348,7 +386,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                     <div className={styles.fieldItem}>
                       <label className={styles.label}>Average Price</label>
                       <span className={styles.value}>
-                        {trade.exitPrice !== undefined && trade.exitPrice !== null ? `$${Number(trade.exitPrice).toFixed(2)}` : "-"}
+                        {trade.exitPrice !== undefined && trade.exitPrice !== null ? `${getCurrencySymbol()}${Number(trade.exitPrice).toFixed(2)}` : "-"}
                       </span>
                     </div>
                     <div className={styles.fieldItem}>

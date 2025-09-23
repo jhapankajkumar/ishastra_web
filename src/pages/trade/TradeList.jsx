@@ -688,6 +688,11 @@ export default function TradeList() {
                   renderSortableHeader('Entry Date', 'entryDate')
                 )}
                 {renderSortableHeader('BUY AVG', 'entryPrice')}
+                {status === 'OPEN' ? (
+                  <th className={styles.tableHeaderCell}>STOP</th>
+                ) : (
+                  <div></div>
+                )}
                 {status === 'CLOSED' ? (
                   <th className={styles.tableHeaderCell}>SELL AVG</th>
                 ) : (
@@ -731,6 +736,9 @@ export default function TradeList() {
                 const plPercentage = invested > 0 ? (plValue / invested * 100).toFixed(2) : 0;
                 // Today's P&L
                 const todaysPL = getTodaysPL(trade);
+                const stopLoss = trade.stopLoss ? Number(trade.stopLoss) : entryPrice;
+                const stopLossDistance = entryPrice > 0 ? ((entryPrice - stopLoss) / entryPrice * 100).toFixed(0) : 0;
+
                 return (
                   <tr
                     key={trade.tradeId}
@@ -771,6 +779,21 @@ export default function TradeList() {
                       <td>{formatDate(trade.entryDate)}</td>
                     )}
                     <td>{formatCurrency(entryPrice, currency)}</td>
+                    {status === 'OPEN' ? (
+                      <td>
+                        <div className={styles.priceWithChange}>
+                        <span >
+                          {formatCurrency(stopLoss, currency)}</span>
+                          {stopLossDistance && (
+                            <span className={`${styles.priceChange} ${stopLossDistance > 0 ? styles.negative : styles.positive}`}>
+                              {(stopLossDistance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    ) : (
+                      <div></div>
+                    )}
                     {status === 'CLOSED' ? (
                       <td>{avgSellPrice ? formatCurrency(avgSellPrice, currency) : 'N/A'}</td>
                     ) : (
