@@ -85,6 +85,33 @@ export const getWatchlist = async () => {
   }
 };
 
+export const deleteSymbolFromWatchlist = async (stock) => {
+  try {
+    const data = {
+      symbol: stock.symbol
+    };
+    const response = await AnalysisAPI_Instance.post(`/watchlist/remove`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting symbol from watchlist:', error);
+    throw error;
+  }
+};
+
+export const refreshStockInWatchlist = async (stock) => {
+  try {
+    const data = {
+      symbol: stock.symbol
+    };
+    console.log('Refreshing stock in watchlist:', data);
+    const response = await AnalysisAPI_Instance.post(`/watchlist/refresh`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error refreshing stock in watchlist:', error);
+    throw error;
+  }
+};
+
 /**
  * Trigger daily scan for watchlist (POST)
  * No input required

@@ -45,7 +45,7 @@ const TickerAnalysis = () => {
       if (tickerData.symbol.includes('.NS') || tickerData.symbol.includes('.BO')) {
         capital = 1000000;
       }
-      const response = await getUnifiedAnalysis(tickerData.symbol, '3mo', capital);
+      const response = await getUnifiedAnalysis(tickerData.symbol, '3mo', capital, true);
       console.log('API Response:', response);
       const result = response.result ? response.result : response;
       setAnalysisData(result);

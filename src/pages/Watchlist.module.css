@@ -1,3 +1,78 @@
+/* Delete Confirmation Dialog Styles */
+.deleteConfirmOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deleteConfirmDialog {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 2rem 2.5rem;
+  max-width: 400px;
+  width: 90vw;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+}
+
+.deleteConfirmTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ef4444;
+  margin-bottom: 0.75rem;
+}
+
+.deleteConfirmMessage {
+  font-size: 1rem;
+  color: #374151;
+  margin-bottom: 1.5rem;
+}
+
+.deleteConfirmActions {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.deleteConfirmButton {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(239,68,68,0.12);
+  transition: background 0.2s;
+}
+.deleteConfirmButton:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+}
+
+.deleteConfirmCancel {
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(107,114,128,0.08);
+  transition: background 0.2s;
+}
+.deleteConfirmCancel:hover {
+  background: #e5e7eb;
+}
 /* Watchlist Component Styles */
 
 .container {
@@ -179,7 +254,7 @@
 .stockList {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 }
 
 /* Enhanced Stock Card Design */
@@ -215,7 +290,7 @@
 }
 
 .stockSymbol {
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 700;
   margin: 0;
   color: #111827;
@@ -415,7 +490,6 @@
   font-size: 14px;
   font-weight: 600;
   color: #ef4444;
-  margin-left: auto;
 }
 
 /* Trigger Section */
@@ -587,7 +661,7 @@
 /* Footer */
 .cardFooter {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
   padding-top: 12px;
   border-top: 1px solid #f3f4f6;
@@ -775,7 +849,7 @@
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 700px) {
   .container {
     padding: 0.5rem;
   }
@@ -864,7 +938,7 @@
   .header p { font-size: 0.95rem; }
 
   .tabContainer {
-    justify-content: flex-start;
+    justify-content: center;
     gap: 6px;
     padding: 6px;
     overflow-x: auto;
@@ -890,7 +964,7 @@
   .stockCard { padding: 12px; border-radius: 10px; }
   .cardHeader { align-items: center; }
   .symbolSection { gap: 6px; }
-  .stockSymbol { font-size: 20px; }
+  .stockSymbol { font-size: 16px; }
 
   .metricsRow { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .priceRanges { flex-direction: column; gap: 8px; }
@@ -933,7 +1007,7 @@
 
 @media (max-width: 420px) {
   .positionRow { display: flex; }
-  .stockSymbol { font-size: 18px; }
+  .stockSymbol { font-size: 16px; }
   .tab { padding: 8px 12px; }
   .sortControls label { display: none; }
   .metricValue { font-size: 12px; }
@@ -946,7 +1020,7 @@
   .stockCard { padding: 12px 14px; margin-bottom: 12px; }
   .cardHeader { margin-bottom: 8px; }
   .symbolSection { gap: 6px; }
-  .stockSymbol { font-size: 20px; }
+  .stockSymbol { font-size: 16px; }
   .badgeGroup { gap: 4px; }
   .actionBadge, .gradeBadge { padding: 3px 6px; font-size: 10px; }
 
