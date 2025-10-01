@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ImageGallery from "../../components/ImageGallery";
 import styles from "./TradeDetailsPopup.module.css";
 import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
@@ -66,7 +66,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     });
 
     const avgExitPrice = totalExitedQty > 0 ? totalValue / totalExitedQty : 0;
-    
+
     return {
       totalExitedQty,
       avgExitPrice,
@@ -87,7 +87,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
         totalPL += priceDiff * Number(tx.quantity);
       }
     });
-    
+
     return totalPL.toFixed(2);
   };
 
@@ -103,7 +103,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
 
   const getInvested = () => {
     if (trade.entryPrice && trade.quantity) {
-      return `$${(Number(trade.entryPrice) * Number(trade.quantity)).toFixed(2)}`;
+      return `${getCurrencySymbol()}${(Number(trade.entryPrice) * Number(trade.quantity)).toFixed(2)}`;
     }
     return "-";
   };
@@ -114,7 +114,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     } else {
       return `${getCurrencySymbol()}${(Number(trade.currentPrice) * trade.quantity).toFixed(2)}`;
     }
-    
+
   };
 
   const getCurrencySymbol = () => {
@@ -129,7 +129,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     } else {
       return `${getCurrencySymbol()}${((trade.currentPrice - trade.entryPrice) * trade.quantity).toFixed(2)}`;
     }
-    
+
     // Fallback to original calculation for legacy trades
     if (
       trade.exitPrice !== undefined &&
@@ -144,7 +144,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
         ? Number(trade.exitPrice) - Number(trade.entryPrice)
         : Number(trade.entryPrice) - Number(trade.exitPrice);
       const pl = priceDiff * Number(trade.quantity);
-      return `$${pl.toFixed(2)}`;
+      return `${getCurrencySymbol()}${pl.toFixed(2)}`;
     }
     return "-";
   };
@@ -153,19 +153,110 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   const exitImages = trade.tradeImages?.filter(img => img.imageType === "exit") || [];
   const postImages = trade.tradeImages?.filter(img => img.imageType === "post") || [];
 
-  // Debug logging for analysis data
-  console.log('Trade analysis data:', trade.analysis);
-  console.log('Trade object:', trade);
+  const currencySymbol = getCurrencySymbol();
+
+  const formatCurrency = (value, digits = 2) => {
+    if (value === undefined || value === null || Number.isNaN(Number(value))) return "-";
+    return `${currencySymbol}${Number(value).toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: digits,
+    })}`;
+  };
+
+  const formatNumber = (value, digits = 2) => {
+    if (value === undefined || value === null || Number.isNaN(Number(value))) return "-";
+    return Number(value).toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: digits,
+    });
+  };
+
+  const executionData = useMemo(() => {
+    if (!trade) return null;
+
+    const rawCandidates = [
+      trade.executionValue,
+      trade.execution,
+      trade.executionData,
+      trade.executionPlan,
+    ];
+
+    let rawExecution = rawCandidates.find(Boolean) || null;
+
+    if (!rawExecution && trade.systemAnalysisResult) {
+      try {
+        const parsedSystem = typeof trade.systemAnalysisResult === 'string'
+          ? JSON.parse(trade.systemAnalysisResult)
+          : trade.systemAnalysisResult;
+        rawExecution = parsedSystem?.execution || null;
+      } catch (err) {
+        console.error('Failed to parse system analysis execution data', err);
+      }
+    }
+
+    if (!rawExecution) return null;
+
+    let finalExecution = rawExecution;
+    if (typeof finalExecution === 'string') {
+      try {
+        finalExecution = JSON.parse(finalExecution);
+      } catch (err) {
+        console.error('Failed to parse execution data', err);
+        return null;
+      }
+    }
+
+    if (finalExecution && finalExecution.execution) {
+      finalExecution = finalExecution.execution;
+    }
+
+    return finalExecution;
+  }, [trade]);
+
+  const entryStrategy = executionData?.entryStrategy;
+  const exitStrategy = executionData?.exitStrategy;
+  const positionSizing = executionData?.positionSizing;
+  const remainingQuantity = getRemainingQuantity();
+  const originalQuantity = getOriginalQuantity();
+  const investedTotal = getInvested();
+  const currentValue = getCurrentValue();
+  const plValue = getPL();
+  const stopLossTrend = trade.stopLoss != null && trade.entryPrice != null
+    ? (Number(trade.stopLoss) >= Number(trade.entryPrice) ? '↑' : '↓')
+    : '';
+  const stopLossValue = formatCurrency(trade.stopLoss, 2);
+  const stopLossDisplay = stopLossTrend && stopLossValue !== '-'
+    ? `${stopLossValue} ${stopLossTrend}`
+    : stopLossValue;
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const { body } = document;
+    const previousOverflow = body.style.overflow;
+    body.style.overflow = 'hidden';
+
+    return () => {
+      body.style.overflow = previousOverflow || '';
+    };
+  }, []);
 
   return (
     <div className={`${styles.overlay} ${theme}`}>
       <div className={styles.popup}>
         <div className={styles.content}>
           {/* Close Button */}
-          <button onClick={onClose} className={styles.closeButton}>
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof onClose === 'function') {
+                onClose();
+              }
+            }}
+            className={styles.closeButton}
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m18 6-12 12"/>
-              <path d="m6 6 12 12"/>
+              <path d="m18 6-12 12" />
+              <path d="m6 6 12 12" />
             </svg>
           </button>
 
@@ -187,89 +278,213 @@ export default function TradeDetailsPopup({ trade, onClose }) {
             {/* Entry Details */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitleAccent}>Entry Details</h3>
-              <div className={styles.grid}>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Date</label>
-                  <span className={styles.value}>{formatDate(trade.entryDate)}</span>
-                </div>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Original Quantity</label>
-                  <span className={styles.value}>{getOriginalQuantity().toLocaleString()}</span>
-                </div>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Remaining Quantity</label>
-                  <span className={styles.value} style={{
-                    color: getRemainingQuantity() === 0 ? "var(--status-success)" : "var(--status-warning)"
-                  }}>
-                    {getRemainingQuantity().toLocaleString()} {getRemainingQuantity() === 0 ? "(Fully Exited)" : "(Partial)"}
-                  </span>
-                </div>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Average Price</label>
-                  <span className={styles.value}>
-                    {trade.entryPrice !== undefined && trade.entryPrice !== null ? `${getCurrencySymbol()}${Number(trade.entryPrice).toFixed(2)}` : "-"}
-                  </span>
-                </div>
-
-                 <div className={styles.fieldItem}>
-                  <label className={styles.label}>Current Price</label>
-                  <span className={styles.value}>
-                    {trade.currentPrice !== undefined && trade.currentPrice !== null ? `${getCurrencySymbol()}${Number(trade.currentPrice).toFixed(2)}` : "-"}
-                  </span>
-                </div>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Stop Loss</label>
-                  <span className={styles.value} style={{
-                    color: "var(--status-error)"
-                  }}>
-                    {getCurrencySymbol()}{trade.stopLoss >= trade.currentPrice ? (trade.stopLoss).toLocaleString(undefined, { maximumFractionDigits: 2 }) : (trade.stopLoss).toLocaleString(undefined, { maximumFractionDigits: 2 })}{trade.stopLoss >= trade.entryPrice ? ' ^' : ''}
-                  </span>
-                </div>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Target 1</label>
-                  <span className={styles.value} style={{
-                    color: "var(--status-success)"
-                  }}>
-                    {trade.target1 !== undefined && trade.target1 !== null ? `${getCurrencySymbol()}${Number(trade.target1).toFixed(2)}` : "-"}
-                  </span>
-                </div>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Target 2</label>
-                  <span className={styles.value} style={{
-                    color: "var(--status-success)"
-                  }}>
-                    {trade.target2 !== undefined && trade.target2 !== null ? `${getCurrencySymbol()}${Number(trade.target2).toFixed(2)}` : "-"}
-                  </span>
-                </div>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Target 3</label>
-                  <span className={styles.value} style={{
-                    color: "var(--status-success)"
-                  }}>
-                    {trade.target3 !== undefined && trade.target3 !== null ? `${getCurrencySymbol()}${Number(trade.target3).toFixed(2)}` : "-"}
-                  </span>
+              <div className={styles.detailCard}>
+                <div className={styles.detailHeading}>Trade Snapshot</div>
+                <div className={styles.detailGrid}>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Entry Date</span>
+                    <span className={styles.detailValue}>{formatDate(trade.entryDate)}</span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Original Quantity</span>
+                    <span className={styles.detailValue}>{originalQuantity.toLocaleString()}</span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Remaining Quantity</span>
+                    <span
+                      className={styles.detailValue}
+                      style={{ color: remainingQuantity === 0 ? "var(--status-success)" : "var(--status-warning)" }}
+                    >
+                      {remainingQuantity.toLocaleString()} {remainingQuantity === 0 ? "(Fully Exited)" : "(Partial)"}
+                    </span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Average Price</span>
+                    <span className={styles.detailValue}>{formatCurrency(trade.entryPrice, 2)}</span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Current Price</span>
+                    <span className={styles.detailValue}>{formatCurrency(trade.currentPrice, 2)}</span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Stop Loss</span>
+                    <span
+                      className={styles.detailValue}
+                      style={{ color: "var(--status-error)" }}
+                    >
+                      {stopLossDisplay}
+                    </span>
+                  </div>
+                  {/* <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Target 1</span>
+                    <span className={styles.detailValue} style={{ color: "var(--status-success)" }}>
+                      {formatCurrency(trade.target1, 2)}
+                    </span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Target 2</span>
+                    <span className={styles.detailValue} style={{ color: "var(--status-success)" }}>
+                      {formatCurrency(trade.target2, 2)}
+                    </span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Target 3</span>
+                    <span className={styles.detailValue} style={{ color: "var(--status-success)" }}>
+                      {formatCurrency(trade.target3, 2)}
+                    </span>
+                  </div> */}
                 </div>
               </div>
-              
-              <div className={styles.gridFinancial}>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Total Invested</label>
-                  <span className={styles.valueFinancial}>{getInvested()}</span>
-                </div>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Total Value</label>
-                  <span className={styles.valueFinancial}>{getCurrentValue()}</span>
-                </div>
-                <div className={styles.fieldItem}>
-                  <label className={styles.label}>Profit & Loss</label>
-                  <span className={styles.valueFinancial} style={{
-                    color: getPL() === "-" ? "var(--text-muted)" : getPL().includes("-") ? "var(--status-error)" : "var(--status-success)"
-                  }}>
-                    {getPL()}
-                  </span>
+
+              <div className={styles.detailCard}>
+                <div className={styles.detailHeading}>Position Metrics</div>
+                <div className={styles.detailGrid}>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Total Invested</span>
+                    <span className={styles.detailValue}>{investedTotal}</span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Current Value</span>
+                    <span className={styles.detailValue}>{currentValue}</span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Profit &amp; Loss</span>
+                    <span
+                      className={styles.detailValue}
+                      style={{
+                        color: plValue === "-" ? "var(--text-muted)" : plValue.includes("-") ? "var(--status-error)" : "var(--status-success)"
+                      }}
+                    >
+                      {plValue}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {executionData && (
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Execution Plan(Recommended)</h3>
+
+                {/* {entryStrategy && (
+                  <div className={styles.detailCard}>
+                    <div className={styles.detailHeading}>Entry Strategy</div>
+                    <div className={styles.detailGrid}>
+                      <div>
+                        <span className={styles.detailLabel}>Type</span>
+                        <span className={styles.detailValue}>{entryStrategy.type || '-'}</span>
+                      </div>
+                      {entryStrategy.entryZone && (
+                        <>
+                          <div>
+                            <span className={styles.detailLabel}>Optimal</span>
+                            <span className={styles.detailValue}>{formatCurrency(entryStrategy.entryZone.optimal)}</span>
+                          </div>
+                          <div>
+                            <span className={styles.detailLabel}>Acceptable</span>
+                            <span className={styles.detailValue}>{formatCurrency(entryStrategy.entryZone.acceptable)}</span>
+                          </div>
+                          <div>
+                            <span className={styles.detailLabel}>Maximum</span>
+                            <span className={styles.detailValue}>{formatCurrency(entryStrategy.entryZone.maximum)}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )} */}
+
+                {exitStrategy && positionSizing && (
+                  <div className={styles.detailCard}>
+                    <div className={styles.detailHeading}>Exit Strategy</div>
+                    <div className={styles.detailGrid}>
+                      {exitStrategy.stopLoss && (
+                        <>
+                          <div>
+                            <span className={styles.detailLabel}>Initial Stop</span>
+                            <span className={styles.detailValue}>{formatCurrency(exitStrategy.stopLoss.initial)}</span>
+                          </div>
+                          <div>
+                            <span className={styles.detailLabel}>Stop Distance</span>
+                            <span className={styles.detailValue}>{positionSizing.stopDistance != null ? `${formatNumber(positionSizing.stopDistance, 2)}%` : '-'}</span>
+                          </div>
+                          {exitStrategy.stopLoss.current && (
+                            <div>
+                              <span className={styles.detailLabel}>Current Stop</span>
+                              <span className={styles.detailValue}>{formatCurrency(exitStrategy.stopLoss.current)}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {/* {exitStrategy.targets && (
+                        <>
+                          <div>
+                            <span className={styles.detailLabel}>Target (Conservative)</span>
+                            <span className={styles.detailValue}>{formatCurrency(exitStrategy.targets.conservative)}</span>
+                          </div>
+                          <div>
+                            <span className={styles.detailLabel}>Target (Moderate)</span>
+                            <span className={styles.detailValue}>{formatCurrency(exitStrategy.targets.moderate)}</span>
+                          </div>
+                          <div>
+                            <span className={styles.detailLabel}>Target (Aggressive)</span>
+                            <span className={styles.detailValue}>{formatCurrency(exitStrategy.targets.aggressive)}</span>
+                          </div>
+                          {exitStrategy.targets.scalingMethod && (
+                            <div className={styles.detailFullRow}>
+                              <span className={styles.detailLabel}>Scaling</span>
+                              <span className={styles.detailValue}>{exitStrategy.targets.scalingMethod}</span>
+                            </div>
+                          )}
+                          {typeof exitStrategy.targets.alerted !== 'undefined' && (
+                            <div>
+                              <span className={styles.detailLabel}>Alerts</span>
+                              <span className={styles.detailValue}>{exitStrategy.targets.alerted ? 'Triggered' : 'Pending'}</span>
+                            </div>
+                          )}
+                        </>
+                      )} */}
+                    </div>
+                  </div>
+                )}
+
+                {exitStrategy && positionSizing && (
+                  <div className={styles.detailCard}>
+                    <div className={styles.detailHeading}>Position Sizing</div>
+                    <div className={styles.detailGrid}>
+                      
+                      
+                      <div>
+                        <span className={styles.detailLabel}>Shares</span>
+                        <span className={styles.detailValue}>{formatNumber(positionSizing.shares, 0)}</span>
+                      </div>
+                      <div>
+                        <span className={styles.detailLabel}>Position Value</span>
+                        <span className={styles.detailValue}>{formatCurrency(positionSizing.positionValue)}</span>
+                      </div>
+                      <div>
+                        <span className={styles.detailLabel}>Risk Amount</span>
+                        <span className={styles.detailValue}>{formatCurrency(positionSizing.riskAmount)}</span>
+                      </div>
+                      <div>
+                        <span className={styles.detailLabel}>Risk / Share</span>
+                        <span className={styles.detailValue}>{formatCurrency(positionSizing.riskPerShare)}</span>
+                      </div>
+                      <div>
+                        <span className={styles.detailLabel}>Risk %</span>
+                        <span className={styles.detailValue}>{positionSizing.riskPercent != null ? `${positionSizing.riskPercent}%` : '-'}</span>
+                      </div>
+                      {positionSizing.maxPosition != null && (
+                        <div>
+                          <span className={styles.detailLabel}>Max Position %</span>
+                          <span className={styles.detailValue}>{`${positionSizing.maxPosition}%`}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Entry Section */}
             <div className={styles.section}>
@@ -302,24 +517,31 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                 <h3 className={styles.sectionTitleAccent}>
                   Exit Details {exitTransactions.length > 1 && `(${exitTransactions.length} Partial Exits)`}
                 </h3>
-                
+
                 {/* Exit Summary */}
                 {(() => {
                   const summary = getExitTransactionsSummary();
                   if (summary) {
                     return (
-                      <div className={styles.grid}>
-                        <div className={styles.fieldItem}>
-                          <label className={styles.label}>Total Exited Qty</label>
-                          <span className={styles.value}>{summary.totalExitedQty.toLocaleString()}</span>
-                        </div>
-                        <div className={styles.fieldItem}>
-                          <label className={styles.label}>Avg Exit Price</label>
-                          <span className={styles.value}>${summary.avgExitPrice.toFixed(2)}</span>
-                        </div>
-                        <div className={styles.fieldItem}>
-                          <label className={styles.label}>Last Exit Date</label>
-                          <span className={styles.value}>{formatDate(summary.lastExitDate)}</span>
+                      <div className={styles.detailCard}>
+                        <div className={styles.detailHeading}>Exit Summary</div>
+                        <div className={styles.detailGrid}>
+                          <div className={styles.fieldItem}>
+                            <span className={styles.detailLabel}>Exited Qty</span>
+                            <span className={styles.detailValue}>{summary.totalExitedQty.toLocaleString()}</span>
+                          </div>
+                          <div className={styles.fieldItem}>
+                            <span className={styles.detailLabel}>Average Exit</span>
+                            <span className={styles.detailValue}>{formatCurrency(summary.avgExitPrice)}</span>
+                          </div>
+                          <div className={styles.fieldItem}>
+                            <span className={styles.detailLabel}>Last Exit</span>
+                            <span className={styles.detailValue}>{formatDate(summary.lastExitDate)}</span>
+                          </div>
+                          <div className={styles.fieldItem}>
+                            <span className={styles.detailLabel}>Exit Count</span>
+                            <span className={styles.detailValue}>{summary.exitCount}</span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -329,69 +551,67 @@ export default function TradeDetailsPopup({ trade, onClose }) {
 
                 {/* Individual Exit Transactions */}
                 {exitTransactions.length > 0 && (
-                  <div style={{ marginBottom: 20 }}>
-                    <h4 className={styles.sectionSubtitle}>
-                      Exit Transactions
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {exitTransactions.map((tx, index) => (
-                        <div key={index} style={{
-                          background: 'var(--bg-tertiary)',
-                          border: '1px solid var(--border-secondary)',
-                          borderRadius: 8,
-                          padding: 16,
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                          gap: 12
-                        }}>
-                          <div>
-                            <label className={styles.label}>Date</label>
-                            <span className={styles.value}>{formatDate(tx.transactionDate)}</span>
-                          </div>
-                          <div>
-                            <label className={styles.label}>Quantity</label>
-                            <span className={styles.value}>{Number(tx.quantity || 0).toLocaleString()}</span>
-                          </div>
-                          <div>
-                            <label className={styles.label}>Price</label>
-                            <span className={styles.value}>${Number(tx.price || 0).toFixed(2)}</span>
-                          </div>
-                          <div>
-                            <label className={styles.label}>P&L</label>
-                            <span className={styles.value} style={{
-                              color: trade.direction?.toLowerCase() === 'long' 
-                                ? (Number(tx.price || 0) >= Number(trade.entryPrice || 0) ? 'var(--status-success)' : 'var(--status-error)')
-                                : (Number(tx.price || 0) <= Number(trade.entryPrice || 0) ? 'var(--status-success)' : 'var(--status-error)')
-                            }}>
-                              ${trade.direction && trade.entryPrice ? (
-                                trade.direction.toLowerCase() === 'long'
-                                  ? ((Number(tx.price || 0) - Number(trade.entryPrice)) * Number(tx.quantity || 0)).toFixed(2)
-                                  : ((Number(trade.entryPrice) - Number(tx.price || 0)) * Number(tx.quantity || 0)).toFixed(2)
-                              ) : '0.00'}
-                            </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+                    {exitTransactions.map((tx, index) => {
+                      const quantity = Number(tx.quantity || 0);
+                      const price = Number(tx.price || 0);
+                      const pnl = trade.direction && trade.entryPrice
+                        ? (trade.direction.toLowerCase() === 'long'
+                          ? (price - Number(trade.entryPrice)) * quantity
+                          : (Number(trade.entryPrice) - price) * quantity)
+                        : 0;
+                      const pnlColor = pnl >= 0 ? 'var(--status-success)' : 'var(--status-error)';
+                      const pnlLabel = pnl > 0 ? ' Gain' : pnl < 0 ? ' Loss' : '';
+                      const pnlValue = pnl === 0
+                        ? formatCurrency(0)
+                        : formatCurrency(Math.abs(pnl)) + pnlLabel;
+
+                      return (
+                        <div key={index} className={styles.detailCard}>
+                          <div className={styles.detailHeading}>Exit {index + 1}</div>
+                          <div className={styles.detailGrid}>
+                            <div className={styles.fieldItem}>
+                              <span className={styles.detailLabel}>Date</span>
+                              <span className={styles.detailValue}>{formatDate(tx.transactionDate)}</span>
+                            </div>
+                            <div className={styles.fieldItem}>
+                              <span className={styles.detailLabel}>Quantity</span>
+                              <span className={styles.detailValue}>{quantity.toLocaleString()}</span>
+                            </div>
+                            <div className={styles.fieldItem}>
+                              <span className={styles.detailLabel}>Price</span>
+                              <span className={styles.detailValue}>{formatCurrency(price)}</span>
+                            </div>
+                            <div className={styles.fieldItem}>
+                              <span className={styles.detailLabel}>P&L</span>
+                              <span className={styles.detailValue} style={{ color: pnlColor }}>
+                                {pnlValue}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 )}
 
                 {/* Legacy Exit Data (for backward compatibility) */}
                 {!exitTransactions.length && (trade.exitDate || trade.exitPrice) && (
-                  <div className={styles.grid}>
-                    <div className={styles.fieldItem}>
-                      <label className={styles.label}>Date</label>
-                      <span className={styles.value}>{formatDate(trade.exitDate)}</span>
-                    </div>
-                    <div className={styles.fieldItem}>
-                      <label className={styles.label}>Average Price</label>
-                      <span className={styles.value}>
-                        {trade.exitPrice !== undefined && trade.exitPrice !== null ? `${getCurrencySymbol()}${Number(trade.exitPrice).toFixed(2)}` : "-"}
-                      </span>
-                    </div>
-                    <div className={styles.fieldItem}>
-                      <label className={styles.label}>Exit Tactic</label>
-                      <span className={styles.value}>{getExitTacticName(trade.exitTacticId)}</span>
+                  <div className={styles.detailCard}>
+                    <div className={styles.detailHeading}>Exit Overview</div>
+                    <div className={styles.detailGrid}>
+                      <div className={styles.fieldItem}>
+                        <span className={styles.detailLabel}>Date</span>
+                        <span className={styles.detailValue}>{formatDate(trade.exitDate)}</span>
+                      </div>
+                      <div className={styles.fieldItem}>
+                        <span className={styles.detailLabel}>Average Price</span>
+                        <span className={styles.detailValue}>{formatCurrency(trade.exitPrice)}</span>
+                      </div>
+                      <div className={styles.fieldItem}>
+                        <span className={styles.detailLabel}>Exit Tactic</span>
+                        <span className={styles.detailValue}>{getExitTacticName(trade.exitTacticId)}</span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -425,7 +645,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
             {trade.status?.toLowerCase() === 'open' && trade.impulseAnalysis && (
               <div className={styles.section}>
                 <h3 className={styles.sectionTitleAccent}>Exit Strategy Analysis</h3>
-                
+
                 {/* Impulse Analysis Card */}
                 <div style={{
                   background: 'linear-gradient(135deg, var(--bg-accent) 0%, var(--bg-secondary) 100%)',
@@ -437,7 +657,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                   {/* Impulse Header */}
                   {/* Impulse Header */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                    
+
                     <h4 style={{
                       margin: 0,
                       fontSize: '18px',
@@ -451,10 +671,10 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                       width: 16,
                       height: 16,
                       borderRadius: '50%',
-                      backgroundColor: trade.impulseAnalysis.impulseColor === 'red' ? '#EF4444' : 
-                                      trade.impulseAnalysis.impulseColor === 'blue' ? '#3B82F6' : 
-                                      trade.impulseAnalysis.impulseColor === 'green' ? '#10B981' :
-                                      'var(--text-muted)',
+                      backgroundColor: trade.impulseAnalysis.impulseColor === 'red' ? '#EF4444' :
+                        trade.impulseAnalysis.impulseColor === 'blue' ? '#3B82F6' :
+                          trade.impulseAnalysis.impulseColor === 'green' ? '#10B981' :
+                            'var(--text-muted)',
                       border: '2px solid #ffffff',
                       boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}></div>
@@ -528,7 +748,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
             {(trade.analysis || trade.status === "Partial Closed") && (
               <div className={styles.section}>
                 <h3 className={styles.sectionTitleAccent}>AI Analysis & Action Items</h3>
-                
+
                 {/* Show message if no analysis data */}
                 {!trade.analysis && (
                   <div style={{
@@ -577,8 +797,8 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                             fontSize: '12px',
                             fontWeight: '600',
                             color: '#ffffff',
-                            backgroundColor: trade.analysis.priority === 'HIGH' ? '#EF4444' : 
-                                            trade.analysis.priority === 'MEDIUM' ? '#F59E0B' : '#10B981',
+                            backgroundColor: trade.analysis.priority === 'HIGH' ? '#EF4444' :
+                              trade.analysis.priority === 'MEDIUM' ? '#F59E0B' : '#10B981',
                             padding: '4px 8px',
                             borderRadius: 4,
                             textTransform: 'uppercase',

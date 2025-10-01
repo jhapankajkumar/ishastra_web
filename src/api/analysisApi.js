@@ -85,10 +85,10 @@ export const getWatchlist = async () => {
   }
 };
 
-export const deleteSymbolFromWatchlist = async (stock) => {
+export const deleteSymbolFromWatchlist = async (symbol) => {
   try {
     const data = {
-      symbol: stock.symbol
+      symbol: symbol
     };
     const response = await AnalysisAPI_Instance.post(`/watchlist/remove`, data);
     return response.data;
