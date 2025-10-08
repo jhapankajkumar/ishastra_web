@@ -833,7 +833,7 @@
     align-items: flex-end;
     gap: 4px;
   }
-  .plValue { font-size: 14px; font-weight: 800; }
+  .plValue { font-size: 12px; font-weight: 800; }
   .plPositive { color: var(--profit-color); }
   .plNegative { color: var(--loss-color); }
   .ltpRow { font-size: 12px; color: var(--text-secondary); }

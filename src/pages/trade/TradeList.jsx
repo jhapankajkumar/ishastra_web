@@ -624,11 +624,14 @@ export default function TradeList() {
                 const plValue = Number(getPartialPL(trade)||0);
                 const plPct = invested>0? (plValue/invested)*100:0;
                 const ltp = Number(trade.currentPrice ?? trade.entryPrice ?? 0);
+                const avgSellPrice = getAverageSellPrice(trade);
                 const ltpPct = (trade.lastDayPrice!=null && Number(trade.lastDayPrice)>0)
                   ? ((ltp-Number(trade.lastDayPrice))/Number(trade.lastDayPrice))*100
                   : null;
                 return (
-                  <div key={trade.id} className={styles.mobileCard}>
+                  <div key={trade.id} className={styles.mobileCard}
+                  onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
+                  >
                     <div className={styles.mobileTopRow}>
                       <div className={styles.mobileTicker}>{trade.ticker}</div>
                       {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
@@ -643,26 +646,41 @@ export default function TradeList() {
                     </div>
                     <div className={styles.mobileTopRow}>
                       <div>
-                        <span className={styles.dim}>Qty.</span> {Number(trade.quantity||0).toLocaleString()}
+                        <span className={styles.dim}>Qty.</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{Number(trade.quantity||0).toLocaleString()}</span>
                         <span className={styles.dot}>•</span>
-                        <span className={styles.dim}>Avg.</span> {Number(trade.entryPrice||0).toLocaleString(undefined,{maximumFractionDigits:2})}
+                        <span className={styles.dim}>Buy Avg.</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{Number(trade.entryPrice||0).toLocaleString(undefined,{maximumFractionDigits:2})} </span>
                       </div>
                     </div>
                     <div className={styles.mobileRow}>
                       <div className={styles.mobileLeft}>
-                        <div>Invested {symbol}{invested.toLocaleString()}</div>
-                        <div className={styles.ltpRow}>LTP {symbol}{ltp.toLocaleString()} {ltpPct==null? '' : (
+                        <div className={styles.mobileTopRow}>
+                          <span className={styles.dim}>Invested:</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{symbol}{invested.toLocaleString(undefined, { maximumFractionDigits: 0})}</span>
+                        </div>
+                        {(getTradeStatusDetailed(trade) == 'CLOSED') && (
+                          <div className={styles.mobileTopRow}>
+                          <span className={styles.dim}>Sell Avg: </span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{symbol}{avgSellPrice.toLocaleString(undefined, { maximumFractionDigits: 0})}</span>
+                        </div>
+                        )}
+
+                        {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
+                        <div className={styles.ltpRow}>LTP {symbol}{ltp.toLocaleString(undefined, { maximumFractionDigits: 2})} {ltpPct==null? '' : (
                           <span className={ltpPct>=0? styles.plPositive: styles.plNegative}>
                             ({ltpPct>=0?'+':''}{ltpPct.toFixed(2)}%)
                           </span>
                         )}
                         </div>
+                      )}
+
+                      {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
+                        <div className={styles.ltpRow}>Stop {symbol}{trade.stopLoss.toLocaleString()} </div>
+                      )}
+
                       </div>
                       <div className={styles.mobileRight}>
                         <div className={`${styles.plValue} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
-                          {symbol}{Math.abs(plValue).toLocaleString()}
+                         {symbol}{Math.abs(plValue).toLocaleString()}
                         </div>
-                        <div className={plPct>=0? styles.plPositive: styles.plNegative}>
+                        <div className={`${styles.plValue} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
                           {plPct>=0?'+':''}{plPct.toFixed(2)}%
                         </div>
                       </div>
@@ -704,7 +722,12 @@ export default function TradeList() {
                   renderSortableHeader('QTY', 'quantity')
                 )}
                 {renderSortableHeader('Invested', 'invested')}
-                <th className={styles.tableHeaderCell}>Current</th>
+                {status === 'CLOSED' ? (
+                  <th className={styles.tableHeaderCell}>Final</th>
+                ) : (
+                  <th className={styles.tableHeaderCell}>Current</th>
+                )}
+                
                 {renderSortableHeader('P&L', 'pl')}
                 {renderSortableHeader("Today's P&L", 'todaysPL')}
                 <th className={styles.tableHeaderCell}>Actions</th>
@@ -727,7 +750,7 @@ export default function TradeList() {
                   status === 'PARTIAL' ?
                     (entryPrice * remainingQty) :
                     (entryPrice * originalQty);
-                const marketValue = status === 'CLOSED' ? 0 :
+                const marketValue = status === 'CLOSED' ? (avgSellPrice ? (avgSellPrice * originalQty) : 0) :
                   status === 'PARTIAL' ?
                     (currentPrice * remainingQty) :
                     (currentPrice * originalQty);
