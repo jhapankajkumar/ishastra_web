@@ -100,14 +100,7 @@ const Watchlist = () => {
   // Handle popup submit
   const handleBuyMoreSubmit = async ({ quantity, avgPrice }) => {
     if (!buyMoreStock) return;
-    if (buyMoreMode === 'buyMore') {
-      // Simulate buy more logic (update capital left, show notification)
-      const totalValue = quantity * avgPrice;
-      setCapitalLeft((prev) => prev - totalValue + (buyMoreInitial.quantity * buyMoreInitial.avgPrice));
-      notification.success(`Bought ${quantity} shares of ${buyMoreStock.symbol} at ${buyMoreInitial.currency}${avgPrice}`);
-      setBuyMoreOpen(false);
-      // In real app, update backend/portfolio here
-    } else if (buyMoreMode === 'createTrade') {
+    if (buyMoreMode === 'createTrade' || buyMoreMode === 'buyMore') {
       // Create trade with entered values
       try {
         let currentPrice = avgPrice;

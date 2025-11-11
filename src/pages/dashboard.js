@@ -537,8 +537,8 @@ const Dashboard = () => {
                   border: theme === 'light' ? '1px solid var(--border-primary)' : 'none'
                 }}>
                   <Card title="Initial Capital" value={`${currencySymbol}${initialCap.toLocaleString('en-US', { maximumFractionDigits : 0 })}`} />
-                  <Card title="Idle Capital" value={`${currencySymbol}${(idle || 0).toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--text-secondary)" />
-                  <Card title="Capital Deployed" value={`${currencySymbol}${deployed.toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--accent-primary)" />
+                  <Card title="Portfolio" value={`${currencySymbol}${(idle || 0).toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--text-secondary)" />
+                  <Card title="Open Trades" value={`${currencySymbol}${deployed.toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--accent-primary)" />
                   <Card title="Current Value" value={`${currencySymbol}${currentVal.toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--accent-primary)" />
                 </div>
 
