@@ -174,7 +174,7 @@ const Watchlist = () => {
     return localStorage.getItem('watchlistActiveTab') || 'INDIA';
   });
   // Responsive compact mode controls
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 700 : false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   const [expandedCards, setExpandedCards] = useState({});
   const navigate = useNavigate();
   const notification = useNotification();
@@ -201,7 +201,7 @@ const Watchlist = () => {
   }, []);
 
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth <= 700);
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);

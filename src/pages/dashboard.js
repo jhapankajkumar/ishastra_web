@@ -29,7 +29,7 @@ import { getCapitalInfo } from '../api/capitalApi';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 700 : false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   const [trades, setTrades] = useState([]);
   const [stats, setStats] = useState(null);
   const [tags, setTags] = useState([]);
@@ -46,7 +46,7 @@ const Dashboard = () => {
   const [capitalMap, setCapitalMap] = useState({});
   // Track viewport for responsive font sizing
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth <= 700);
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
@@ -484,10 +484,13 @@ const Dashboard = () => {
 
             // Remaining/Idle capital
             const idle = initialCap + closedTradePnl - capitalDeployed;
+            
             const deployed = capitalDeployed;
             const currentVal = currencyCurrentValue
             const totalPnl = currencyTotalPnL;
             const totalPnlPctInitial = initialCap > 0 ? (totalPnl / initialCap) * 100 : 0;
+
+            const portfolioValue = idle + currentVal
             // Today change
             let todayChange = 0, todayBase = 0;
             (currencyTrades || []).forEach(t => {
@@ -536,8 +539,7 @@ const Dashboard = () => {
                   background: theme === 'light' ? 'var(--bg-secondary)' : 'linear-gradient(90deg, #181F2A 60%, #1A2332 100%)', padding: isMobile ? 8 : 12, borderRadius: isMobile ? 12 : 18,
                   border: theme === 'light' ? '1px solid var(--border-primary)' : 'none'
                 }}>
-                  <Card title="Initial Capital" value={`${currencySymbol}${initialCap.toLocaleString('en-US', { maximumFractionDigits : 0 })}`} />
-                  <Card title="Portfolio" value={`${currencySymbol}${(idle || 0).toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--text-secondary)" />
+                  <Card title="Portfolio" value={`${currencySymbol}${(portfolioValue || 0).toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--text-secondary)" />
                   <Card title="Open Trades" value={`${currencySymbol}${deployed.toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--accent-primary)" />
                   <Card title="Current Value" value={`${currencySymbol}${currentVal.toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--accent-primary)" />
                 </div>

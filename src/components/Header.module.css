@@ -208,7 +208,7 @@
   align-items: center;
   gap: 6px;
 }
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   .headerRow {
     display: flex;
     flex-direction: row;
@@ -241,7 +241,7 @@
     letter-spacing: -0.5px;
   }
 }
-@media (min-width: 701px) {
+@media (min-width: 769px) {
   .headerRow {
     display: none;
   }
@@ -264,7 +264,7 @@
 .bottomNav {
   display: none;
 }
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   .bottomNav {
     display: flex;
     position: fixed;
@@ -349,7 +349,7 @@
   box-sizing: border-box;
   overflow-x: hidden;
 }
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   .indicesContainer {
     overflow-x: auto;
     flex-wrap: nowrap;

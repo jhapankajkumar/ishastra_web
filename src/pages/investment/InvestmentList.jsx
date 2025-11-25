@@ -9,9 +9,9 @@ import { useTheme } from "../../contexts/ThemeContext";
 import styles from "./InvestmentList.module.css";
 
 export default function InvestmentList() {
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 700 : false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth <= 700);
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);

@@ -12,7 +12,7 @@ import styles from "./TradeList.module.css";
 import { getExitTransactions, getLastExitDate, getAverageExitPrice, getPartialPL } from '../../common/Helper';
 
 export default function TradeList() {
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 700 : false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   // Tab state for NASDAQ/NSE separation
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('tradeListActiveTab') || 'NASDAQ';
@@ -20,7 +20,7 @@ export default function TradeList() {
 
   // Track viewport for responsive font sizing
     useEffect(() => {
-      const onResize = () => setIsMobile(window.innerWidth <= 700);
+      const onResize = () => setIsMobile(window.innerWidth <= 768);
       window.addEventListener('resize', onResize);
       return () => window.removeEventListener('resize', onResize);
     }, []);
@@ -520,7 +520,7 @@ export default function TradeList() {
 
     const totalCapital = capitalInfo?.total || 0;
     const investedPercentage = totalCapital > 0 ? (totalInvested / totalCapital * 100).toFixed(2) : 0;
-    const plPercentage = totalCapital > 0 ? (totalPL / totalCapital * 100).toFixed(2) : 0;
+    const plPercentage = totalInvested > 0 ? (totalPL / totalInvested * 100).toFixed(2) : 0;
     const todaysPlPercentage = Number(todayPct).toFixed(2);
 
     return {
@@ -921,7 +921,7 @@ export default function TradeList() {
                 <span className={styles.metricLabel}>Total Invested</span>
                 <span className={styles.metricValue}>
                   {formatCurrency(calculateMarketMetrics('USD').totalInvested, 'USD')}
-                  <small className={styles.metricPercent}>({calculateMarketMetrics('USD').investedPercentage}%)</small>
+                  {/* <small className={styles.metricPercent}>({calculateMarketMetrics('USD').investedPercentage}%)</small> */}
                 </span>
               </div>
               <div className={styles.metric}>
@@ -956,7 +956,7 @@ export default function TradeList() {
                 <span className={styles.metricLabel}>Total Invested</span>
                 <span className={styles.metricValue}>
                   {formatCurrency(calculateMarketMetrics('INR').totalInvested, 'INR')}
-                  <small className={styles.metricPercent}>({calculateMarketMetrics('INR').investedPercentage}%)</small>
+                  {/* <small className={styles.metricPercent}>({calculateMarketMetrics('INR').investedPercentage}%)</small> */}
                 </span>
               </div>
               <div className={styles.metric}>

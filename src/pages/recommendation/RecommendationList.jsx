@@ -8,9 +8,9 @@ import { useTheme } from "../../contexts/ThemeContext";
 import styles from "./RecommendationList.module.css";
 
 export default function RecommendationList() {
-    const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 700 : false);
+    const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
     useEffect(() => {
-        const onResize = () => setIsMobile(window.innerWidth <= 700);
+        const onResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
