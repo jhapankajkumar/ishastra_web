@@ -36,8 +36,13 @@ const Dashboard = () => {
   const [setups, setSetups] = useState([]); // <-- Add setups state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Tabs: 'trading' or 'investment'
-  const [activeTab, setActiveTab] = useState('trading');
+  // Tabs: 'trading' or 'investment' - persist to localStorage
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dashboardActiveTab') || 'trading';
+    }
+    return 'trading';
+  });
   // Investment tab state
   const [investmentSummary, setInvestmentSummary] = useState(null);
   const [investments, setInvestments] = useState([]);
@@ -205,8 +210,13 @@ const Dashboard = () => {
     return totalLosses / losingTrades.length;
   }, [losingTrades]);
 
-  // --- Trading currency sub-tabs (INR/USD) ---
-  const [tradingCurrency, setTradingCurrency] = useState('INR');
+  // --- Trading currency sub-tabs (INR/USD) - persist to localStorage ---
+  const [tradingCurrency, setTradingCurrency] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dashboardTradingCurrency') || 'INR';
+    }
+    return 'INR';
+  });
   const tradesINR = React.useMemo(() => trades.filter(t => (t.currency || 'INR').toUpperCase() === 'INR'), [trades]);
   const tradesUSD = React.useMemo(() => trades.filter(t => (t.currency || 'INR').toUpperCase() === 'USD'), [trades]);
   const currencyTrades = tradingCurrency === 'USD' ? tradesUSD : tradesINR;
@@ -429,8 +439,14 @@ const Dashboard = () => {
         marginRight: 'auto',
         position: 'relative',
       }}>
-        <button style={tabStyle('trading')} onClick={() => setActiveTab('trading')}>Trading</button>
-        <button style={tabStyle('investment')} onClick={() => setActiveTab('investment')}>Investment</button>
+        <button style={tabStyle('trading')} onClick={() => {
+          setActiveTab('trading');
+          localStorage.setItem('dashboardActiveTab', 'trading');
+        }}>Trading</button>
+        <button style={tabStyle('investment')} onClick={() => {
+          setActiveTab('investment');
+          localStorage.setItem('dashboardActiveTab', 'investment');
+        }}>Investment</button>
       </div>
       {/* Tab Content */}
       {activeTab === 'trading' ? (
@@ -441,7 +457,10 @@ const Dashboard = () => {
             marginBottom: 16
           }}>
             <button
-              onClick={() => setTradingCurrency('INR')}
+              onClick={() => {
+                setTradingCurrency('INR');
+                localStorage.setItem('dashboardTradingCurrency', 'INR');
+              }}
               style={{
                 padding: '8px 16px', borderRadius: 18, border: '1px solid var(--border-primary)',
                 background: tradingCurrency === 'INR' ? 'var(--gradient-primary)' : 'var(--bg-tertiary)',
@@ -450,7 +469,10 @@ const Dashboard = () => {
               }}
             >INR</button>
             <button
-              onClick={() => setTradingCurrency('USD')}
+              onClick={() => {
+                setTradingCurrency('USD');
+                localStorage.setItem('dashboardTradingCurrency', 'USD');
+              }}
               style={{
                 padding: '8px 16px', borderRadius: 18, border: '1px solid var(--border-primary)',
                 background: tradingCurrency === 'USD' ? 'var(--gradient-primary)' : 'var(--bg-tertiary)',
