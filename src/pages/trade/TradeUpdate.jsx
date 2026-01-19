@@ -313,6 +313,16 @@ const TradeUpdate = () => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    if (isNaN(d)) return "-";
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mmm = d.toLocaleString('en-US', { month: 'short' });
+    const yyyy = d.getFullYear();
+    return `${dd} ${mmm} ${yyyy}`;
+  };
+
   return (
     <div className={`${styles.container} ${theme}`}>
       <button
@@ -355,9 +365,9 @@ const TradeUpdate = () => {
               </span>
             </div>
             <div className={styles.summaryItem}>
-              <span className={styles.summaryLabel}>Status:</span>
-              <span className={`${styles.summaryValue} ${styles.statusValue}`}>
-                {trade.tradeStatus || 'Open'}
+              <span className={styles.summaryLabel}>Entry Date:</span>
+              <span className={`${styles.summaryValue} ${styles.summaryValue}`}>
+                {trade.entryDate ? formatDate(trade.entryDate) : 'N/A'}
               </span>
             </div>
             <div className={styles.summaryItem}>
@@ -369,7 +379,7 @@ const TradeUpdate = () => {
 
             <div className={styles.summaryItem}>
               <span className={styles.summaryLabel}>Current:</span>
-              <span className={`${styles.statusValue}`}>
+              <span className={`${styles.summaryValue} ${styles.statusValue}`}>
                 {(trade.currentPrice * trade.remainingQuantity).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
             </div>

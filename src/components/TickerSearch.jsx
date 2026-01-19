@@ -33,7 +33,7 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
           let filtered = Array.isArray(data) ? data : [];
           if (instrumentType && quoteTypeMap[instrumentType]) {
             filtered = filtered.filter(
-              t => (t.quoteType || '').toUpperCase() === quoteTypeMap[instrumentType]
+              t => (t.quoteType || '').toUpperCase() === quoteTypeMap[instrumentType] || (t.typeDisp || '').toUpperCase() === "ETF"
             );
           }
           setSuggestions(filtered.slice(0, 10));
@@ -72,7 +72,7 @@ const TickerSearch = ({ value, onChange, onSelect, placeholder = "Search ticker.
           currency = 'INR';
         }
       }
-      onSelect({ symbol: ticker.symbol, name: companyName, currency, sector: ticker.sector.toUpperCase() || '' });
+      onSelect({ symbol: ticker.symbol, name: companyName, currency, sector: ticker.sector?.toUpperCase() || '' });
     }
     inputRef.current?.blur();
   };

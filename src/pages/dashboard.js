@@ -574,7 +574,7 @@ const Dashboard = () => {
                 }}>
                   
                   <Card title="Total P&L" value={`${currencySymbol}${Math.abs(totalPnl).toLocaleString('en-US', { maximumFractionDigits : 0 })}`} subtext={`(${(totalPnlPctInitial).toFixed(2)}%)`} color={totalPnl >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'} borderAccent={isMobile ? (totalPnl >= 0 ? 'var(--profit-color)' : 'var(--loss-color)') : undefined} />
-                  <Card title="Today's P&L" value={todayBase > 0 ? `${currencySymbol}${Math.abs(todayChange).toLocaleString('en-US', { maximumFractionDigits : 0 })}` : '—'} subtext={`(${todayPct.toFixed(2)}%)`} color={todayChange >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'} />
+                  <Card title="Today's P&L" value={todayBase > 0 ? `${currencySymbol}${Math.abs(todayChange).toLocaleString('en-US', { maximumFractionDigits : 0 })}` : '—'} subtext={`(${todayPct?.toFixed(2)}%)`} color={todayChange >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'} />
                 </div>
 
                 <div style={{ fontWeight: 800, color: 'var(--text-secondary)', margin: '8px 0' }}>Activity Summary</div>

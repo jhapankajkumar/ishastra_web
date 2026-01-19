@@ -634,6 +634,7 @@ export default function TradeList() {
                   >
                     <div className={styles.mobileTopRow}>
                       <div className={styles.mobileTicker}>{trade.ticker}</div>
+                      <div>{formatDate(trade.entryDate)}</div>
                       {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
                         <button
                           className={styles.editIconBtn}
