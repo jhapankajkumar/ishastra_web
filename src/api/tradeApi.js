@@ -1,6 +1,15 @@
 import {API} from './baseApi';
 
-export const getAllTrades = () => API.get('/trades');
+// Get all trades (optionally filter by paper trade flag)
+// Pass `isPaperTrade` as a query param: /trades?isPaperTrade=true|false
+export const getAllTrades = (isPaperTrade) => {
+  const params = {};
+  // Only send the query param when a boolean value is provided
+  if (typeof isPaperTrade === 'boolean') {
+    params.isPaperTrade = isPaperTrade;
+  }
+  return API.get('/trades', { params });
+};
 export const getTradeById = (id) => API.get(`/trades/${id}`);
 
 // Update trade (exit) - now supports partial exits
@@ -122,7 +131,7 @@ export async function createTrade(formOrData, options = {}) {
     // Add other fields
     formData.append('entryCommission', defaultNumber(data.entryCommission));
     formData.append('notes', defaultText(data.notes));
-    formData.append('isPaperTrade', true); // Hardcoded as per original
+    // formData.append('isPaperTrade', false); // Hardcoded as per original
     
     // Special field: systemAnalysisResult
     if (data.systemAnalysisResult) {
@@ -182,7 +191,7 @@ export async function createTrade(formOrData, options = {}) {
     formData.append('reasonForEntry', defaultText(form.reasonForEntry));
     formData.append('entryCommission', defaultNumber(form.entryCommission));
     formData.append('notes', defaultText(form.notes));
-    formData.append('isPaperTrade', true);
+    // formData.append('isPaperTrade', true);
 
     // Only append entryCharts - handle FileList or Array properly
     if (form.entryCharts) {

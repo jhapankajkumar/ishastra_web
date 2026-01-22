@@ -1,26 +1,16 @@
 import React from "react";
 
 export default function RiskManagementSection({
-  form,
   handleChange,
   entryDisabled,
-  today,
   styles,
-  currentPrice,
-  loadingPrice,
-  atrValue,
-  atrMultiplier,
   stopLossMethod,
   fixedPercent,
   stopLossPrice,
   targets,
   riskPerTrade,
   riskValue,
-  market,
-  qtyValue,
-  autoQty,
-  maxAllowedQty,
-  qtyWarning
+  market
 }) {
   return (
     <div className={styles.cardSection} style={{ marginTop: 0 }}>
@@ -28,7 +18,15 @@ export default function RiskManagementSection({
       <div className={styles.gridTwoCol}>
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Risk per Trade ({market === "India" ? "₹" : "$"} or %)</label>
-              <input type="text" name="riskPerTrade" value={riskPerTrade} onChange={handleChange} className={styles.input} placeholder={market === "India" ? "e.g. 2% or ₹1000" : "e.g. 2% or $1000"} disabled={entryDisabled} />
+              <input
+                type="text"
+                name="riskPerTrade"
+                value={riskPerTrade}
+                className={styles.input}
+                placeholder="1%"
+                disabled
+                readOnly
+              />
               <div style={{ color: '#aaa', fontSize: '0.95em', marginTop: 2 }}>
                 Risk per Trade Amount: <b>{riskValue.toLocaleString(undefined, {maximumFractionDigits: 2})} {market === "India" ? "₹" : "$"}</b>
               </div>
@@ -36,23 +34,10 @@ export default function RiskManagementSection({
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Stop Loss Method</label>
               <select name="stopLossMethod" value={stopLossMethod} onChange={handleChange} className={styles.input} disabled={entryDisabled}>
-                <option value="ATR">ATR</option>
                 <option value="Fixed Value">Fixed Value</option>
                 <option value="Fixed %">Fixed %</option>
               </select>
             </div>
-            {stopLossMethod === "ATR" && (
-              <>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label}>ATR Value</label>
-                  <input type="number" name="atrValue" value={atrValue} onChange={handleChange} className={styles.input} placeholder="e.g. 10" disabled={entryDisabled} />
-                </div>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label}>ATR Multiplier</label>
-                  <input type="number" name="atrMultiplier" value={atrMultiplier} onChange={handleChange} className={styles.input} placeholder="e.g. 1.5" min="0.1" step="0.1" disabled={entryDisabled} />
-                </div>
-              </>
-            )}
             {stopLossMethod === "Fixed %" && (
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Fixed % Value</label>
@@ -60,8 +45,17 @@ export default function RiskManagementSection({
               </div>
             )}
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Stop Loss Price (auto)</label>
-              <input type="text" name="stopLossPrice" value={stopLossPrice} readOnly className={styles.input} />
+              <label className={styles.label}>Stop Loss Price</label>
+              <input
+                type="number"
+                name="stopLossPrice"
+                value={stopLossPrice}
+                onChange={handleChange}
+                className={styles.input}
+                placeholder="Enter stop loss price"
+                readOnly={stopLossMethod !== "Fixed Value"}
+                disabled={entryDisabled}
+              />
             </div>
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Target 1 (1:2)</label>

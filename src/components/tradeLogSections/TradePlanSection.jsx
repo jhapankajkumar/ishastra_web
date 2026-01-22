@@ -6,10 +6,14 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
   // console.log("TradePlanSection Rendered");
 
   // --- Logic for dynamic fields and calculations ---
-  // Set default stop loss method as ATR
-  const stopLossMethod = form.stopLossMethod || "ATR";
-  // Set default ATR value as 10 if ATR selected
-  const atrValue = stopLossMethod === "ATR" ? (form.atrValue || 10) : (form.atrValue || 0);
+  const stopLossMethod = form.stopLossMethod === "Fixed %" ? "Fixed %" : "Fixed Value";
+  // Ensure outdated values like ATR are normalized
+  React.useEffect(() => {
+    if (form.stopLossMethod !== stopLossMethod) {
+      handleChange({ target: { name: "stopLossMethod", value: stopLossMethod } });
+    }
+  }, [form.stopLossMethod, stopLossMethod, handleChange]);
+
   // Set default fixed percent as 3 if Fixed % selected
   const fixedPercent = stopLossMethod === "Fixed %" ? (form.fixedPercent || 3) : (form.fixedPercent || 0);
   const direction = form.direction || "Long";
@@ -35,48 +39,45 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
   const accountBalance = remainingCapital;
   console.log(`Account Balance: ${accountBalance}`);
 
-  // Set default risk % per trade to 1.5 if not set
-  const riskPerTrade = form.riskPerTrade || "1.5%";
-  // Parse risk value
-  let riskValue = 0;
-  if (typeof riskPerTrade === "string" && riskPerTrade.includes("%")) {
-    const pct = parseFloat(riskPerTrade);
-    riskValue = (accountBalance * pct) / 100;
-  } else {
-    riskValue = parseFloat(riskPerTrade) || 0;
-  }
+  // Risk per trade fixed at 1%
+  const riskPerTrade = "1%";
+  const riskValue = accountBalance * 0.01;
+  React.useEffect(() => {
+    if (form.riskPerTrade !== riskPerTrade) {
+      handleChange({ target: { name: "riskPerTrade", value: riskPerTrade } });
+    }
+  }, [form.riskPerTrade, handleChange, riskPerTrade]);
 
-  // Set default ATR multiplier (like RiskManagement screen)
-  const atrMultiplier = stopLossMethod === "ATR"
-    ? (form.atrMultiplier !== undefined && form.atrMultiplier !== null && form.atrMultiplier !== "" ? parseFloat(form.atrMultiplier) : 1.5)
-    : 1.5;
+  // Track manual edits
+  const [qtyManuallyEdited, setQtyManuallyEdited] = React.useState(false);
+
+  const handleTradePlanChange = React.useCallback(
+    (e) => {
+      const { name } = e.target;
+      if (name === "entryFilledShares" && !qtyManuallyEdited) {
+        setQtyManuallyEdited(true);
+      }
+      handleChange(e);
+    },
+    [handleChange, qtyManuallyEdited]
+  );
 
   // Calculate stop loss value
+  const manualStopLossPrice = parseFloat(form.stopLossPrice);
   let stopLossValue = 0;
-  if (stopLossMethod === "ATR") {
-    stopLossValue = (parseFloat(atrValue) || 0) * atrMultiplier;
-  } else if (stopLossMethod === "Fixed Value") {
-    // For Fixed Value, calculate 3% up/down from entryPrice based on direction
-    if (entryPrice > 0) {
-      const threePercent = entryPrice * 0.03;
-      stopLossValue = threePercent;
-    } else {
-      stopLossValue = parseFloat(form.stopLossPrice) || 0;
-    }
-  } else if (stopLossMethod === "Fixed %") {
-    stopLossValue = entryPrice * (parseFloat(fixedPercent) / 100);
+  if (stopLossMethod === "Fixed Value" && entryPrice && manualStopLossPrice) {
+    stopLossValue = Math.abs(entryPrice - manualStopLossPrice);
+  } else if (stopLossMethod === "Fixed %" && entryPrice) {
+    stopLossValue = entryPrice * ((parseFloat(fixedPercent) || 0) / 100);
   }
 
   // console.log(`Stop Loss Value: ${stopLossValue}, Entry Price: ${entryPrice}, Direction: ${direction}`);
   
   // Calculate actual risk per share (difference between entry price and stop loss price)
   let riskPerShare = 0;
-  if (stopLossMethod === "ATR" && atrValue && entryPrice) {
-    const atrStop = (parseFloat(atrValue) || 0) * atrMultiplier;
-    riskPerShare = atrStop; // This is the actual risk per share
-  } else if (stopLossMethod === "Fixed %" && fixedPercent && entryPrice) {
+  if (stopLossMethod === "Fixed %" && fixedPercent && entryPrice) {
     riskPerShare = stopLossValue; // For fixed %, stopLossValue is already the risk per share
-  } else if (stopLossMethod === "Fixed Value" && entryPrice) {
+  } else if (stopLossMethod === "Fixed Value" && entryPrice && stopLossValue) {
     riskPerShare = stopLossValue; // For fixed value, stopLossValue is the risk per share
   }
   
@@ -92,13 +93,16 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
   // console.log(`Auto QTY: ${autoQty}, Max Allowed QTY: ${maxAllowedQty}, Risk Value: ${riskValue}, Stop Loss Value: ${stopLossValue}`);
   // Use autoQty if user hasn't manually changed QTY, and update as price changes
   // If user manually enters a value, use that, otherwise always use autoQty
-  const qtyValue = (form.entryFilledShares === undefined || form.entryFilledShares === null || form.entryFilledShares === "") ? autoQty : form.entryFilledShares;
   let stopLossPrice = "";
   // If the calculated autoQty changes and user hasn't entered a value, update the form value
   React.useEffect(() => {
     // Skip auto-calculation if data is populated from watchlist
     if (isPopulated) {
       console.log('🔒 Skipping quantity auto-calculation - data from watchlist');
+      return;
+    }
+
+    if (qtyManuallyEdited) {
       return;
     }
     
@@ -117,38 +121,32 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
         console.log(`Auto-calculating entryFilledShares: ${current} -> ${autoQty}`);
         handleChange({ target: { name: "entryFilledShares", value: String(autoQty) } });
     }
-  }, [autoQty, stopLossValue, form.entryFilledShares, handleChange, isPopulated]);
+  }, [autoQty, stopLossValue, form.entryFilledShares, handleChange, isPopulated, qtyManuallyEdited]);
 
   // Warn if user QTY > maxAllowedQty
-  const qtyWarning = parseFloat(form.entryFilledShares) > maxAllowedQty;
-
   // Calculate stop loss price
   
-  if (stopLossMethod === "ATR" && atrValue && entryPrice) {
-    // Use ATR * atrMultiplier for stop loss price calculation
-    const atrStop = (parseFloat(atrValue) || 0) * atrMultiplier;
-    stopLossPrice = direction === "Long"
-      ? (entryPrice - atrStop).toFixed(2)
-      : (entryPrice + atrStop).toFixed(2);
-  } else if (stopLossMethod === "Fixed %" && fixedPercent && entryPrice) {
-    stopLossPrice = direction === "Long"
+  let computedStopLossPrice = "";
+  if (stopLossMethod === "Fixed %" && entryPrice && stopLossValue) {
+    computedStopLossPrice = direction === "Long"
       ? (entryPrice - stopLossValue).toFixed(2)
       : (entryPrice + stopLossValue).toFixed(2);
-  } else if (stopLossMethod === "Fixed Value" && entryPrice) {
-    // For Fixed Value, show 3% up/down from entryPrice
-    if (entryPrice > 0) {
-      stopLossPrice = direction === "Long"
-        ? (entryPrice - stopLossValue).toFixed(2)
-        : (entryPrice + stopLossValue).toFixed(2);
-    } else if (form.stopLossPrice) {
-      stopLossPrice = form.stopLossPrice;
-    }
+  }
+
+  if (stopLossMethod === "Fixed Value") {
+    stopLossPrice = form.stopLossPrice || "";
+  } else {
+    stopLossPrice = computedStopLossPrice;
   }
 
   React.useEffect(() => {
     // Skip auto-calculation if data is populated from watchlist
     if (isPopulated) {
       console.log('🔒 Skipping stop loss auto-calculation - data from watchlist');
+      return;
+    }
+
+    if (stopLossMethod === "Fixed Value") {
       return;
     }
     
@@ -171,17 +169,14 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
         },
       });
     }
-  }, [stopLossPrice, form.stopLossPrice, handleChange, isPopulated]);
+  }, [stopLossPrice, form.stopLossPrice, handleChange, isPopulated, stopLossMethod]);
 
 
   // Calculate targets (1:2, 1:3, 1:4)
   const targets = [2, 3, 4].map(mult => {
     if (!stopLossValue || !entryPrice) return "";
-    if (direction === "Long") {
-      return (entryPrice + stopLossValue * mult).toFixed(2);
-    } else {
-      return (entryPrice - stopLossValue * mult).toFixed(2);
-    }
+    const directionFactor = direction === "Long" ? 1 : -1;
+    return (entryPrice + directionFactor * stopLossValue * mult).toFixed(2);
   });
 
   React.useEffect(() => {
@@ -262,32 +257,37 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
           </div>
           <div className={styles.fieldGroup}>
             <label className={styles.label}>Entry Date</label>
-            <input type="date" name="entryDate" value={entryDate} onChange={handleChange} max={today} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} disabled={entryDisabled} />
+            <input type="date" name="entryDate" value={entryDate} onChange={handleTradePlanChange} max={today} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} disabled={entryDisabled} />
           </div>
           <div className={styles.fieldGroup}>
             <label className={styles.label}>Average Price ({market === "India" ? "₹" : "$"})</label>
-            <input type="text" name="entryOrderPrice" value={form.entryOrderPrice || ""} onChange={handleChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} placeholder="0.00" disabled={entryDisabled} />
+            <input type="text" name="entryOrderPrice" value={form.entryOrderPrice || ""} onChange={handleTradePlanChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} placeholder="0.00" disabled={entryDisabled} />
           </div>
           {/* Quantity */}
           <div className={styles.fieldGroup}>
             <label className={styles.label}>Quantity</label>
-            <input type="text" name="entryFilledShares" value={form.entryFilledShares || ""} onChange={handleChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} placeholder="100" disabled={entryDisabled} />
+            <input type="text" name="entryFilledShares" value={form.entryFilledShares || ""} onChange={handleTradePlanChange} className={`${styles.input} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} placeholder="100" disabled={entryDisabled} />
           </div>
           
           <div className={styles.fieldGroup}>
             <label className={styles.label}>Entry Commission ({market === "India" ? "₹" : "$"})</label>
-            <input type="number" name="entryCommission" value={form.entryCommission || 0} onChange={handleChange} className={styles.input} placeholder="0" min="0" disabled={entryDisabled} />
+            <input
+              type="number"
+              name="entryCommission"
+              value={form.entryCommission ?? ""}
+              onChange={handleTradePlanChange}
+              className={styles.input}
+              placeholder="0"
+              min="0"
+              disabled={entryDisabled}
+            />
           </div>
         </div>
       </div>
       <RiskManagementSection
-        form={form}
-        handleChange={handleChange}
+        handleChange={handleTradePlanChange}
         entryDisabled={entryDisabled}
-        today={today}
         styles={styles}
-        atrValue={atrValue}
-        atrMultiplier={atrMultiplier}
         stopLossMethod={stopLossMethod}
         fixedPercent={fixedPercent}
         stopLossPrice={stopLossPrice}
@@ -295,10 +295,6 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
         riskPerTrade={riskPerTrade}
         riskValue={riskValue}
         market={market}
-        qtyValue={qtyValue}
-        autoQty={autoQty}
-        maxAllowedQty={maxAllowedQty}
-        qtyWarning={qtyWarning}
       />
     </>
   );
