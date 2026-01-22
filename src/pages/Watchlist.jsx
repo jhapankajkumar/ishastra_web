@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import BuyMorePopup from '../components/BuyMorePopup';
 import { useNavigate } from 'react-router-dom';
 import { getWatchlist, runWatchlistDailyScan, deleteSymbolFromWatchlist, refreshStockInWatchlist } from '../api/analysisApi';
 import { convertWatchlistToTradeEntryForm, validateWatchlistForConversion, hasBuySignal } from '../common/WatchlistToTradeConverter';
-import { createTrade } from '../api/tradeApi';
-import { getCurrentPrice } from '../api/tickerApi';
 import { useNotification } from '../components/NotificationProvider';
 import styles from './Watchlist.module.css';
 
@@ -53,108 +50,10 @@ const Watchlist = () => {
     setShowDeleteConfirm(false);
     setStockToDelete(null);
   };
-  // Popup state
-  const [buyMoreOpen, setBuyMoreOpen] = useState(false);
-  const [buyMoreMode, setBuyMoreMode] = useState('buyMore'); // 'buyMore' or 'createTrade'
-  const [buyMoreStock, setBuyMoreStock] = useState(null);
-  const [buyMoreInitial, setBuyMoreInitial] = useState({ quantity: 0, avgPrice: 0, riskPerShare: 0, riskPercent: 0, positionValue: 0, capitalLeft: 0, currency: '₹', symbol: '' });
-  // Simulate available capital (should be fetched from user/account API in real app)
-  const [capitalLeft, setCapitalLeft] = useState(1000000); // 10 lakh default
-  // Open Buy More popup
-  const handleBuyMore = (stock) => {
-    const pos = stock.execution?.positionSizing || {};
-    setBuyMoreStock(stock);
-    setBuyMoreMode('buyMore');
-    setBuyMoreInitial({
-      quantity: pos.shares || 0,
-      avgPrice: stock.price || stock.entryPrice || 0,
-      riskPerShare: pos.riskPerShare || 0,
-      riskPercent: pos.riskPercent || 0,
-      positionValue: pos.positionValue || 0,
-      capitalLeft,
-      currency: stock.currency === 'INR' ? '₹' : '$',
-      symbol: stock.symbol
-    });
-    setBuyMoreOpen(true);
-  };
-
-  // Open Create Trade popup
-  const handleCreateTradePopup = (stock, event) => {
-    event.stopPropagation();
-    const pos = stock.execution?.positionSizing || {};
-    setBuyMoreStock(stock);
-    setBuyMoreMode('createTrade');
-    setBuyMoreInitial({
-      quantity: pos.shares || 0,
-      avgPrice: stock.price || stock.entryPrice || 0,
-      riskPerShare: pos.riskPerShare || 0,
-      riskPercent: pos.riskPercent || 0,
-      positionValue: pos.positionValue || 0,
-      capitalLeft,
-      currency: stock.currency === 'INR' ? '₹' : '$',
-      symbol: stock.symbol
-    });
-    setBuyMoreOpen(true);
-  };
-
-  // Handle popup submit
-  const handleBuyMoreSubmit = async ({ quantity, avgPrice }) => {
-    if (!buyMoreStock) return;
-    if (buyMoreMode === 'createTrade' || buyMoreMode === 'buyMore') {
-      // Create trade with entered values
-      try {
-        let currentPrice = avgPrice;
-        let companyName = buyMoreStock.symbol;
-        try {
-          const priceResponse = await getCurrentPrice(buyMoreStock.symbol);
-          currentPrice = priceResponse.data?.price || avgPrice;
-          companyName = priceResponse.data?.companyName || buyMoreStock.symbol;
-        } catch { }
-        const stock = buyMoreStock;
-        const tradeData = {
-          ticker: stock.symbol,
-          tickerName: companyName,
-          direction: 'Long',
-          instrumentType: 'Stocks',
-          currency: stock.currency || 'INR',
-          entryDate: new Date().toISOString().split('T')[0],
-          entryPrice: avgPrice,
-          quantity,
-          stopLoss: stock.execution?.exitStrategy?.stopLoss?.initial || 0,
-          target1: stock.execution?.exitStrategy?.targets?.conservative || 0,
-          target2: stock.execution?.exitStrategy?.targets?.moderate || 0,
-          target3: stock.execution?.exitStrategy?.targets?.aggressive || 0,
-          confidence: Math.round(stock.decision?.confidence || 75),
-          grade: stock.decision?.grade || 'A',
-          tradeSetup: 20001,
-          isPaperTrade: true,
-          entryCommission: 0,
-          reasonForEntry: stock.decision?.reasoning || `${stock.decision?.action} signal from ${stock.decision?.winningSystem}`,
-          notes: `Auto-created from Watchlist Analysis\nStrategy: ${stock.execution?.entryStrategy?.type || 'Monitor'}\nSystem: ${stock.decision?.winningSystem || 'N/A'}\nConfidence: ${Math.round(stock.decision?.confidence || 0)}%\nRisk/Reward: ${stock.execution?.positionSizing?.riskReward || 'N/A'}:1\nEntry Zone: ${stock.currency === 'INR' ? '₹' : '$'}${stock.execution?.entryStrategy?.entryZone?.optimal?.toFixed(2) || 'N/A'} - ${stock.currency === 'INR' ? '₹' : '$'}${stock.execution?.entryStrategy?.entryZone?.maximum?.toFixed(2) || 'N/A'}\nVolume Required: Min ${(stock.execution?.entryStrategy?.volumeRequirements?.minimum / 1000000)?.toFixed(1) || 'N/A'}M\nTime Window: ${stock.execution?.entryStrategy?.timeWindows?.primary || 'Any time'}\nMax Hold: ${stock.execution?.exitStrategy?.timeBasedExits?.maxHoldPeriod || 'N/A'} days`,
-          systemAnalysisResult: JSON.stringify(stock)
-        };
-        await createTrade(tradeData, { useDirectObject: true });
-        notification.success(
-          `Trade created for ${stock.symbol}!`,
-          {
-            action: {
-              label: 'View Trades',
-              onClick: () => navigate('/trades')
-            },
-            duration: 5000
-          }
-        );
-        setBuyMoreOpen(false);
-        navigate('/trades');
-      } catch (error) {
-        notification.error(`Failed to create trade for ${buyMoreStock.symbol}. Please try again.`);
-      }
-    }
-  };
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortBy, setSortBy] = useState('grade'); // grade, confidence, symbol
+  const [searchTerm, setSearchTerm] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   // Refresh handler for daily scan
   const handleRefresh = async () => {
@@ -184,16 +83,31 @@ const Watchlist = () => {
     localStorage.setItem('watchlistActiveTab', tab);
   };
 
-  // Filter stocks based on active tab
+  // Filter stocks based on active tab and search term
   const getFilteredStocks = () => {
+    let filteredStocks = [];
     switch (activeTab) {
       case 'INDIA':
-        return stocks.filter(stock => stock.currency === 'INR' && stock.decision?.action === 'BUY');
+        filteredStocks = stocks.filter(stock => stock.currency === 'INR' && stock.decision?.action === 'BUY');
+        break;
       case 'USA':
-        return stocks.filter(stock => stock.currency === 'USD' && stock.decision?.action === 'BUY');
+        filteredStocks = stocks.filter(stock => stock.currency === 'USD' && stock.decision?.action === 'BUY');
+        break;
       default:
-        return stocks;
+        filteredStocks = stocks;
     }
+
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) {
+      return filteredStocks;
+    }
+
+    return filteredStocks.filter(stock => {
+      const symbol = stock.symbol?.toLowerCase() || '';
+      const companyName = stock.companyName?.toLowerCase() || '';
+      const tickerName = stock.tickerName?.toLowerCase() || '';
+      return symbol.includes(normalizedSearch) || companyName.includes(normalizedSearch) || tickerName.includes(normalizedSearch);
+    });
   };
 
   useEffect(() => {
@@ -222,7 +136,7 @@ const Watchlist = () => {
 
   // Multi-level sorting function
   const sortStocks = (stocksData) => {
-    return stocksData.sort((a, b) => {
+    return [...stocksData].sort((a, b) => {
       // Level 1: Sort by action (BUY first, then WATCH, then others)
       const actionA = a.decision?.action || 'UNKNOWN';
       const actionB = b.decision?.action || 'UNKNOWN';
@@ -254,9 +168,7 @@ const Watchlist = () => {
       setError(null);
       const response = await getWatchlist();
       const stocksData = response.stocks || response.data || [];
-      // Apply multi-level sorting
-      const sortedStocks = sortStocks(stocksData);
-      setStocks(sortedStocks);
+      setStocks(sortStocks(stocksData));
     } catch (err) {
       setError(err.message || 'Failed to fetch watchlist');
       console.error('Watchlist error:', err);
@@ -265,56 +177,10 @@ const Watchlist = () => {
     }
   };
 
-  const handleSort = (sortType) => {
-    setSortBy(sortType);
-    let sortedStocks = [...stocks];
-
-    sortedStocks = sortedStocks.sort((a, b) => {
-      const gradeA = getGradeValue(a.decision?.grade);
-      const gradeB = getGradeValue(b.decision?.grade);
-
-      if (gradeA !== gradeB) {
-        return gradeB - gradeA; // Higher grade first
-      }
-
-      // Secondary sort by confidence  
-      const confidenceA = a.decision?.confidence || 0;
-      const confidenceB = b.decision?.confidence || 0;
-      return confidenceB - confidenceA; // Higher confidence first
-    });
-
-
-    setStocks(sortedStocks);
-  };
-
   const handleStockClick = (symbol) => {
     navigate(`/stock-detail/${symbol}`);
   };
 
-
-  const getDecisionBadgeClass = (action) => {
-    switch (action) {
-      case 'STRONG_BUY':
-        return styles.badgeBuy;
-      case 'BUY':
-        return styles.badgeBuy;
-      case 'WATCH':
-        return styles.badgeWatch;
-      case 'HOLD':
-        return styles.badgeHold;
-      case 'AVOID':
-        return styles.badgeAvoid;
-      default:
-        return styles.badgeDefault;
-    }
-  };
-
-  const getGradeBadgeClass = (grade) => {
-    if (grade >= 'A') return styles.gradeA;
-    if (grade >= 'B') return styles.gradeB;
-    if (grade >= 'C') return styles.gradeC;
-    return styles.gradeD;
-  };
 
   const handleChartClick = (symbol) => {
     navigate(`/chart/${symbol}`);
@@ -346,27 +212,36 @@ const Watchlist = () => {
     );
   }
   const currentFilteredStocks = getFilteredStocks();
+  const indiaWatchlistCount = stocks.filter(stock => stock.currency === 'INR' && stock.decision?.action === 'BUY').length;
+  const usaWatchlistCount = stocks.filter(stock => stock.currency === 'USD' && stock.decision?.action === 'BUY').length;
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <h1>📊 Trading Watchlist</h1>
         <p>Monitor your high-priority trading opportunities</p>
+      </div>
 
-        {/* <div className={styles.sortControls}>
-          <label>Sort by:</label>
-          <button
-            className={`${styles.sortButton} ${sortBy === 'grade' ? styles.active : ''}`}
-            onClick={() => handleSort('grade')}
-          >
-            Grade
-          </button>
-          <button
-            className={`${styles.sortButton} ${sortBy === 'symbol' ? styles.active : ''}`}
-            onClick={() => handleSort('symbol')}
-          >
-            Symbol
-          </button>
-        </div> */}
+      <div className={styles.controlBar}>
+        <div className={styles.searchContainer}>
+          <span className={styles.searchIcon}>🔍</span>
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="Search by symbol or company"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              className={styles.clearSearchBtn}
+              onClick={() => setSearchTerm('')}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Watchlist Tabs */}
@@ -375,13 +250,13 @@ const Watchlist = () => {
           className={`${styles.tab} ${activeTab === 'INDIA' ? styles.active : ''}`}
           onClick={() => setActiveTabWithPersist('INDIA')}
         >
-          📊 India Stocks
+          📊 India Stocks ({indiaWatchlistCount})
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'USA' ? styles.active : ''}`}
           onClick={() => setActiveTabWithPersist('USA')}
         >
-          📊 US Stocks
+          📊 US Stocks ({usaWatchlistCount})
         </button>
       </div>
 
@@ -396,40 +271,33 @@ const Watchlist = () => {
             <div className={styles.cardHeader}>
               <div className={styles.symbolSection}>
                 <h4 className={styles.stockSymbol}>{stock.symbol}</h4>
-                <div className={styles.badgeGroup}>
-                  <span className={`${styles.actionBadge} ${getDecisionBadgeClass(stock.decision?.action)}`}>
-                    {stock.decision?.action || 'N/A'}
-                  </span>
-                  <span className={`${styles.gradeBadge} ${getGradeBadgeClass(stock.decision?.grade)}`}>
-                    {stock.decision?.grade || 'N/A'}
-                  </span>
-                  <div className={styles.chartLink} onClick={(e) => { e.stopPropagation(); handleChartClick(stock.symbol); }}>
-                    <span className={styles.chartIcon}>📈</span>
-                  </div>
-                </div>
               </div>
-
-              
-              {/* <div className={styles.priceSection}>
-                <span className={styles.metricLabel}>Price:</span>
-                <span className={styles.metricValue}>
-                  {stock.currency === 'INR' ? '₹' : '$'}{(stock.price || 0).toFixed(2)}
-                </span>
-              </div> */}
-              <button
-                onClick={e => refreshStockData(stock, e)}
-                className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                title="Refresh"
-              >
-                🔄
-              </button>
-              <button
-                onClick={e => handleDeleteClick(stock, e)}
-                className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                title="Delete"
-              >
-                🗑️
-              </button>
+              <div className={styles.headerActions}>
+                <button
+                  type="button"
+                  className={styles.chartLink}
+                  onClick={(e) => { e.stopPropagation(); handleChartClick(stock.symbol); }}
+                  title="Open chart"
+                >
+                  📈
+                </button>
+                <button
+                  type="button"
+                  onClick={e => refreshStockData(stock, e)}
+                  className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                  title="Refresh"
+                >
+                  🔄
+                </button>
+                <button
+                  type="button"
+                  onClick={e => handleDeleteClick(stock, e)}
+                  className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                  title="Delete"
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
 
             {/* Metrics Row */}
@@ -575,46 +443,6 @@ const Watchlist = () => {
               </div>
             )}
 
-            {/* Footer */}
-            <div className={styles.cardFooter}>
-              {/* <span className={styles.addedDate}>
-                Added: {new Date(stock.createdAt).toLocaleDateString()}
-              </span> */}
-              <div className={styles.footerActions}>
-                {/* Actions: Buy More, Create Trade, Delete */}
-                {stock.decision?.action === 'BUY' && (
-                  <>
-                    {stock.inTrade && (
-                      <button
-                        className={styles.createTradeButton}
-                        onClick={(e) => { e.stopPropagation(); handleBuyMore(stock); }}
-                        title="Buy more shares"
-                        style={{ marginRight: 8 }}
-                      >
-                        ➕ Buy More
-                      </button>
-                    )}
-                    {!stock.inTrade && (
-                      <button
-                        className={styles.createTradeButton}
-                        onClick={(e) => handleCreateTradePopup(stock, e)}
-                        title="Create trade entry from this BUY signal"
-                        style={{ marginRight: 8 }}
-                      >
-                        📝 Create Trade
-                      </button>
-                    )}
-                  </>
-                )}
-                {/* Delete button for all stocks (restored, but already present above) */}
-                {!isMobile && (
-                  <span className={styles.createTradeButton}>Details →</span>
-                )}
-                {isMobile && index === currentFilteredStocks.length - 1 && (
-                  <span className={styles.createTradeButton}>Details →</span>
-                )}
-              </div>
-            </div>
           </div>
         ))}
       </div>
@@ -622,29 +450,15 @@ const Watchlist = () => {
       {currentFilteredStocks.length === 0 && (
         <div className={styles.emptyState}>
           <h3>
-            No BUY signals found
+            {searchTerm ? 'No matching stocks' : 'No BUY signals found'}
           </h3>
           <p>
-            No stocks currently have BUY signals. Check back later!
+            {searchTerm
+              ? 'Try a different ticker or clear the search filter.'
+              : 'No stocks currently have BUY signals. Check back later!'}
           </p>
         </div>
       )}
-
-      {/* Buy More / Create Trade Popup */}
-      <BuyMorePopup
-        open={buyMoreOpen}
-        onClose={() => setBuyMoreOpen(false)}
-        onSubmit={handleBuyMoreSubmit}
-        initialQuantity={buyMoreInitial.quantity}
-        initialAvgPrice={buyMoreInitial.avgPrice}
-        riskPerShare={buyMoreInitial.riskPerShare}
-        riskPercent={buyMoreInitial.riskPercent}
-        positionValue={buyMoreInitial.positionValue}
-        capitalLeft={buyMoreInitial.capitalLeft}
-        currency={buyMoreInitial.currency}
-        symbol={buyMoreInitial.symbol}
-        mode={buyMoreMode}
-      />
 
       {/* Delete Confirmation Dialog (ensure this is rendered after all popups) */}
       {showDeleteConfirm && stockToDelete && (
@@ -673,21 +487,6 @@ const Watchlist = () => {
         </div>
       )}
 
-      {/* Buy More / Create Trade Popup */}
-      <BuyMorePopup
-        open={buyMoreOpen}
-        onClose={() => setBuyMoreOpen(false)}
-        onSubmit={handleBuyMoreSubmit}
-        initialQuantity={buyMoreInitial.quantity}
-        initialAvgPrice={buyMoreInitial.avgPrice}
-        riskPerShare={buyMoreInitial.riskPerShare}
-        riskPercent={buyMoreInitial.riskPercent}
-        positionValue={buyMoreInitial.positionValue}
-        capitalLeft={buyMoreInitial.capitalLeft}
-        currency={buyMoreInitial.currency}
-        symbol={buyMoreInitial.symbol}
-        mode={buyMoreMode}
-      />
     </div>
   );
 };

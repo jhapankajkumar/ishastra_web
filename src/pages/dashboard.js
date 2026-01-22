@@ -483,8 +483,8 @@ const Dashboard = () => {
           </div>
           {/* Capital Summary */}
           {(() => {
-            const cap = capitalMap[tradingCurrency] || { total: 100000, allocated: 0, remaining: 0 };
-            const initialCap = Number(cap.total || 100000);
+            const cap = capitalMap[tradingCurrency] || { total: 0, allocated: 0, remaining: 0 };
+            const initialCap = Number(cap.total || 0);
             // Calculate closedTradePnl: sum of realized PnL for closed and partially closed trades
             const closedTradePnl = (currencyTrades || []).reduce((sum, t) => {
               // A trade is closed if remaining qty is 0, or status is 'closed' or 'partially closed'
@@ -574,7 +574,12 @@ const Dashboard = () => {
                 }}>
                   
                   <Card title="Total P&L" value={`${currencySymbol}${Math.abs(totalPnl).toLocaleString('en-US', { maximumFractionDigits : 0 })}`} subtext={`(${(totalPnlPctInitial).toFixed(2)}%)`} color={totalPnl >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'} borderAccent={isMobile ? (totalPnl >= 0 ? 'var(--profit-color)' : 'var(--loss-color)') : undefined} />
-                  <Card title="Today's P&L" value={todayBase > 0 ? `${currencySymbol}${Math.abs(todayChange).toLocaleString('en-US', { maximumFractionDigits : 0 })}` : '—'} subtext={`(${todayPct?.toFixed(2)}%)`} color={todayChange >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'} />
+                  <Card
+                    title="Today's P&L"
+                    value={todayBase > 0 ? `${currencySymbol}${Math.abs(todayChange).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
+                    subtext={todayBase > 0 && todayPct != null ? `(${todayPct.toFixed(2)}%)` : ''}
+                    color={todayChange >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'}
+                  />
                 </div>
 
                 <div style={{ fontWeight: 800, color: 'var(--text-secondary)', margin: '8px 0' }}>Activity Summary</div>
@@ -750,7 +755,9 @@ const Dashboard = () => {
                         >
                           <td style={{ padding: '12px 14px', fontWeight: 700 }}>{trade.ticker}</td>
                           <td style={{ padding: '12px 14px', fontWeight: 700 }}>{trade.entryDate ? formatDate(trade.entryDate) : "-"}</td>
-                          <td style={{ padding: '12px 14px', }}>{currencySymbol}{trade.entryPrice?.toFixed(2).toLocaleString() ?? '-'}</td>
+                          <td style={{ padding: '12px 14px' }}>
+                            {trade.entryPrice != null ? `${currencySymbol}${Number(trade.entryPrice).toFixed(2)}` : '-'}
+                          </td>
                           <td style={{ padding: '12px 14px', }}>{trade.quantity}</td>
                           <td style={{ padding: '12px 14px', }}>{soldQty}</td>
                           <td style={{ padding: '12px 14px', }}>{soldQty > 0 ? (getAverageExitPrice(trade) !== "-" ? getAverageExitPrice(trade) : (trade.exitPrice !== undefined && trade.exitPrice !== null ? Number(trade.exitPrice).toFixed(2) : "-")) : '-'}</td>
