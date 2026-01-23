@@ -41,7 +41,7 @@ export default function RiskManagementSection({
             {stopLossMethod === "Fixed %" && (
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Fixed % Value</label>
-                <input type="number" name="fixedPercent" value={fixedPercent} onChange={handleChange} className={styles.input} placeholder="e.g. 3" min="0" max="100" disabled={entryDisabled} />
+                <input type="number" name="fixedPercent" value={fixedPercent} onChange={handleChange} className={styles.input} placeholder="e.g. 5" min="0" max="100" disabled={entryDisabled} />
               </div>
             )}
             <div className={styles.fieldGroup}>

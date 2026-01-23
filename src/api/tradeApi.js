@@ -24,6 +24,9 @@ export async function updateTrade(id, form) {
   formData.append('exitGrade', form.exitGrade);
   formData.append('reasonForExit', form.reasonForExit);
   formData.append('exitTactic', form.exitTactic);
+  if (form.exitCommission !== undefined && form.exitCommission !== null) {
+    formData.append('exitCommission', form.exitCommission);
+  }
 
   // Add exit quantity for partial exits
   if (form.exitQuantity) {
@@ -54,6 +57,9 @@ export async function partialExitTrade(id, form) {
   formData.append('exitQuantity', form.exitQuantity);
   formData.append('reasonForExit', form.reasonForExit);
   formData.append('exitTactic', form.exitTactic);
+  if (form.exitCommission !== undefined && form.exitCommission !== null) {
+    formData.append('exitCommission', form.exitCommission);
+  }
 
   // Only append exitCharts - handle FileList or Array properly
   if (form.exitCharts) {

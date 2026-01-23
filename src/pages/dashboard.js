@@ -223,7 +223,8 @@ const Dashboard = () => {
   const currencySymbol = tradingCurrency === 'USD' ? '$' : '₹';
   const currencyTotalPnL = React.useMemo(() => (currencyTrades || []).reduce((total, trade) =>
      {
-      return total + (Number(trade.remainingQuantity) * (Number(trade.currentPrice) - Number(trade.entryPrice)));
+      let commission = (trade.entryCommission || 0) + (trade.exitCommission || 0);
+      return total + (Number(trade.remainingQuantity) * (Number(trade.currentPrice) - Number(trade.entryPrice)) - commission);
      }, 0), [currencyTrades]);
   const currencyCurrentValue = React.useMemo(() => (currencyTrades || []).reduce((sum, t) => {
     if (t.status.toLowerCase() === 'closed') return sum; // Closed trades do not contribute to current value
@@ -494,6 +495,14 @@ const Dashboard = () => {
               return isClosed ? sum + getRealizedPnLSafe(t) : sum;
             }, 0);
 
+            const openTradePnl = (currencyTrades || []).reduce((sum, t) => {
+              // A trade is closed if remaining qty is 0, or status is 'closed' or 'partially closed'
+              const status = (t.status || '').toLowerCase();
+              const isOpen = status === 'open' || status === 'partially closed';
+              return isOpen ? sum + getUnRealizedPnLSafe(t) : sum;
+            }, 0);
+
+
             // Calculate capitalDeployed: sum of invested capital for open trades and open portion of partially closed trades
             const capitalDeployed = (currencyTrades || []).reduce((sum, t) => {
               const rem = getRemainingQtySafe(t);
@@ -505,14 +514,14 @@ const Dashboard = () => {
             }, 0);
 
             // Remaining/Idle capital
-            const idle = initialCap + closedTradePnl - capitalDeployed;
-            
+            const currentVal = currencyCurrentValue;
+            const portfolioValue = initialCap + closedTradePnl + openTradePnl;
             const deployed = capitalDeployed;
-            const currentVal = currencyCurrentValue
+            
             const totalPnl = currencyTotalPnL;
             const totalPnlPctInitial = initialCap > 0 ? (totalPnl / initialCap) * 100 : 0;
 
-            const portfolioValue = idle + currentVal
+            
             // Today change
             let todayChange = 0, todayBase = 0;
             (currencyTrades || []).forEach(t => {
@@ -1615,11 +1624,29 @@ function getRealizedPnLSafe(trade) {
   const entry = Number(trade.entryPrice || 0);
   const sign = (trade.direction || 'long').toLowerCase() === 'short' ? -1 : 1;
   const exits = getExitTransactions(trade) || [];
+  const commission = Number(trade.entryCommission || 0) + Number(trade.exitCommission || 0);
   let realized = 0;
   exits.forEach(tx => {
     const price = Number(tx.price || 0);
     const qty = Number(tx.quantity || 0);
-    realized += sign * (price - entry) * qty;
+    realized += sign * ((price - entry) * qty);
   });
+
+  realized -= commission;
+
+  console.log('Realized PnL calculation:', { commission, realized });
   return realized;
+}
+
+function getUnRealizedPnLSafe(trade) {
+  let unrealizedPnL = 0;
+  const entry = Number(trade.entryPrice || 0);
+  const price = Number(trade.currentPrice || 0);
+  const qty = Number(trade.remainingQuantity || 0);
+  console.log('Calculating Unrealized PnL:', { price, entry, qty });
+  const commission = Number(trade.entryCommission || 0);
+  console.log('Commission', commission);
+  unrealizedPnL = ((price - entry) * qty) - commission;
+  console.log('Unrealized PnL calculation:', { price, entry, qty, commission, unrealizedPnL });
+  return unrealizedPnL;
 }

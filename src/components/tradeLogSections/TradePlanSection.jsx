@@ -6,7 +6,7 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
   // console.log("TradePlanSection Rendered");
 
   // --- Logic for dynamic fields and calculations ---
-  const stopLossMethod = form.stopLossMethod === "Fixed %" ? "Fixed %" : "Fixed Value";
+  const stopLossMethod = form.stopLossMethod === "Fixed Value" ? "Fixed Value" : "Fixed %";
   // Ensure outdated values like ATR are normalized
   React.useEffect(() => {
     if (form.stopLossMethod !== stopLossMethod) {
@@ -14,8 +14,16 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
     }
   }, [form.stopLossMethod, stopLossMethod, handleChange]);
 
-  // Set default fixed percent as 3 if Fixed % selected
-  const fixedPercent = stopLossMethod === "Fixed %" ? (form.fixedPercent || 3) : (form.fixedPercent || 0);
+  const hasFixedPercent = form.fixedPercent !== undefined && form.fixedPercent !== null && form.fixedPercent !== "";
+  const fixedPercentValue = hasFixedPercent ? form.fixedPercent : "5";
+  const fixedPercentNumeric = parseFloat(fixedPercentValue) || 0;
+
+  React.useEffect(() => {
+    if (!hasFixedPercent && stopLossMethod === "Fixed %") {
+      handleChange({ target: { name: "fixedPercent", value: "5" } });
+    }
+  }, [hasFixedPercent, stopLossMethod, handleChange]);
+
   const direction = form.direction || "Long";
   // Define entryPrice (was missing)
   const entryPrice = parseFloat(form.entryOrderPrice) || 0;
@@ -68,14 +76,14 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
   if (stopLossMethod === "Fixed Value" && entryPrice && manualStopLossPrice) {
     stopLossValue = Math.abs(entryPrice - manualStopLossPrice);
   } else if (stopLossMethod === "Fixed %" && entryPrice) {
-    stopLossValue = entryPrice * ((parseFloat(fixedPercent) || 0) / 100);
+    stopLossValue = entryPrice * (fixedPercentNumeric / 100);
   }
 
   // console.log(`Stop Loss Value: ${stopLossValue}, Entry Price: ${entryPrice}, Direction: ${direction}`);
   
   // Calculate actual risk per share (difference between entry price and stop loss price)
   let riskPerShare = 0;
-  if (stopLossMethod === "Fixed %" && fixedPercent && entryPrice) {
+  if (stopLossMethod === "Fixed %" && entryPrice) {
     riskPerShare = stopLossValue; // For fixed %, stopLossValue is already the risk per share
   } else if (stopLossMethod === "Fixed Value" && entryPrice && stopLossValue) {
     riskPerShare = stopLossValue; // For fixed value, stopLossValue is the risk per share
@@ -289,7 +297,7 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
         entryDisabled={entryDisabled}
         styles={styles}
         stopLossMethod={stopLossMethod}
-        fixedPercent={fixedPercent}
+        fixedPercent={fixedPercentValue}
         stopLossPrice={stopLossPrice}
         targets={targets}
         riskPerTrade={riskPerTrade}

@@ -41,7 +41,7 @@ const initialState = {
   timeframesUsed: [],
   riskPerTrade: "1%",
   stopLossPrice: "",
-  stopLossMethod: "Fixed Value",
+  stopLossMethod: "Fixed %",
   atrMultiplier: 1.5,
   target1: "",
   target2: "",
@@ -57,6 +57,7 @@ const initialState = {
   notes: "", // Add missing notes field
   tradeStatus: "Planned",
   tradeSetupId: 2001, // Use tradeSetupId directly
+  fixedPercent: "5",
 };
 
 function mapTradeDataToForm(tradeData) {
@@ -102,11 +103,12 @@ function mapTradeDataToForm(tradeData) {
     timeframesUsed: tradeData.timeframesUsed || [],
     riskPerTrade: tradeData.riskPerTrade || "1%",
     stopLossPrice: tradeData.stopLossPrice || "",
-    stopLossMethod: tradeData.stopLossMethod === "Fixed %" ? "Fixed %" : "Fixed Value",
+    stopLossMethod: tradeData.stopLossMethod === "Fixed Value" ? "Fixed Value" : "Fixed %",
     target1: tradeData.target1 || "",
     target2: tradeData.target2 || "",
     target3: tradeData.target3 || "",
     atrValue: tradeData.atrValue || "",
+    fixedPercent: tradeData.fixedPercent !== undefined && tradeData.fixedPercent !== null && tradeData.fixedPercent !== "" ? String(tradeData.fixedPercent) : "5",
     setupConfidence: tradeData.setupConfidence || "",
     tradeStatus: tradeData.tradeStatus || "Planned",
     currency: tradeData.currency || "USD"
@@ -132,12 +134,13 @@ function mapWatchlistDataToForm(watchlistData) {
     setupType: String(watchlistData.setupType || ""), // Convert to string for form compatibility
     riskPerTrade: "1%",
     stopLossPrice: String(watchlistData.stopLossPrice || ""),
-    stopLossMethod: watchlistData.stopLossMethod === "Fixed %" ? "Fixed %" : "Fixed Value",
+    stopLossMethod: watchlistData.stopLossMethod === "Fixed Value" ? "Fixed Value" : "Fixed %",
     atrMultiplier: watchlistData.atrMultiplier || 1.5,
     atrValue: String(watchlistData.atrValue || ""),
     target1: String(watchlistData.target1 || ""),
     target2: String(watchlistData.target2 || ""),
     target3: String(watchlistData.target3 || ""),
+    fixedPercent: watchlistData.fixedPercent !== undefined && watchlistData.fixedPercent !== null && watchlistData.fixedPercent !== "" ? String(watchlistData.fixedPercent) : "5",
     setupConfidence: watchlistData.setupConfidence || "",
     timeframesUsed: watchlistData.timeframeUsed ? [watchlistData.timeframeUsed] : ["Daily"],
     notes: watchlistData.notes || "", // Map notes field (should contain exit conditions)

@@ -35,6 +35,7 @@ const TradeUpdate = () => {
     reasonForExit: '',
     exitTactic: '',
     exitCharts: [],
+    exitCommission: '',
     tradeStatus: 'Closed'
   });
 
@@ -76,6 +77,7 @@ const TradeUpdate = () => {
         reasonForExit: tradeData.reasonForExit || '',
         exitTactic: tradeData.exitTacticId || '',
         exitCharts: [],
+        exitCommission: tradeData.exitCommission ?? '',
         tradeStatus: tradeData.tradeStatus || (tradeData.remainingQuantity === tradeData.quantity ? 'Closed' : 'Partial Closed')
       });
 
@@ -208,6 +210,7 @@ const TradeUpdate = () => {
           ...prev,
           exitOrderPrice: '',
           exitFilledShares: '',
+          exitCommission: '',
           reasonForExit: '',
           exitTactic: '',
           exitCharts: []
@@ -513,6 +516,21 @@ const TradeUpdate = () => {
                         {priceError}
                       </div>
                     )}
+                  </div>
+
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>
+                      Exit Commission ({trade.market === "India" ? "₹" : "$"})
+                    </label>
+                    <input
+                      type="number"
+                      name="exitCommission"
+                      value={exitForm.exitCommission}
+                      onChange={handleExitFormChange}
+                      className={styles.input}
+                      placeholder="0"
+                      min="0"
+                    />
                   </div>
 
                   <div className={styles.fieldGroup}>
