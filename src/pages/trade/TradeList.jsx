@@ -29,6 +29,7 @@ export default function TradeList() {
     setActiveTab(tab);
     localStorage.setItem('tradeListActiveTab', tab);
   };
+  const showIndiaMarket = false
 
   // Sorting functions
   const handleSort = (column) => {
@@ -919,7 +920,7 @@ export default function TradeList() {
             <div className={styles.marketMetrics}>
               {/* Removed Total Capital for compact mobile view */}
               <div className={styles.metric}>
-                <span className={styles.metricLabel}>Total Invested</span>
+                <span className={styles.metricLabel}>Open Positions Value</span>
                 <span className={styles.metricValue}>
                   {formatCurrency(calculateMarketMetrics('USD').totalInvested, 'USD')}
                   {/* <small className={styles.metricPercent}>({calculateMarketMetrics('USD').investedPercentage}%)</small> */}
@@ -945,6 +946,7 @@ export default function TradeList() {
           </div>
 
           {/* India Market Card */}
+          {showIndiaMarket && (
           <div className={styles.compactMarketCard}>
             <div className={styles.marketHeader}>
               <span className={styles.marketFlag}>🇮🇳</span>
@@ -977,7 +979,7 @@ export default function TradeList() {
                 </div>
               )}
             </div>
-          </div>
+          </div>)}
         </div>
       )}
 
@@ -1011,6 +1013,7 @@ export default function TradeList() {
       </div>
 
       {/* Market Tabs */}
+      {showIndiaMarket && (
       <div className={styles.tabContainer}>
         <button
           className={`${styles.tabButton} ${activeTab === 'NASDAQ' ? styles.active : ''}`}
@@ -1018,13 +1021,16 @@ export default function TradeList() {
         >
           🇺🇸 US (NASDAQ/NYSE)
         </button>
+        {showIndiaMarket && (
         <button
           className={`${styles.tabButton} ${activeTab === 'NSE' ? styles.active : ''}`}
           onClick={() => setActiveTabWithPersist('NSE')}
         >
           🇮🇳 India (NSE)
         </button>
+        )}
       </div>
+      )}
 
       {/* Market-Based Trade Sections */}
       {Object.entries(marketGroups).map(([currency, marketData]) => {

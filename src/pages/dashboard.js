@@ -223,19 +223,35 @@ const Dashboard = () => {
   const currencySymbol = tradingCurrency === 'USD' ? '$' : '₹';
   const currencyTotalPnL = React.useMemo(() => (currencyTrades || []).reduce((total, trade) =>
      {
-      let commission = (trade.entryCommission || 0) + (trade.exitCommission || 0);
-      return total + (Number(trade.remainingQuantity) * (Number(trade.currentPrice) - Number(trade.entryPrice)) - commission);
+      return total + (Number(trade.remainingQuantity) * (Number(trade.currentPrice) - Number(trade.entryPrice)));
      }, 0), [currencyTrades]);
   const currencyCurrentValue = React.useMemo(() => (currencyTrades || []).reduce((sum, t) => {
     if (t.status.toLowerCase() === 'closed') return sum; // Closed trades do not contribute to current value
     return sum + (t.currentPrice ? Number(t.currentPrice) * getRemainingQtySafe(t) : 0);
   }, 0), [currencyTrades]);
 
+  const realizedUnrealized = React.useMemo(() => {
+    let totalPnL = 0;
+    currencyTrades.forEach(trade => {
+      const tradeRealized = getRealizedPnLSafe(trade);
+      const unrealizedPL = getUnRealizedPnLSafe(trade);
+      totalPnL += (tradeRealized + unrealizedPL);
+    });
+    return totalPnL;
+  }, [currencyTrades]);
+
   // ---- Move all hooks above any return ----
   const tagIdToName = React.useMemo(
     () => Object.fromEntries(tags.map(tag => [tag.tag_id, tag.name])),
     [tags]
   );
+
+  const totalCommissions = React.useMemo(() => {  
+    return trades.reduce((total, trade) => {
+      const commission = (trade.entryCommission || 0) + (trade.exitCommission || 0);
+      return total + commission;
+    }, 0);
+  }, [currencyTrades]);
 
   const tagCounts = React.useMemo(() => {
     const acc = {};
@@ -515,11 +531,11 @@ const Dashboard = () => {
 
             // Remaining/Idle capital
             const currentVal = currencyCurrentValue;
-            const portfolioValue = initialCap + closedTradePnl + openTradePnl;
+            const portfolioValue = initialCap + closedTradePnl + openTradePnl - totalCommissions;
             const deployed = capitalDeployed;
-            
+            const finalRealizedUnrealized = realizedUnrealized - totalCommissions;
             const totalPnl = currencyTotalPnL;
-            const totalPnlPctInitial = initialCap > 0 ? (totalPnl / initialCap) * 100 : 0;
+            const totalPnlPctInitial = initialCap > 0 ? (finalRealizedUnrealized / initialCap) * 100 : 0;
 
             
             // Today change
@@ -566,13 +582,14 @@ const Dashboard = () => {
               <>
                 <div style={{ fontWeight: 800, color: 'var(--text-secondary)', marginBottom: 8 }}>Capital Summary</div>
                 <div style={{
-                  display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: isMobile ? 10 : 18, marginBottom: 18,
+                  display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 2fr)' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: isMobile ? 10 : 18, marginBottom: 18,
                   background: theme === 'light' ? 'var(--bg-secondary)' : 'linear-gradient(90deg, #181F2A 60%, #1A2332 100%)', padding: isMobile ? 8 : 12, borderRadius: isMobile ? 12 : 18,
                   border: theme === 'light' ? '1px solid var(--border-primary)' : 'none'
                 }}>
-                  <Card title="Portfolio" value={`${currencySymbol}${(portfolioValue || 0).toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--text-secondary)" />
+                  <Card title="Portfolio | Performance" value={`${currencySymbol}${(portfolioValue || 0).toLocaleString('en-US', { maximumFractionDigits : 0 })}`} subtext={`${finalRealizedUnrealized.toFixed(0)} (${(totalPnlPctInitial).toFixed(2)}%)`} color={totalPnlPctInitial >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'} />
                   <Card title="Open Trades" value={`${currencySymbol}${deployed.toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--accent-primary)" />
                   <Card title="Current Value" value={`${currencySymbol}${currentVal.toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--accent-primary)" />
+                  <Card title="Commission" value={`${currencySymbol}${totalCommissions.toLocaleString('en-US', { maximumFractionDigits : 0 })}`} color="var(--loss-color)" />
                 </div>
 
                 <div style={{ fontWeight: 800, color: 'var(--text-secondary)', margin: '8px 0' }}>Portfolio Metrics</div>
@@ -582,9 +599,9 @@ const Dashboard = () => {
                   border: theme === 'light' ? '1px solid var(--border-primary)' : 'none'
                 }}>
                   
-                  <Card title="Total P&L" value={`${currencySymbol}${Math.abs(totalPnl).toLocaleString('en-US', { maximumFractionDigits : 0 })}`} subtext={`(${(totalPnlPctInitial).toFixed(2)}%)`} color={totalPnl >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'} borderAccent={isMobile ? (totalPnl >= 0 ? 'var(--profit-color)' : 'var(--loss-color)') : undefined} />
+                  <Card title="Unrealized P&L" value={`${currencySymbol}${Math.abs(totalPnl).toLocaleString('en-US', { maximumFractionDigits : 0 })}`}  color={totalPnl >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'} />
                   <Card
-                    title="Today's P&L"
+                    title="Daily P&L"
                     value={todayBase > 0 ? `${currencySymbol}${Math.abs(todayChange).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
                     subtext={todayBase > 0 && todayPct != null ? `(${todayPct.toFixed(2)}%)` : ''}
                     color={todayChange >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'}
@@ -1631,10 +1648,6 @@ function getRealizedPnLSafe(trade) {
     const qty = Number(tx.quantity || 0);
     realized += sign * ((price - entry) * qty);
   });
-
-  realized -= commission;
-
-  console.log('Realized PnL calculation:', { commission, realized });
   return realized;
 }
 
@@ -1643,10 +1656,6 @@ function getUnRealizedPnLSafe(trade) {
   const entry = Number(trade.entryPrice || 0);
   const price = Number(trade.currentPrice || 0);
   const qty = Number(trade.remainingQuantity || 0);
-  console.log('Calculating Unrealized PnL:', { price, entry, qty });
-  const commission = Number(trade.entryCommission || 0);
-  console.log('Commission', commission);
-  unrealizedPnL = ((price - entry) * qty) - commission;
-  console.log('Unrealized PnL calculation:', { price, entry, qty, commission, unrealizedPnL });
+  unrealizedPnL = ((price - entry) * qty);
   return unrealizedPnL;
 }
