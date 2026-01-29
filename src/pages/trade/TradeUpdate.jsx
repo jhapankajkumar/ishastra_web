@@ -528,7 +528,7 @@ const TradeUpdate = () => {
                       value={exitForm.exitCommission}
                       onChange={handleExitFormChange}
                       className={styles.input}
-                      placeholder="0"
+                      placeholder="0.00"
                       min="0"
                     />
                   </div>
