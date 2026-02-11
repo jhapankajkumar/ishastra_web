@@ -285,8 +285,9 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
               value={form.entryCommission ?? ""}
               onChange={handleTradePlanChange}
               className={styles.input}
-              placeholder="0"
+              placeholder="0.00"
               min="0"
+              step="any"
               disabled={entryDisabled}
             />
           </div>

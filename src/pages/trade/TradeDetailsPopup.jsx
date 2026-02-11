@@ -229,6 +229,17 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     ? `${stopLossValue} ${stopLossTrend}`
     : stopLossValue;
 
+  // Entry / Exit commission display values
+  const entryCommissionAmount = (trade.entryCommission !== undefined && trade.entryCommission !== null)
+    ? Number(trade.entryCommission)
+    : null;
+  const entryCommissionDisplay = entryCommissionAmount !== null ? formatCurrency(entryCommissionAmount, 2) : '-';
+
+  const exitCommissionAmount = (trade.exitCommission !== undefined && trade.exitCommission !== null)
+    ? Number(trade.exitCommission)
+    : (exitTransactions && exitTransactions.length ? exitTransactions.reduce((s, tx) => s + (Number(tx.commission) || 0), 0) : null);
+  const exitCommissionDisplay = exitCommissionAmount !== null ? formatCurrency(exitCommissionAmount, 2) : '-';
+
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const { body } = document;
@@ -314,6 +325,14 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                     >
                       {stopLossDisplay}
                     </span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Entry Commission</span>
+                    <span className={styles.detailValue}>{entryCommissionDisplay}</span>
+                  </div>
+                  <div className={styles.fieldItem}>
+                    <span className={styles.detailLabel}>Exit Commission</span>
+                    <span className={styles.detailValue}>{exitCommissionDisplay}</span>
                   </div>
                   {/* <div className={styles.fieldItem}>
                     <span className={styles.detailLabel}>Target 1</span>
