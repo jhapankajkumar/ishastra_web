@@ -7,16 +7,12 @@ function RiskManagement() {
 
   // Initial state for formData
   const [formData, setFormData] = useState({
-    accountBalance: '',
+    capital: '20000',
     stockPrice: '',
     positionType: 'Long',
-    riskPercentage: 2,
-    atr: '',
-    atrMultiplier: 1.5,
-    target1RR: 1,
-    target2RR: 2,
-    target3RR: 3,
-    trailingStopPercentage: 1
+    maxPosition: '10',
+    riskPerShare: '0.5',
+    stopLoss: ''
   });
 
   // State for calculated results
@@ -28,8 +24,8 @@ function RiskManagement() {
     target2Price: 0,
     target3Price: 0,
     totalInvestment: 0,
-    trailingStopPrice: 0,
-    riskAmount: 0
+    riskAmount: 0,
+    slPercentage: 0
   });
 
   // Handle input changes
@@ -43,81 +39,79 @@ function RiskManagement() {
 
   // Calculate risk management values
   const calculateRiskManagement = () => {
-    const balance = parseFloat(formData.accountBalance) || 0;
+    const capital = parseFloat(formData.capital) || 0;
     const price = parseFloat(formData.stockPrice) || 0;
+    const maxPos = parseFloat(formData.maxPosition) / 100 || 0;
+    const riskPctPerShare = parseFloat(formData.riskPerShare) / 100 || 0;
     const isLong = formData.positionType === 'Long';
-    const riskPct = parseFloat(formData.riskPercentage) / 100 || 0;
-    const maxRiskAmount = balance * riskPct;
-    const atr = parseFloat(formData.atr) || 0;
-    const atrMultiplier = parseFloat(formData.atrMultiplier) || 1.5;
-    const trailingPct = parseFloat(formData.trailingStopPercentage) / 100 || 0;
-    const target1RR = parseFloat(formData.target1RR) || 1;
-    const target2RR = parseFloat(formData.target2RR) || 2;
-    const target3RR = parseFloat(formData.target3RR) || 3;
 
-    // Stop loss calculation (always ATR-based)
-    let stopPrice = 0;
-    if (atr > 0) {
-      stopPrice = isLong ? price - atr * atrMultiplier : price + atr * atrMultiplier;
+    // Use manually entered Stop Loss if provided, otherwise calculate from risk per share
+    let stopLoss = price;
+    if (formData.stopLoss && parseFloat(formData.stopLoss) > 0) {
+      stopLoss = parseFloat(formData.stopLoss);
+    } else if (price > 0) {
+      const riskAmount = price * riskPctPerShare;
+      stopLoss = isLong ? price - riskAmount : price + riskAmount;
     }
 
-    // Calculate risk per share
-    const riskPerShare = Math.abs(price - stopPrice);
+    // Calculate total risk budget based on Risk Per Share percentage
+    const totalRiskBudget = capital * riskPctPerShare;
 
-    // Calculate number of shares (limited by both risk and available capital)
-    let sharesByRisk = 0;
-    let sharesByCapital = 0;
+    // Calculate risk per share distance
+    const riskPerShareDistance = Math.abs(price - stopLoss);
+
+    // Calculate number of shares based on risk budget and stop loss distance
     let numberOfShares = 0;
-    if (riskPerShare > 0 && price > 0) {
-      sharesByRisk = Math.floor(maxRiskAmount / riskPerShare);
-      sharesByCapital = Math.floor(balance / price);
-      numberOfShares = Math.min(sharesByRisk, sharesByCapital);
+    if (riskPerShareDistance > 0) {
+      numberOfShares = Math.floor(totalRiskBudget / riskPerShareDistance);
     }
+    
+    // Apply Max Position % constraint as upper cap
+    const maxSharesByMaxPosition = Math.floor((capital * maxPos) / price);
+    
+    // Ensure shares don't exceed available capital AND max position constraint
+    const maxSharesByCapital = Math.floor(capital / price);
+    numberOfShares = Math.min(numberOfShares, maxSharesByCapital, maxSharesByMaxPosition);
 
     // Calculate total investment
     const totalInvestment = numberOfShares * price;
 
-    // Calculate targets
-    const target1 = isLong ? 
-      price + (riskPerShare * target1RR) :
-      price - (riskPerShare * target1RR);
-    const target2 = isLong ? 
-      price + (riskPerShare * target2RR) :
-      price - (riskPerShare * target2RR);
-    const target3 = isLong ? 
-      price + (riskPerShare * target3RR) :
-      price - (riskPerShare * target3RR);
+    // Calculate SL percentage and risk amount
+    let slPercentage = 0;
+    let riskPerShare = 0;
+    let riskAmount = 0;
 
-    // Calculate trailing stop (original trailing stop)
-    // For long: price * (1 - pct), for short: price * (1 - pct)
-    // So trailing stop is always below entry for both
-    const trailingStop = price * (1 - trailingPct);
-
-    // Trailing Stop 1 and 2 based on ATR * atrMultiplier from stopPrice
-    let trailingStop1 = 0;
-    let trailingStop2 = 0;
-    if (atr > 0) {
-      if (isLong) {
-        trailingStop1 = stopPrice + atr * atrMultiplier;
-        trailingStop2 = stopPrice + 2 * atr * atrMultiplier;
-      } else {
-        trailingStop1 = stopPrice - atr * atrMultiplier;
-        trailingStop2 = stopPrice - 2 * atr * atrMultiplier;
-      }
+    if (price > 0 && stopLoss !== price) {
+      riskPerShare = Math.abs(price - stopLoss);
+      slPercentage = (riskPerShare / price) * 100;
+      riskAmount = riskPerShare * numberOfShares;
     }
 
+    // Calculate max risk (based on Risk Per Share % of capital)
+    const maxRisk = totalRiskBudget;
+
+    // Calculate targets based on risk per share
+    // Risk = Entry - SL, so for 1:2R target = Entry + 2*Risk
+    const target1 = isLong ? 
+      price + (2 * riskPerShare) :
+      price - (2 * riskPerShare);
+    const target2 = isLong ? 
+      price + (3 * riskPerShare) :
+      price - (3 * riskPerShare);
+    const target3 = isLong ? 
+      price + (4 * riskPerShare) :
+      price - (4 * riskPerShare);
+
     setCalculations({
-      maxRisk: maxRiskAmount,
+      maxRisk: maxRisk,
       shares: numberOfShares,
-      stopLossPrice: stopPrice,
+      stopLossPrice: stopLoss,
       target1Price: target1,
       target2Price: target2,
       target3Price: target3,
       totalInvestment: totalInvestment,
-      trailingStopPrice: trailingStop,
-      trailingStop1: trailingStop1,
-      trailingStop2: trailingStop2,
-      riskAmount: maxRiskAmount
+      riskAmount: riskAmount,
+      slPercentage: slPercentage
     });
   };
 
@@ -146,16 +140,45 @@ function RiskManagement() {
           <h3 className={styles.sectionTitle}>Position Setup</h3>
           <div className={styles.formGrid}>
             <div className={styles.inputGroup}>
-              <label className={styles.label}>Trading Account Balance</label>
-              <input
-                type="number"
-                name="accountBalance"
-                value={formData.accountBalance}
+              <label className={styles.label}>Trading Capital</label>
+              <select
+                name="capital"
+                value={formData.capital}
                 onChange={handleInputChange}
-                className={styles.input}
-                placeholder="Enter available trading balance"
-                
-              />
+                className={styles.select}
+              >
+                <option value="20000">20,000</option>
+                <option value="25000">25,000</option>
+                <option value="30000">30,000</option>
+                <option value="35000">35,000</option>
+                <option value="40000">40,000</option>
+                <option value="45000">45,000</option>
+                <option value="50000">50,000</option>
+                <option value="55000">55,000</option>
+                <option value="60000">60,000</option>
+                <option value="65000">65,000</option>
+                <option value="70000">70,000</option>
+                <option value="75000">75,000</option>
+                <option value="80000">80,000</option>
+                <option value="85000">85,000</option>
+                <option value="90000">90,000</option>
+                <option value="95000">95,000</option>
+                <option value="100000">100,000</option>
+              </select>
+            </div>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Max Position %</label>
+              <select
+                name="maxPosition"
+                value={formData.maxPosition}
+                onChange={handleInputChange}
+                className={styles.select}
+              >
+                <option value="10">10%</option>
+                <option value="15">15%</option>
+                <option value="20">20%</option>
+                <option value="25">25%</option>
+              </select>
             </div>
             <div className={styles.inputGroup}>
               <label className={styles.label}>Stock Price</label>
@@ -165,8 +188,22 @@ function RiskManagement() {
                 value={formData.stockPrice}
                 onChange={handleInputChange}
                 className={styles.input}
-                placeholder="Current stock price"
-                
+                placeholder="Enter stock price"
+                step="0.01"
+                min="0"
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Stop Loss Price</label>
+              <input
+                type="number"
+                name="stopLoss"
+                value={formData.stopLoss}
+                onChange={handleInputChange}
+                className={styles.input}
+                placeholder="Enter stop loss price"
+                step="0.01"
+                min="0"
               />
             </div>
             <div className={styles.inputGroup}>
@@ -182,106 +219,20 @@ function RiskManagement() {
               </select>
             </div>
             <div className={styles.inputGroup}>
-              <label className={styles.label}>Risk Percentage (%)</label>
-              <input
-                type="number"
-                name="riskPercentage"
-                value={formData.riskPercentage}
+              <label className={styles.label}>Risk Per Share %</label>
+              <select
+                name="riskPerShare"
+                value={formData.riskPerShare}
                 onChange={handleInputChange}
-                className={styles.input}
-                placeholder="Risk per trade (%)"
-                step="0.1"
-                min="0.1"
-                max="10"
-              />
+                className={styles.select}
+              >
+                <option value="0.5">0.5%</option>
+                <option value="0.75">0.75%</option>
+                <option value="1.0">1.0%</option>
+                <option value="1.5">1.5%</option>
+                <option value="2.0">2.0%</option>
+              </select>
             </div>
-          </div>
-          <div>
-            <h3 className={styles.subSectionTitle}>ATR-based Stop Loss</h3>
-            <div className={styles.formGrid}>
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>ATR Value</label>
-                <input
-                  type="number"
-                  name="atr"
-                  value={formData.atr}
-                  onChange={handleInputChange}
-                  className={styles.input}
-                  placeholder="Average True Range"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>ATR Multiplier</label>
-                <input
-                  type="number"
-                  name="atrMultiplier"
-                  value={formData.atrMultiplier}
-                  onChange={handleInputChange}
-                  className={styles.input}
-                  placeholder="e.g. 1.5"
-                  step="0.1"
-                  min="0.1"
-                />
-              </div>
-            </div>
-          </div>
-          <h3 className={styles.subSectionTitle}>Target Configuration</h3>
-          <div className={styles.targetsGrid}>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Target 1 (Risk:Reward)</label>
-              <input
-                type="number"
-                name="target1RR"
-                value={formData.target1RR}
-                onChange={handleInputChange}
-                className={styles.input}
-                placeholder="1"
-                step="0.1"
-                min="0.1"
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Target 2 (Risk:Reward)</label>
-              <input
-                type="number"
-                name="target2RR"
-                value={formData.target2RR}
-                onChange={handleInputChange}
-                className={styles.input}
-                placeholder="2"
-                step="0.1"
-                min="0.1"
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Target 3 (Risk:Reward)</label>
-              <input
-                type="number"
-                name="target3RR"
-                value={formData.target3RR}
-                onChange={handleInputChange}
-                className={styles.input}
-                placeholder="3"
-                step="0.1"
-                min="0.1"
-              />
-            </div>
-          </div>
-          <h3 className={styles.subSectionTitle}>Trailing Stop Configuration</h3>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>Trailing Stop Percentage (%)</label>
-            <input
-              type="number"
-              name="trailingStopPercentage"
-              value={formData.trailingStopPercentage}
-              onChange={handleInputChange}
-              className={styles.input}
-              placeholder="Trailing stop percentage"
-              step="0.1"
-              min="0.1"
-            />
           </div>
         </div>
         <div className={styles.resultsSection}>
@@ -306,21 +257,9 @@ function RiskManagement() {
             <div className={styles.resultCard}>
               <div className={styles.resultLabel}>Stop Loss Price</div>
               <div className={styles.resultValue}>{formatCurrency(calculations.stopLossPrice)}</div>
-              <div className={styles.resultProfit} style={{ color: '#e53935' }}>
-                {(() => {
-                  const entry = parseFloat(formData.stockPrice || 0);
-                  const stop = calculations.stopLossPrice;
-                  const shares = calculations.shares;
-                  const loss = (stop - entry) * shares * (formData.positionType === "Long" ? 1 : -1);
-                  const percent = entry > 0 ? ((stop - entry) / entry) * 100 * (formData.positionType === "Long" ? 1 : -1) : 0;
-                  return `Loss: ${formatCurrency(loss)} (${percent.toFixed(2)}%)`;
-                })()}
+              <div className={styles.resultNote}>
+                SL: {calculations.slPercentage.toFixed(2)}% ({formatCurrency(Math.abs(parseFloat(formData.stockPrice || 0) - calculations.stopLossPrice))})
               </div>
-            </div>
-            <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Trailing Stop</div>
-              <div className={styles.resultValue}>{formatCurrency(calculations.trailingStopPrice)}</div>
-              <div className={styles.resultNote}>Initial trailing stop level</div>
             </div>
             <div className={styles.resultCard}>
               <div className={styles.resultLabel}>Target 1</div>
@@ -364,13 +303,13 @@ function RiskManagement() {
             <h3 className={styles.summaryTitle}>Risk Summary</h3>
             <div className={styles.summaryGrid}>
               <div className={styles.summaryItem}>
-                <span className={styles.summaryLabel}>Risk per Trade:</span>
-                <span className={styles.summaryValue}>{formData.riskPercentage}% ({formatCurrency(calculations.maxRisk)})</span>
+                <span className={styles.summaryLabel}>Capital Allocated:</span>
+                <span className={styles.summaryValue}>{formatCurrency(calculations.maxRisk)}</span>
               </div>
               <div className={styles.summaryItem}>
                 <span className={styles.summaryLabel}>Portfolio Exposure:</span>
                 <span className={styles.summaryValue}>
-                  {((calculations.totalInvestment / (parseFloat(formData.accountBalance) || 1)) * 100).toFixed(2)}%
+                  {((calculations.totalInvestment / (parseFloat(formData.capital) || 1)) * 100).toFixed(2)}%
                 </span>
               </div>
               <div className={styles.summaryItem}>

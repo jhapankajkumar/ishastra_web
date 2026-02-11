@@ -6,13 +6,13 @@ import styles from "./Header.module.css";
 
 const navLinks = [
   { to: "/", label: "Dashboard", icon: "📊" },
-  { to: "/watchlist", label: "Watchlist", special: false, icon: "👀" },
+  { to: "/risk-management", label: "Risk Management", icon: "⚖️" },
   { to: "/trades", label: "Trades", icon: "💼" },
+  { to: "/watchlist", label: "Watchlist", icon: "👀" },
   { to: "/chart", label: "Chart", icon: "📈" },
   { to: "/investments", label: "Investments", icon: "💰" },
   { to: "/recommendations", label: "Recommendations", icon: "💡" },
   { to: "/journal", label: "Journal", icon: "📝" },
-  { to: "/risk-management", label: "Risk Management", icon: "⚖️" },
   { to: "/analysis", label: "Analysis", special: true, icon: "🔍" },
 ];
 
@@ -179,11 +179,11 @@ export default function Header() {
           Dashboard
         </Link>
         <Link
-          to="/watchlist"
-          className={`${styles.bottomNavItem} ${location.pathname === '/watchlist' ? styles.bottomNavItemActive : ''}`}
+          to="/risk-management"
+          className={`${styles.bottomNavItem} ${location.pathname === '/risk-management' ? styles.bottomNavItemActive : ''}`}
         >
-          <span className={styles.bottomNavIcon}>👀</span>
-          Watchlist
+          <span className={styles.bottomNavIcon}>⚖️</span>
+          Risk Management
         </Link>
         <Link
           to="/trades"
