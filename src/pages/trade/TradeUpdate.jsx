@@ -499,7 +499,7 @@ const TradeUpdate = () => {
                         onChange={handleExitFormChange}
                         className={styles.input}
                         placeholder="0.00"
-                        step="any"
+                        step="0.01"
                         min="0"
                         required
                       />
@@ -531,7 +531,7 @@ const TradeUpdate = () => {
                       onChange={handleExitFormChange}
                       className={styles.input}
                       placeholder="0.00"
-                      step="any"
+                      step="0.01"
                       min="0"
                     />
                   </div>

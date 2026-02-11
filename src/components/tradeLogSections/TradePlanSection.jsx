@@ -287,7 +287,7 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
               className={styles.input}
               placeholder="0.00"
               min="0"
-              step="any"
+              step="0.01"
               disabled={entryDisabled}
             />
           </div>
