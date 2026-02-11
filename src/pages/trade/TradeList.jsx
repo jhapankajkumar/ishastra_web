@@ -600,18 +600,40 @@ export default function TradeList() {
     return { value, percent };
   };
 
+  // Calculate total P&L for closed trades
+  const calculateClosedTradesPL = (trades) => {
+    return trades.reduce((sum, trade) => {
+      const pl = getPartialPL(trade);
+      return sum + (pl === "-" ? 0 : Number(pl));
+    }, 0);
+  };
+
   // Render trade table based on status
   const renderTradeTable = (trades, status, currency) => {
     if (trades.length === 0) return null;
     const symbol = currency === 'INR' ? '₹' : '$';
     const sortedTrades = sortTrades(trades);
+    
+    // Calculate total P&L for closed trades section
+    let totalClosedPL = 0;
+    if (status === 'CLOSED') {
+      totalClosedPL = calculateClosedTradesPL(trades);
+    }
     return (
       <div className={styles.section}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 className={styles.sectionTitle}>
             {status === 'OPEN' ? 'Open Trades' :
               status === 'PARTIAL' ? 'Partially Closed Trades' :
-                'Closed Trades'} ({trades.length}) {currency}
+                'Closed Trades'} ({trades.length}) {currency} {status === 'CLOSED' && (
+            <div style={{ 
+              fontSize: '18px', 
+              fontWeight: '600',
+              color: totalClosedPL >= 0 ? '#10b981' : '#ef4444'
+            }}>
+              {totalClosedPL >= 0 ? '+' : ''}{formatCurrency(totalClosedPL, currency)}
+            </div>
+          )}
           </h3>
         </div>
         {isMobile ? (
