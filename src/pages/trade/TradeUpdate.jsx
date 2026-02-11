@@ -493,14 +493,12 @@ const TradeUpdate = () => {
                     </label>
                     <div className={styles.priceInputGroup}>
                       <input
-                        type="number"
+                        type="text"
                         name="exitOrderPrice"
                         value={exitForm.exitOrderPrice}
                         onChange={handleExitFormChange}
                         className={styles.input}
                         placeholder="0.00"
-                        step="0.01"
-                        min="0"
                         required
                       />
                       <button
@@ -525,13 +523,12 @@ const TradeUpdate = () => {
                       Exit Commission ({trade.market === "India" ? "₹" : "$"})
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       name="exitCommission"
                       value={exitForm.exitCommission}
                       onChange={handleExitFormChange}
                       className={styles.input}
                       placeholder="0.00"
-                      step="0.01"
                       min="0"
                     />
                   </div>

@@ -280,14 +280,12 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
           <div className={styles.fieldGroup}>
             <label className={styles.label}>Entry Commission ({market === "India" ? "₹" : "$"})</label>
             <input
-              type="number"
+              type="text"
               name="entryCommission"
-              value={form.entryCommission ?? ""}
+              value={form.entryCommission || ""}
               onChange={handleTradePlanChange}
               className={styles.input}
               placeholder="0.00"
-              min="0"
-              step="0.01"
               disabled={entryDisabled}
             />
           </div>
