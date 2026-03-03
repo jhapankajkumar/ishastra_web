@@ -642,6 +642,7 @@ export default function TradeList() {
               .sort((a,b)=> (a.ticker||'').localeCompare(b.ticker||''))
               .map((trade)=>{
                 const currency = getCurrency(trade);
+                const entryPrice = Number(trade.entryPrice || 0);
                 const symbol = getCurrencySymbol(trade);
                 const invested = Number(trade.entryPrice||0)*Number(trade.quantity||0);
                 const plValue = Number(getPartialPL(trade)||0);
@@ -651,6 +652,8 @@ export default function TradeList() {
                 const ltpPct = (trade.lastDayPrice!=null && Number(trade.lastDayPrice)>0)
                   ? ((ltp-Number(trade.lastDayPrice))/Number(trade.lastDayPrice))*100
                   : null;
+                const stopLoss = trade.stopLoss ? Number(trade.stopLoss) : 0;
+                const stopLossDistance = entryPrice > 0 ? ((entryPrice - stopLoss) / entryPrice * 100).toFixed(0) : 0;
                 return (
                   <div key={trade.id} className={styles.mobileCard}
                   onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
@@ -696,7 +699,16 @@ export default function TradeList() {
                       )}
 
                       {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
-                        <div className={styles.ltpRow}>Stop {symbol}{trade.stopLoss.toLocaleString()} </div>
+                        <div className={styles.ltpRow}>Stop {symbol}{trade.stopLoss.toLocaleString()} 
+                        <span >
+                          {" • "}
+                           </span>
+                          {stopLossDistance && (
+                            <span className={`${styles.ltpRow} ${stopLossDistance > 0 ? styles.negative : styles.positive}`}>
+                              {(stopLossDistance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                            </span>
+                          )}
+                        </div>
                       )}
 
                       </div>
