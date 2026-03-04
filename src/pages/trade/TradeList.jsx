@@ -105,8 +105,8 @@ export default function TradeList() {
           break;
 
         case 'pl':
-          aValue = parseFloat(getPartialPL(a) || 0);
-          bValue = parseFloat(getPartialPL(b) || 0);
+          aValue = parseFloat((showCombined ? a.aggregatedPL : getPartialPL(a)) || 0);
+          bValue = parseFloat((showCombined ? b.aggregatedPL : getPartialPL(b)) || 0);
           break;
 
         case 'todaysPL':
@@ -131,6 +131,7 @@ export default function TradeList() {
   const [capitalData, setCapitalData] = useState([]);
   const [sortBy, setSortBy] = useState('entryDate');
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
+  const [showCombined, setShowCombined] = useState(true);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [mode, setMode] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
@@ -332,12 +333,119 @@ export default function TradeList() {
     return "-";
   };
 
+  const combineTradesByTicker = (tradeList = []) => {
+    const grouped = tradeList.reduce((acc, trade) => {
+      const key = (trade.ticker || 'Unknown').toUpperCase();
+      const qty = Number(trade.quantity || 0);
+      const remQty = Number(trade.remainingQuantity ?? trade.quantity ?? 0);
+      const invested = Number(trade.entryPrice || 0) * qty;
+      const plVal = Number(getPartialPL(trade) || 0);
+      const entryTs = trade.entryDate ? new Date(trade.entryDate).getTime() : 0;
+      if (!acc[key]) {
+        acc[key] = {
+          ...trade,
+          ticker: key,
+          quantity: 0,
+          remainingQuantity: 0,
+          totalInvested: 0,
+          aggregatedPL: 0,
+          latestEntryTs: 0,
+          currency: getCurrency(trade),
+          direction: trade.direction || 'long',
+          exitTransactions: [],
+          trades: [],
+        };
+      }
+      const agg = acc[key];
+      agg.trades.push(trade);
+      agg.quantity += qty;
+      agg.remainingQuantity += remQty;
+      agg.totalInvested += invested;
+      agg.aggregatedPL += plVal;
+      if (entryTs >= agg.latestEntryTs) {
+        agg.latestEntryTs = entryTs;
+        agg.entryDate = trade.entryDate;
+        agg.currentPrice = trade.currentPrice ?? trade.entryPrice ?? 0;
+        agg.lastDayPrice = trade.lastDayPrice;
+        agg.stopLoss = trade.stopLoss;
+        agg.tickerName = trade.tickerName || agg.tickerName;
+      }
+      // Keep exit transactions for completeness (flattened)
+      if (Array.isArray(trade.exitTransactions)) {
+        agg.exitTransactions = [...(agg.exitTransactions || []), ...trade.exitTransactions];
+      }
+      // Capture status priority: OPEN > PARTIAL > CLOSED
+      const status = (trade.status || '').toUpperCase();
+      if (status === 'OPEN') {
+        agg.status = 'OPEN';
+      } else if (!agg.status || agg.status === 'CLOSED') {
+        agg.status = status === 'PARTIAL CLOSED' ? 'PARTIAL' : status || 'CLOSED';
+      }
+      return acc;
+    }, {});
+
+    return Object.values(grouped).map(agg => {
+      const avgPrice = agg.quantity ? agg.totalInvested / agg.quantity : 0;
+      const invested = agg.totalInvested;
+
+      const directions = new Set((agg.trades || []).map(t => (t.direction || 'long').toLowerCase()));
+      const mixedDirections = directions.size > 1;
+
+      const sumPartialPL = agg.trades.reduce((sum, t) => sum + Number(getPartialPL(t) || 0), 0);
+
+      let combinedPL = sumPartialPL;
+      if (!mixedDirections) {
+        let realized = 0;
+        let unrealized = 0;
+        const dirSign = directions.has('short') ? -1 : 1;
+
+        (agg.trades || []).forEach(t => {
+          const entry = Number(t.entryPrice || 0);
+          const txs = Array.isArray(t.exitTransactions) ? t.exitTransactions : [];
+          if (txs.length > 0) {
+            txs.forEach(tx => {
+              const txPrice = Number(tx.price || t.exitPrice || 0);
+              const txQty = Number(tx.quantity || 0);
+              realized += dirSign * (txPrice - entry) * txQty;
+            });
+          } else if (t.exitPrice && (t.status || '').toUpperCase() === 'CLOSED') {
+            const txQty = Number(t.quantity || 0);
+            realized += dirSign * (Number(t.exitPrice) - entry) * txQty;
+          }
+
+          const exitsQty = txs.reduce((sum, tx) => sum + Number(tx.quantity || 0), 0);
+          const remaining = Number(t.remainingQuantity ?? (t.quantity || 0) - exitsQty);
+          const current = Number(t.currentPrice ?? entry);
+          unrealized += dirSign * (current - entry) * remaining;
+        });
+
+        combinedPL = realized + unrealized;
+      }
+
+      const plPct = invested ? (combinedPL / invested) * 100 : 0;
+
+      return {
+        ...agg,
+        entryPrice: avgPrice,
+        avgBuyPrice: avgPrice,
+        investedValue: invested,
+        currentPrice: agg.currentPrice ?? avgPrice,
+        direction: agg.direction || 'long',
+        status: agg.status || 'OPEN',
+        aggregatedPL: combinedPL,
+        aggregatedPLPercent: plPct,
+      };
+    });
+  };
+
   // Enhanced trade status detection
   const getTradeStatusDetailed = (trade) => {
 
-    if (trade.status.toLowerCase() === 'open') {
+    const status = (trade.status || '').toLowerCase();
+
+    if (status === 'open') {
       return 'OPEN';
-    } else if (trade.status.toLowerCase() === 'partial closed') {
+    } else if (status === 'partial closed' || status.startsWith('partial')) {
       return 'PARTIAL';
     } else {
       return 'CLOSED';
@@ -460,7 +568,7 @@ export default function TradeList() {
   // --- Sorting logic ---
   const getPLForSort = (trade) => {
     // Use getPartialPL for correct P&L
-    const pl = getPartialPL(trade);
+    const pl = showCombined ? trade.aggregatedPL : getPartialPL(trade);
     return pl === "-" ? 0 : Number(pl);
   };
 
@@ -469,9 +577,11 @@ export default function TradeList() {
     return invested === "-" ? 0 : Number(invested);
   };
 
+  const displayedTrades = showCombined ? combineTradesByTicker(trades) : trades;
+
   // Market calculations
   const calculateMarketMetrics = (currency) => {
-    const marketTrades = trades.filter(trade => getCurrency(trade) === currency);
+    const marketTrades = displayedTrades.filter(trade => getCurrency(trade) === currency);
     const capitalInfo = capitalData.find(cap => cap.currency === currency);
 
     // Separate trades by status
@@ -497,7 +607,7 @@ export default function TradeList() {
     // Calculate total P&L (open + partial + closed)
     const totalPL = marketTrades.reduce((sum, trade) => {
       if (trade.status.toUpperCase() === 'CLOSED') return sum;
-      const pl = getPartialPL(trade);
+      const pl = showCombined ? trade.aggregatedPL : getPartialPL(trade);
       return sum + (pl === "-" ? 0 : Number(pl));
     }, 0);
 
@@ -538,7 +648,7 @@ export default function TradeList() {
     };
   };
 
-  const sortedTrades = [...trades].sort((a, b) => {
+  const sortedTrades = [...displayedTrades].sort((a, b) => {
     let valA, valB;
     switch (sortBy) {
       case 'ticker':
@@ -589,6 +699,7 @@ export default function TradeList() {
 
   const marketGroups = groupTradesByMarketAndStatus();
 
+
   // Calculate Today's P&L for a trade
   const getTodaysPL = (trade) => {
     const currentPrice = trade.currentPrice !== undefined ? Number(trade.currentPrice) : Number(trade.entryPrice || 0);
@@ -603,7 +714,7 @@ export default function TradeList() {
   // Calculate total P&L for closed trades
   const calculateClosedTradesPL = (trades) => {
     return trades.reduce((sum, trade) => {
-      const pl = getPartialPL(trade);
+      const pl = showCombined ? trade.aggregatedPL : getPartialPL(trade);
       return sum + (pl === "-" ? 0 : Number(pl));
     }, 0);
   };
@@ -645,7 +756,7 @@ export default function TradeList() {
                 const entryPrice = Number(trade.entryPrice || 0);
                 const symbol = getCurrencySymbol(trade);
                 const invested = Number(trade.entryPrice||0)*Number(trade.quantity||0);
-                const plValue = Number(getPartialPL(trade)||0);
+                const plValue = Number((showCombined ? trade.aggregatedPL : getPartialPL(trade)) || 0);
                 const plPct = invested>0? (plValue/invested)*100:0;
                 const ltp = Number(trade.currentPrice ?? trade.entryPrice ?? 0);
                 const avgSellPrice = getAverageSellPrice(trade);
@@ -745,7 +856,7 @@ export default function TradeList() {
                 {status === 'OPEN' ? (
                   <th className={styles.tableHeaderCell}>STOP</th>
                 ) : (
-                  <div></div>
+                  <th className={styles.tableHeaderCell} aria-hidden="true"></th>
                 )}
                 {status === 'CLOSED' ? (
                   <th className={styles.tableHeaderCell}>SELL AVG</th>
@@ -790,8 +901,8 @@ export default function TradeList() {
                   status === 'PARTIAL' ?
                     (currentPrice * remainingQty) :
                     (currentPrice * originalQty);
-                const pl = getPartialPL(trade);
-                const plValue = pl === "-" ? 0 : Number(pl);
+                const plRaw = showCombined ? trade.aggregatedPL : getPartialPL(trade);
+                const plValue = plRaw === "-" ? 0 : Number(plRaw || 0);
                 const plPercentage = invested > 0 ? (plValue / invested * 100).toFixed(2) : 0;
                 // Today's P&L
                 const todaysPL = getTodaysPL(trade);
@@ -800,7 +911,7 @@ export default function TradeList() {
 
                 return (
                   <tr
-                    key={trade.tradeId}
+                    key={trade.id || trade.tradeId}
                     className={`${styles.tradeRow} ${styles[status.toLowerCase()]}`}
                     onClick={() => handleShowDetails(trade.id)}
                   >
@@ -851,7 +962,7 @@ export default function TradeList() {
                         </div>
                       </td>
                     ) : (
-                      <div></div>
+                      <td className={styles.emptyCell}></td>
                     )}
                     {status === 'CLOSED' ? (
                       <td>{avgSellPrice ? formatCurrency(avgSellPrice, currency) : 'N/A'}</td>
@@ -1020,23 +1131,36 @@ export default function TradeList() {
       {/* Action Bar */}
       <div className={styles.actionBar}>
         <div className={styles.filters}>
-          <label>Sort By:</label>
-          <select
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
-            className={styles.filterSelect}
-          >
-            {sortOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-          <button
-            className={styles.filterSelect}
-            onClick={() => setSortOrder(order => order === 'asc' ? 'desc' : 'asc')}
-            title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-          >
-            {sortOrder === 'asc' ? '▲' : '▼'}
-          </button>
+          <div className={styles.filterGroup}>
+            <label htmlFor="sortBySelect">Sort By:</label>
+            <select
+              id="sortBySelect"
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className={styles.filterSelect}
+            >
+              {sortOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <button
+              className={styles.filterSelect}
+              onClick={() => setSortOrder(order => order === 'asc' ? 'desc' : 'asc')}
+              title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+            >
+              {sortOrder === 'asc' ? '▲' : '▼'}
+            </button>
+          </div>
+          <div className={styles.filterGroup}>
+            <label htmlFor="showCombinedToggle">Show Combined:</label>
+            <input
+              id="showCombinedToggle"
+              type="checkbox"
+              checked={showCombined}
+              onChange={e => setShowCombined(e.target.checked)}
+              className={styles.checkbox}
+            />
+          </div>
         </div>
         <button
           className={styles.addButton}
@@ -1094,7 +1218,7 @@ export default function TradeList() {
       })}
 
       {/* Empty State */}
-      {trades.length === 0 && !loading && (
+      {displayedTrades.length === 0 && !loading && (
         <div className={styles.emptyState}>
           <h3>No trades found</h3>
           <p>Start by adding your first trade to track your portfolio.</p>
