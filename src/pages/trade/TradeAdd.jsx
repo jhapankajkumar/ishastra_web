@@ -39,7 +39,7 @@ const initialState = {
   postTradeFiles: [],
   setupType: "",
   timeframesUsed: [],
-  riskPerTrade: "1%",
+  riskPerTrade: "1.0",
   stopLossPrice: "",
   stopLossMethod: "Fixed %",
   atrMultiplier: 1.5,
@@ -101,7 +101,7 @@ function mapTradeDataToForm(tradeData) {
     id: tradeData.id,
     setupType: setupValue,
     timeframesUsed: tradeData.timeframesUsed || [],
-    riskPerTrade: tradeData.riskPerTrade || "1%",
+    riskPerTrade: String(tradeData.riskPerTrade || "1.0").replace('%', '').trim() || "1.0",
     stopLossPrice: tradeData.stopLossPrice || "",
     stopLossMethod: tradeData.stopLossMethod === "Fixed Value" ? "Fixed Value" : "Fixed %",
     target1: tradeData.target1 || "",
@@ -132,8 +132,7 @@ function mapWatchlistDataToForm(watchlistData) {
     entryOrderPrice: String(watchlistData.averagePrice || ""),
     entryFilledShares: String(watchlistData.quantity || ""),
     setupType: String(watchlistData.setupType || ""), // Convert to string for form compatibility
-    riskPerTrade: "1%",
-    stopLossPrice: String(watchlistData.stopLossPrice || ""),
+    riskPerTrade: "1.0",
     stopLossMethod: watchlistData.stopLossMethod === "Fixed Value" ? "Fixed Value" : "Fixed %",
     atrMultiplier: watchlistData.atrMultiplier || 1.5,
     atrValue: String(watchlistData.atrValue || ""),
@@ -299,10 +298,20 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
     return () => { mounted = false; };
   }, []);
 
-  // Handle prefilled data from watchlist
+  // Handle prefilled data from watchlist or "Add More Position"
   useEffect(() => {
     const locationState = location?.state;
-    
+
+    // Pre-fill ticker/currency when navigating from "Add More Position" button
+    if (locationState?.prefillTicker) {
+      const ticker = locationState.prefillTicker;
+      const currency = locationState.prefillCurrency || 'USD';
+      setForm((prev) => ({ ...prev, ticker, currency }));
+      // Also trigger price/ATR fetch for the ticker
+      handleTickerSelect(ticker, '');
+      return;
+    }
+
     if (locationState?.prefilledData && locationState?.source === 'watchlist') {
       // console.log('📋 Loading pre-filled data from watchlist:', locationState.prefilledData);
       setIsPopulated(true);

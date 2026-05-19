@@ -10,25 +10,38 @@ export default function RiskManagementSection({
   targets,
   riskPerTrade,
   riskValue,
+  accountBalance,
   market
 }) {
+  const currSym = market === "India" ? "₹" : "$";
+  const riskOptions = ["0.2", "0.3", "0.5", "0.75", "1.0", "1.5", "2.0"];
+
   return (
     <div className={styles.cardSection} style={{ marginTop: 0 }}>
       <h2 className={styles.sectionTitle}>Risk Management</h2>
       <div className={styles.gridTwoCol}>
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Risk per Trade ({market === "India" ? "₹" : "$"} or %)</label>
-              <input
-                type="text"
+              <label className={styles.label}>Risk per Trade (%)</label>
+              <select
                 name="riskPerTrade"
                 value={riskPerTrade}
+                onChange={handleChange}
                 className={styles.input}
-                placeholder="1%"
-                disabled
-                readOnly
-              />
+                disabled={entryDisabled}
+              >
+                {riskOptions.map(pct => {
+                  const amt = accountBalance > 0
+                    ? (accountBalance * parseFloat(pct) / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })
+                    : null;
+                  return (
+                    <option key={pct} value={pct}>
+                      {pct}%{amt ? ` (${currSym}${amt})` : ''}
+                    </option>
+                  );
+                })}
+              </select>
               <div style={{ color: '#aaa', fontSize: '0.95em', marginTop: 2 }}>
-                Risk per Trade Amount: <b>{riskValue.toLocaleString(undefined, {maximumFractionDigits: 2})} {market === "India" ? "₹" : "$"}</b>
+                Risk Amount: <b>{currSym}{riskValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</b>
               </div>
             </div>
             <div className={styles.fieldGroup}>

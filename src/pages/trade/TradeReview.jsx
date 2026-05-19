@@ -129,7 +129,7 @@ const TradeReview = () => {
       } else {
         console.warn('showNotification is not available');
       }
-      navigate('/');
+      navigate('/trades');
     } catch (err) {
       console.error('Error saving review:', err);
       if (typeof showNotification === 'function') {
@@ -155,7 +155,7 @@ const TradeReview = () => {
   if (loading) {
     return (
       <div className={`${styles.container} ${theme}`}>
-        <PageHeader title="Trade Review" showBackButton onBackClick={() => navigate('/')} />
+        <PageHeader title="Trade Review" showBackButton onBackClick={() => navigate('/trades')} />
         <div className={styles.loading}>Loading trade data...</div>
       </div>
     );
@@ -665,7 +665,7 @@ const TradeReview = () => {
             <div className={styles.buttonGroup}>
               <button
                 type="button"
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/trades')}
                 className={styles.skipButton}
               >
                 Skip Review

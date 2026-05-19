@@ -47,14 +47,10 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
   const accountBalance = remainingCapital;
   console.log(`Account Balance: ${accountBalance}`);
 
-  // Risk per trade fixed at 1%
-  const riskPerTrade = "1%";
-  const riskValue = accountBalance * 0.01;
-  React.useEffect(() => {
-    if (form.riskPerTrade !== riskPerTrade) {
-      handleChange({ target: { name: "riskPerTrade", value: riskPerTrade } });
-    }
-  }, [form.riskPerTrade, handleChange, riskPerTrade]);
+  // Risk per trade - user-selectable
+  const riskPctStr = (form.riskPerTrade || "1.0").replace('%', '').trim();
+  const riskPct = parseFloat(riskPctStr) || 1.0;
+  const riskValue = accountBalance * riskPct / 100;
 
   // Track manual edits
   const [qtyManuallyEdited, setQtyManuallyEdited] = React.useState(false);
@@ -189,36 +185,22 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
 
   React.useEffect(() => {
     // Skip auto-calculation if data is populated from watchlist
-    if (isPopulated) {
-      console.log('🔒 Skipping targets auto-calculation - data from watchlist');
-      return;
-    }
-    
-    // Only auto-calculate targets if they're empty or zero
-    // If there are already meaningful values, preserve them (from watchlist or user input)
+    if (isPopulated) return;
     if (!entryPrice || !stopLossValue) return;
 
-    const hasValidTargets = (form.target1 && form.target1 !== "" && form.target1 !== "0" && parseFloat(form.target1) > 0) ||
-                           (form.target2 && form.target2 !== "" && form.target2 !== "0" && parseFloat(form.target2) > 0);
-
-    if (hasValidTargets) {
-      console.log(`Preserving existing targets: T1=${form.target1}, T2=${form.target2}, T3=${form.target3}`);
-      return;
-    }
-
-    // Calculate targets only if we have no valid targets
     const entry = parseFloat(entryPrice);
-    const risk = parseFloat(stopLossValue); // Risk per share
+    const risk = parseFloat(stopLossValue);
+    if (!entry || !risk) return;
 
-    const t1 = (entry + risk * 2).toFixed(2);
-    const t2 = (entry + risk * 3).toFixed(2);
-    const t3 = (entry + risk * 4).toFixed(2);
+    const dirFactor = direction === "Long" ? 1 : -1;
+    const t1 = (entry + dirFactor * risk * 2).toFixed(2);
+    const t2 = (entry + dirFactor * risk * 3).toFixed(2);
+    const t3 = (entry + dirFactor * risk * 4).toFixed(2);
 
-    console.log(`Auto-calculating targets: T1=${t1}, T2=${t2}, T3=${t3}`);
     handleChange({ target: { name: "target1", value: t1 } });
     handleChange({ target: { name: "target2", value: t2 } });
     handleChange({ target: { name: "target3", value: t3 } });
-  }, [entryPrice, stopLossValue, form.target1, form.target2, form.target3, handleChange, isPopulated]);
+  }, [entryPrice, stopLossValue, direction, handleChange, isPopulated]);
 
   // Set default entry date as today if not set
   const entryDate = form.entryDate || today;
@@ -299,8 +281,9 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
         fixedPercent={fixedPercentValue}
         stopLossPrice={stopLossPrice}
         targets={targets}
-        riskPerTrade={riskPerTrade}
+        riskPerTrade={form.riskPerTrade || "1.0"}
         riskValue={riskValue}
+        accountBalance={accountBalance}
         market={market}
       />
     </>

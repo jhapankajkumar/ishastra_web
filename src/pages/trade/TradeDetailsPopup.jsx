@@ -158,7 +158,7 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   const formatCurrency = (value, digits = 2) => {
     if (value === undefined || value === null || Number.isNaN(Number(value))) return "-";
     return `${currencySymbol}${Number(value).toLocaleString(undefined, {
-      minimumFractionDigits: 0,
+      minimumFractionDigits: digits,
       maximumFractionDigits: digits,
     })}`;
   };
@@ -228,6 +228,23 @@ export default function TradeDetailsPopup({ trade, onClose }) {
   const stopLossDisplay = stopLossTrend && stopLossValue !== '-'
     ? `${stopLossValue} ${stopLossTrend}`
     : stopLossValue;
+
+  // Stop loss % and computed targets
+  const _entryP = Number(trade.entryPrice || 0);
+  const _slP = Number(trade.stopLoss || 0);
+  const _isLong = (trade.direction || 'long').toLowerCase() === 'long';
+  const _dirFactor = _isLong ? 1 : -1;
+  const _riskPerShare = _entryP > 0 && _slP > 0 ? Math.abs(_entryP - _slP) : 0;
+  const slPct = _entryP > 0 && _riskPerShare > 0 ? (_riskPerShare / _entryP) * 100 : null;
+  const _computeTarget = (mult, storedVal) => {
+    const stored = Number(storedVal);
+    if (stored > 0) return stored;
+    return _riskPerShare > 0 ? _entryP + _dirFactor * mult * _riskPerShare : null;
+  };
+  const detailT1 = _computeTarget(2, trade.target1);
+  const detailT2 = _computeTarget(3, trade.target2);
+  const detailT3 = _computeTarget(4, trade.target3);
+  const targetPct = (tp) => tp && _entryP > 0 ? Math.abs((tp - _entryP) / _entryP) * 100 : null;
 
   // Entry / Exit commission display values
   const entryCommissionAmount = (trade.entryCommission !== undefined && trade.entryCommission !== null)
@@ -324,6 +341,11 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                       style={{ color: "var(--status-error)" }}
                     >
                       {stopLossDisplay}
+                      {slPct !== null && (
+                        <span style={{ fontSize: '12px', marginLeft: '6px', opacity: 0.75 }}>
+                          ({slPct.toFixed(2)}%)
+                        </span>
+                      )}
                     </span>
                   </div>
                   <div className={styles.fieldItem}>
@@ -334,24 +356,45 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                     <span className={styles.detailLabel}>Exit Commission</span>
                     <span className={styles.detailValue}>{exitCommissionDisplay}</span>
                   </div>
-                  {/* <div className={styles.fieldItem}>
-                    <span className={styles.detailLabel}>Target 1</span>
-                    <span className={styles.detailValue} style={{ color: "var(--status-success)" }}>
-                      {formatCurrency(trade.target1, 2)}
-                    </span>
-                  </div>
-                  <div className={styles.fieldItem}>
-                    <span className={styles.detailLabel}>Target 2</span>
-                    <span className={styles.detailValue} style={{ color: "var(--status-success)" }}>
-                      {formatCurrency(trade.target2, 2)}
-                    </span>
-                  </div>
-                  <div className={styles.fieldItem}>
-                    <span className={styles.detailLabel}>Target 3</span>
-                    <span className={styles.detailValue} style={{ color: "var(--status-success)" }}>
-                      {formatCurrency(trade.target3, 2)}
-                    </span>
-                  </div> */}
+                  {detailT1 !== null && (
+                    <div className={styles.fieldItem}>
+                      <span className={styles.detailLabel}>Target 1 (1:2R)</span>
+                      <span className={styles.detailValue} style={{ color: 'var(--status-success)' }}>
+                        {formatCurrency(detailT1, 2)}
+                        {targetPct(detailT1) !== null && (
+                          <span style={{ fontSize: '12px', marginLeft: '6px', opacity: 0.75 }}>
+                            (+{targetPct(detailT1).toFixed(2)}%)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {detailT2 !== null && (
+                    <div className={styles.fieldItem}>
+                      <span className={styles.detailLabel}>Target 2 (1:3R)</span>
+                      <span className={styles.detailValue} style={{ color: 'var(--status-success)' }}>
+                        {formatCurrency(detailT2, 2)}
+                        {targetPct(detailT2) !== null && (
+                          <span style={{ fontSize: '12px', marginLeft: '6px', opacity: 0.75 }}>
+                            (+{targetPct(detailT2).toFixed(2)}%)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {detailT3 !== null && (
+                    <div className={styles.fieldItem}>
+                      <span className={styles.detailLabel}>Target 3 (1:4R)</span>
+                      <span className={styles.detailValue} style={{ color: 'var(--status-success)' }}>
+                        {formatCurrency(detailT3, 2)}
+                        {targetPct(detailT3) !== null && (
+                          <span style={{ fontSize: '12px', marginLeft: '6px', opacity: 0.75 }}>
+                            (+{targetPct(detailT3).toFixed(2)}%)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

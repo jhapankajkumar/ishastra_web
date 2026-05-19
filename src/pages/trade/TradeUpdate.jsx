@@ -248,7 +248,7 @@ const TradeUpdate = () => {
         <PageHeader
           title="Update Trade"
           showBackButton={true}
-          onBackClick={() => navigate('/dashboard')}
+          onBackClick={() => navigate('/trades')}
         />
         <div className={styles.loading}>Loading trade data...</div>
       </div>
@@ -354,7 +354,12 @@ const TradeUpdate = () => {
             <div className={styles.summaryItem}>
               <span className={styles.summaryLabel}>StopLoss:</span>
               <span className={`${styles.summaryValue} ${styles.statusValue}`}>
-                {trade.stopLoss >= trade.currentPrice ? (trade.stopLoss).toLocaleString(undefined, { maximumFractionDigits: 0 }) : (trade.stopLoss).toLocaleString(undefined, { maximumFractionDigits: 0 })}{trade.stopLoss >= trade.entryPrice ? ' ^' : ''}
+                {(trade.stopLoss).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{trade.stopLoss >= trade.entryPrice ? ' ↑' : ' ↓'}
+                {trade.entryPrice > 0 && trade.stopLoss > 0 && (
+                  <span style={{ marginLeft: 4, fontSize: '0.9em', opacity: 0.8 }}>
+                    ({(Math.abs(trade.entryPrice - trade.stopLoss) / trade.entryPrice * 100).toFixed(2)}%)
+                  </span>
+                )}
               </span>
             </div>
             <div className={styles.summaryItem}>

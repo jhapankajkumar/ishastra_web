@@ -4,6 +4,7 @@ import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from ".
 import { getCapitalInfo } from "../../api/capitalApi";
 import TradeAdd from "./TradeAdd";
 import TradeDetailsPopup from "./TradeDetailsPopup";
+import CombinedPositionPopup from "./CombinedPositionPopup";
 import PageHeader from "../../components/PageHeader";
 import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
@@ -136,6 +137,8 @@ export default function TradeList() {
   const [mode, setMode] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupTrade, setPopupTrade] = useState(null);
+  const [showCombinedPopup, setShowCombinedPopup] = useState(false);
+  const [combinedPopupTrade, setCombinedPopupTrade] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingCapital, setLoadingCapital] = useState(true);
@@ -181,13 +184,20 @@ export default function TradeList() {
     fetchData();
   }, []);
 
-  const handleEdit = (id) => {
-    // Navigate to the new UpdateTrade page
+  const handleEdit = (trade) => {
+    const id = typeof trade === 'object' ? trade.id : trade;
+    const subTrades = typeof trade === 'object' ? (trade.trades || []) : [];
+    // If combined and has multiple real sub-trades, open combined popup so user picks which to edit
+    if (showCombined && subTrades.length > 1) {
+      setCombinedPopupTrade(trade);
+      setShowCombinedPopup(true);
+      return;
+    }
     navigate(`/trades/update/${id}`);
   };
 
-  const handleReview = async (id) => {
-    // Navigate to the new TradeReview page
+  const handleReview = async (trade) => {
+    const id = typeof trade === 'object' ? trade.id : trade;
     navigate(`/trades/review/${id}`);
   };
 
@@ -228,7 +238,20 @@ export default function TradeList() {
     setTradeToDelete(null);
   };
 
-  const handleShowDetails = async (id) => {
+  const handleShowDetails = async (tradeOrId) => {
+    // If it's a combined trade with multiple entries, show the combined popup
+    if (
+      showCombined &&
+      typeof tradeOrId === 'object' &&
+      (tradeOrId.trades || []).length > 1
+    ) {
+      setCombinedPopupTrade(tradeOrId);
+      setShowCombinedPopup(true);
+      return;
+    }
+
+    // Single trade: fetch full details from the API
+    const id = typeof tradeOrId === 'object' ? tradeOrId.id : tradeOrId;
     try {
       const res = await getTradeById(id);
       setPopupTrade(res.data);
@@ -250,6 +273,11 @@ export default function TradeList() {
   const handleClosePopup = () => {
     setShowPopup(false);
     setPopupTrade(null);
+  };
+
+  const handleCloseCombinedPopup = () => {
+    setShowCombinedPopup(false);
+    setCombinedPopupTrade(null);
   };
 
   const handleBack = () => {
@@ -764,10 +792,9 @@ export default function TradeList() {
                   ? ((ltp-Number(trade.lastDayPrice))/Number(trade.lastDayPrice))*100
                   : null;
                 const stopLoss = trade.stopLoss ? Number(trade.stopLoss) : 0;
-                const stopLossDistance = entryPrice > 0 ? ((entryPrice - stopLoss) / entryPrice * 100).toFixed(0) : 0;
+                const stopLossDistance = entryPrice > 0 ? (entryPrice - stopLoss) / entryPrice * 100 : 0;
                 return (
                   <div key={trade.id} className={styles.mobileCard}
-                  onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
                   >
                     <div className={styles.mobileTopRow}>
                       <div className={styles.mobileTicker}>{trade.ticker}</div>
@@ -775,7 +802,7 @@ export default function TradeList() {
                       {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
                         <button
                           className={styles.editIconBtn}
-                          onClick={(e) => { e.stopPropagation(); handleEdit(trade.id); }}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(trade); }}
                           title="Edit Trade"
                         >
                           ✏️ Edit
@@ -810,7 +837,7 @@ export default function TradeList() {
                       )}
 
                       {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
-                        <div className={styles.ltpRow}>Stop {symbol}{trade.stopLoss.toLocaleString()} 
+                        <div className={styles.ltpRow}>Stop {symbol}{trade.stopLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
                         <span >
                           {" • "}
                            </span>
@@ -907,13 +934,13 @@ export default function TradeList() {
                 // Today's P&L
                 const todaysPL = getTodaysPL(trade);
                 const stopLoss = trade.stopLoss ? Number(trade.stopLoss) : entryPrice;
-                const stopLossDistance = entryPrice > 0 ? ((entryPrice - stopLoss) / entryPrice * 100).toFixed(0) : 0;
+                const stopLossDistance = entryPrice > 0 ? (entryPrice - stopLoss) / entryPrice * 100 : 0;
 
                 return (
                   <tr
                     key={trade.id || trade.tradeId}
                     className={`${styles.tradeRow} ${styles[status.toLowerCase()]}`}
-                    onClick={() => handleShowDetails(trade.id)}
+                    onClick={() => handleShowDetails(trade)}
                   >
                     <td className={styles.tickerCell}>
                       <div className={styles.tickerInfo}>
@@ -1005,7 +1032,7 @@ export default function TradeList() {
                     <td className={styles.actionsCell}>
                       <div className={styles.actionButtons}>
                         <button
-                          onClick={e => { e.stopPropagation(); handleShowDetails(trade.id); }}
+                          onClick={e => { e.stopPropagation(); handleShowDetails(trade); }}
                           className={`${styles.actionBtn} ${styles.viewBtn}`}
                           title="View Details"
                         >
@@ -1014,7 +1041,7 @@ export default function TradeList() {
                         <button
                           onClick={e => {
                             e.stopPropagation();
-                            status === 'CLOSED' ? handleReview(trade.id) : handleEdit(trade.id);
+                            status === 'CLOSED' ? handleReview(trade) : handleEdit(trade);
                           }}
                           className={`${styles.actionBtn} ${status === 'CLOSED' ? styles.reviewBtn : styles.editBtn}`}
                           title={status === 'CLOSED' ? "Add Review" : "Edit Trade"}
@@ -1236,6 +1263,14 @@ export default function TradeList() {
         <TradeDetailsPopup
           trade={popupTrade}
           onClose={handleClosePopup}
+        />
+      )}
+
+      {/* Combined Position Popup (multiple entries for same ticker) */}
+      {showCombinedPopup && combinedPopupTrade && (
+        <CombinedPositionPopup
+          trade={combinedPopupTrade}
+          onClose={handleCloseCombinedPopup}
         />
       )}
 
