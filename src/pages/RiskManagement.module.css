@@ -10,25 +10,31 @@
 .content {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mainGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 32px;
+  gap: 14px;
   align-items: start;
 }
 
 .inputSection {
   background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 10px;
+  padding: 14px;
   border: 1px solid var(--border-primary);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .resultsSection {
   background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 10px;
+  padding: 14px;
   border: 1px solid var(--border-primary);
   position: sticky;
   top: 88px;
@@ -36,28 +42,28 @@
 }
 
 .sectionTitle {
-  font-size: 24px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 24px 0;
-  padding-bottom: 12px;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
   border-bottom: 2px solid var(--btn-primary-bg);
 }
 
 .subSectionTitle {
-  font-size: 18px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
-  margin: 32px 0 16px 0;
-  padding-bottom: 8px;
+  margin: 16px 0 8px 0;
+  padding-bottom: 6px;
   border-bottom: 1px solid var(--border-secondary);
 }
 
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .targetsGrid {
@@ -73,21 +79,21 @@
 }
 
 .label {
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-muted);
-  margin-bottom: 8px;
-  letter-spacing: 0.025em;
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
 }
 
 .input,
 .select {
-  padding: 12px 16px;
+  padding: 6px 10px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-secondary);
-  border-radius: 8px;
+  border-radius: 6px;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 12px;
   transition: all 0.2s ease;
   outline: none;
 }
@@ -142,18 +148,18 @@
 
 .resultsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 /* Results Display */
 .resultCard {
   background: var(--bg-tertiary);
   border: 1px solid var(--border-secondary);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
@@ -162,16 +168,16 @@
 }
 
 .resultLabel {
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--text-muted);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .resultValue {
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -381,11 +387,15 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-  .content {
+  .mainGrid {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 14px;
   }
   
+  .calcGrid {
+    grid-template-columns: 1fr;
+  }
+
   .resultsSection {
     position: static;
   }
@@ -393,12 +403,12 @@
 
 @media (max-width: 768px) {
   .content {
-    padding: 16px;
+    padding: 10px;
   }
   
   .inputSection,
   .resultsSection {
-    padding: 20px;
+    padding: 12px;
   }
   
   .formGrid {
@@ -513,5 +523,245 @@
   .select {
     background: #000;
     border-color: #fff;
+  }
+}
+
+/* ── Sub-panels inside Position Setup ──────────────────────────────────── */
+.subPanel {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-secondary);
+}
+
+.subPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.subPanelTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+/* R-Multiple grid */
+.rMultiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.rMultiCell {
+  background: var(--bg-tertiary);
+  border-radius: 5px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--border-secondary);
+}
+
+.rMultiLabel {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.rMultiPrice {
+  font-size: 13px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.rMultiGain {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Buffer / Slippage controls */
+.bufferControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.bufferControlGroup {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bufferControlLabel {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* Buffer analysis table */
+.bufferTable {
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-secondary);
+}
+
+.bufferRow {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 1fr;
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border-secondary);
+  align-items: center;
+}
+
+.bufferRow:last-child {
+  border-bottom: none;
+}
+
+.bufferRowHead {
+  background: var(--bg-tertiary);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bufferWorst {
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+.bufferQtyRow {
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.bufferQtyClean {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.bufferQtyBuff {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.bufferMuted {
+  color: var(--text-muted);
+}
+
+/* ── SL Calculator Cards ─────────────────────────────────────────────────── */
+.calcGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.calcCard {
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.calcCardTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 4px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--btn-primary-bg);
+}
+
+.calcCardHint {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin: 0 0 10px 0;
+  font-style: italic;
+}
+
+.calcRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.calcLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 72px;
+  font-weight: 500;
+}
+
+.calcInput {
+  flex: 1;
+  padding: 5px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  width: 100%;
+}
+
+.calcInput:focus {
+  border-color: var(--btn-primary-bg);
+}
+
+.calcResult {
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  border: 1px solid var(--border-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.calcResultRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.calcResultLabel {
+  color: var(--text-muted);
+}
+
+.calcResultValue {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.calcResultValueHighlight {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.calcResultValueDanger {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .calcGrid {
+    grid-template-columns: 1fr;
   }
 }

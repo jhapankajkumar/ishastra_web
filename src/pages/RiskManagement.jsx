@@ -9,36 +9,32 @@ function RiskManagement() {
   const [formData, setFormData] = useState({
     capital: '10000',
     stockPrice: '',
-    positionType: 'Long',
     maxPosition: '25',
     riskPerShare: '2.0',
     stopLoss: '',
-    minRR: '2.0',
-    maxSlPercent: '5',
-    slippage: '0'
+    slippage: '0',
+    slippageSl: '0.5'
   });
 
   // State for calculated results
   const [calculations, setCalculations] = useState({
-    maxRisk: 0,
     shares: 0,
+    actualFillPrice: 0,
+    finalSlPrice: 0,
+    finalSlPct: 0,
+    riskAmount: 0,
+    totalInvestment: 0,
+    breakEvenPrice: 0,
     stopLossPrice: 0,
     target1Price: 0,
     target2Price: 0,
     target3Price: 0,
-    totalInvestment: 0,
-    riskAmount: 0,
+    maxRisk: 0,
     slPercentage: 0,
     rrRatio: 0,
-    breakEvenPrice: 0,
     rrGatePass: false,
     slGatePass: false,
-    sizeGatePass: false,
-    slippagePrice: 0,
-    slippageRiskPerShare: 0,
-    slippageShares: 0,
-    slippageTotalInvestment: 0,
-    slippageRiskAmount: 0
+    sizeGatePass: false
   });
 
   // Handle input changes
@@ -50,128 +46,75 @@ function RiskManagement() {
     }));
   };
 
-  // Calculate risk management values
+  // Calculate risk management values (always Long position)
   const calculateRiskManagement = () => {
     const capital = parseFloat(formData.capital) || 0;
     const price = parseFloat(formData.stockPrice) || 0;
     const maxPos = parseFloat(formData.maxPosition) / 100 || 0;
     const riskPctPerShare = parseFloat(formData.riskPerShare) / 100 || 0;
-    const isLong = formData.positionType === 'Long';
-    const slippagePct = parseFloat(formData.slippage) / 100 || 0;
-    // Worst-case fill: slippage works against you (higher for Long, lower for Short)
-    const slippagePrice = price > 0
-      ? isLong ? price * (1 + slippagePct) : price * (1 - slippagePct)
-      : 0;
+    const entrySlipPct = parseFloat(formData.slippage) / 100 || 0;
+    const slSlipPct = parseFloat(formData.slippageSl) / 100 || 0;
 
-    // Use manually entered Stop Loss if provided, otherwise calculate from risk per share
-    let stopLoss = price;
+    // Actual fill price: entry + entry slippage (Long — slippage pushes fill price up)
+    const actualFillPrice = price > 0 ? price * (1 + entrySlipPct) : 0;
+
+    // Clean stop loss (user-entered); derive from risk % if not provided
+    let cleanStopLoss = 0;
     if (formData.stopLoss && parseFloat(formData.stopLoss) > 0) {
-      stopLoss = parseFloat(formData.stopLoss);
+      cleanStopLoss = parseFloat(formData.stopLoss);
     } else if (price > 0) {
-      const riskAmount = price * riskPctPerShare;
-      stopLoss = isLong ? price - riskAmount : price + riskAmount;
+      cleanStopLoss = price * (1 - riskPctPerShare);
     }
 
-    // Calculate total risk budget based on Risk Per Share percentage
+    // Worst-case SL execution: buffer = entry × SL_slippage_pct (SL triggered below)
+    const slBufAmt = price * slSlipPct;
+    const finalSlPrice = cleanStopLoss > 0 ? cleanStopLoss - slBufAmt : 0;
+
+    // Buffered risk per share (includes both entry and SL slippage)
     const totalRiskBudget = capital * riskPctPerShare;
+    const bufferedRPS = actualFillPrice > 0 && finalSlPrice > 0 && actualFillPrice > finalSlPrice
+      ? actualFillPrice - finalSlPrice : 0;
 
-    // Calculate risk per share distance
-    const riskPerShareDistance = Math.abs(price - stopLoss);
-
-    // Calculate number of shares based on risk budget and stop loss distance
-    let numberOfShares = 0;
-    if (riskPerShareDistance > 0) {
-      numberOfShares = Math.floor(totalRiskBudget / riskPerShareDistance);
-    }
-    
-    // Apply Max Position % constraint as upper cap
-    const maxSharesByMaxPosition = Math.floor((capital * maxPos) / price);
-    
-    // Ensure shares don't exceed available capital AND max position constraint
-    const maxSharesByCapital = Math.floor(capital / price);
-    numberOfShares = Math.min(numberOfShares, maxSharesByCapital, maxSharesByMaxPosition);
-
-    // Calculate total investment
-    const totalInvestment = numberOfShares * price;
-
-    // Calculate SL percentage and risk amount
-    let slPercentage = 0;
-    let riskPerShare = 0;
-    let riskAmount = 0;
-
-    if (price > 0 && stopLoss !== price) {
-      riskPerShare = Math.abs(price - stopLoss);
-      slPercentage = (riskPerShare / price) * 100;
-      riskAmount = riskPerShare * numberOfShares;
+    // Position sizing with max-position cap applied
+    let shares = 0;
+    if (bufferedRPS > 0 && actualFillPrice > 0) {
+      const maxByRisk = Math.floor(totalRiskBudget / bufferedRPS);
+      const maxByCap  = Math.floor(capital / actualFillPrice);
+      const maxByPos  = Math.floor((capital * maxPos) / actualFillPrice);
+      shares = Math.min(maxByRisk, maxByCap, maxByPos);
     }
 
-    // Calculate max risk (based on Risk Per Share % of capital)
-    const maxRisk = totalRiskBudget;
+    const totalInvestment = shares * actualFillPrice;
+    const riskAmount = shares * bufferedRPS;
+    const finalSlPct = actualFillPrice > 0 ? (bufferedRPS / actualFillPrice) * 100 : 0;
 
-    // Calculate targets based on risk per share
-    // Risk = Entry - SL, so for 1:2R target = Entry + 2*Risk
-    const target1 = isLong ? 
-      price + (2 * riskPerShare) :
-      price - (2 * riskPerShare);
-    const target2 = isLong ? 
-      price + (3 * riskPerShare) :
-      price - (3 * riskPerShare);
-    const target3 = isLong ? 
-      price + (4 * riskPerShare) :
-      price - (4 * riskPerShare);
+    // Break-even trigger: price hits 2R above actual fill → move SL to entry
+    const breakEvenPrice = actualFillPrice > 0 && bufferedRPS > 0
+      ? actualFillPrice + 2 * bufferedRPS : 0;
 
-    // Break-even trigger: when T1 (1:2R) is hit, move SL to entry
-    const breakEvenPrice = isLong ?
-      price + (2 * riskPerShare) :
-      price - (2 * riskPerShare);
-
-    // R:R Gatekeeper calculations
-    const minRR = parseFloat(formData.minRR) || 2.0;
-    const maxSlPct = parseFloat(formData.maxSlPercent) || 5.0;
-    // T1 is always at 2R, so rrRatio = 2.0 when T1 is target
-    const rrRatio = riskPerShareDistance > 0 ? (Math.abs(target1 - price) / riskPerShareDistance) : 0;
-    const rrGatePass = price > 0 && stopLoss > 0 && rrRatio >= minRR;
-    const slGatePass = price > 0 && stopLoss > 0 && slPercentage > 0 && slPercentage <= maxSlPct;
-    const sizeGatePass = numberOfShares > 0;
-
-    // Slippage-adjusted sizing: size using worst-case fill price to keep risk constant
-    let slippageShares = 0;
-    let slippageRiskPerShare = 0;
-    let slippageRiskAmount = 0;
-    let slippageTotalInvestment = 0;
-    if (slippagePrice > 0 && stopLoss > 0 && Math.abs(slippagePrice - stopLoss) > 0) {
-      slippageRiskPerShare = Math.abs(slippagePrice - stopLoss);
-      const slippageMaxByPos = Math.floor((capital * maxPos) / slippagePrice);
-      const slippageMaxByCap = Math.floor(capital / slippagePrice);
-      slippageShares = Math.min(
-        Math.floor(totalRiskBudget / slippageRiskPerShare),
-        slippageMaxByCap,
-        slippageMaxByPos
-      );
-      slippageTotalInvestment = slippageShares * slippagePrice;
-      slippageRiskAmount = slippageRiskPerShare * slippageShares;
-    }
+    // R-Multiple targets from actual fill price using buffered 1R
+    const target1Price = actualFillPrice + 2 * bufferedRPS;
+    const target2Price = actualFillPrice + 3 * bufferedRPS;
+    const target3Price = actualFillPrice + 4 * bufferedRPS;
 
     setCalculations({
-      maxRisk: maxRisk,
-      shares: numberOfShares,
-      stopLossPrice: stopLoss,
-      target1Price: target1,
-      target2Price: target2,
-      target3Price: target3,
-      totalInvestment: totalInvestment,
-      riskAmount: riskAmount,
-      slPercentage: slPercentage,
-      rrRatio: rrRatio,
-      breakEvenPrice: breakEvenPrice,
-      rrGatePass: rrGatePass,
-      slGatePass: slGatePass,
-      sizeGatePass: sizeGatePass,
-      slippagePrice: slippagePrice,
-      slippageRiskPerShare: slippageRiskPerShare,
-      slippageShares: slippageShares,
-      slippageTotalInvestment: slippageTotalInvestment,
-      slippageRiskAmount: slippageRiskAmount
+      shares,
+      actualFillPrice,
+      finalSlPrice,
+      finalSlPct,
+      riskAmount,
+      totalInvestment,
+      breakEvenPrice,
+      stopLossPrice: cleanStopLoss,
+      target1Price,
+      target2Price,
+      target3Price,
+      maxRisk: totalRiskBudget,
+      slPercentage: finalSlPct,
+      rrRatio: 2.0,
+      rrGatePass: shares > 0,
+      slGatePass: finalSlPct > 0,
+      sizeGatePass: shares > 0
     });
   };
 
@@ -196,7 +139,9 @@ function RiskManagement() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        <div className={styles.inputSection}>
+        {/* ── Existing Risk Management Section ── */}
+        <div className={styles.mainGrid}>
+          <div className={styles.inputSection}>
           <h3 className={styles.sectionTitle}>Position Setup</h3>
           <div className={styles.formGrid}>
             <div className={styles.inputGroup}>
@@ -233,8 +178,6 @@ function RiskManagement() {
                 <option value="300000">300,000</option>
                 <option value="400000">400,000</option>
                 <option value="500000">500,000</option>
-
-                
               </select>
             </div>
             <div className={styles.inputGroup}>
@@ -250,44 +193,6 @@ function RiskManagement() {
                 <option value="20">20%</option>
                 <option value="25">25%</option>
                 <option value="30">30%</option>
-              </select>
-            </div>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Stock Price</label>
-              <input
-                type="number"
-                name="stockPrice"
-                value={formData.stockPrice}
-                onChange={handleInputChange}
-                className={styles.input}
-                placeholder="Enter stock price"
-                step="0.01"
-                min="0"
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Stop Loss Price</label>
-              <input
-                type="number"
-                name="stopLoss"
-                value={formData.stopLoss}
-                onChange={handleInputChange}
-                className={styles.input}
-                placeholder="Enter stop loss price"
-                step="0.01"
-                min="0"
-              />
-            </div>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Position Type</label>
-              <select
-                name="positionType"
-                value={formData.positionType}
-                onChange={handleInputChange}
-                className={styles.select}
-              >
-                <option value="Long">Long Position</option>
-                <option value="Short">Short Position</option>
               </select>
             </div>
             <div className={styles.inputGroup}>
@@ -309,33 +214,30 @@ function RiskManagement() {
               </select>
             </div>
             <div className={styles.inputGroup}>
-              <label className={styles.label}>Min R:R Required</label>
-              <select
-                name="minRR"
-                value={formData.minRR}
+              <label className={styles.label}>Entry Price</label>
+              <input
+                type="number"
+                name="stockPrice"
+                value={formData.stockPrice}
                 onChange={handleInputChange}
-                className={styles.select}
-              >
-                <option value="1.5">1.5R</option>
-                <option value="2.0">2R (Recommended)</option>
-                <option value="2.5">2.5R</option>
-                <option value="3.0">3R</option>
-              </select>
+                className={styles.input}
+                placeholder="Enter price"
+                step="0.01"
+                min="0"
+              />
             </div>
             <div className={styles.inputGroup}>
-              <label className={styles.label}>Max SL % Allowed</label>
-              <select
-                name="maxSlPercent"
-                value={formData.maxSlPercent}
+              <label className={styles.label}>Stop Loss Price</label>
+              <input
+                type="number"
+                name="stopLoss"
+                value={formData.stopLoss}
                 onChange={handleInputChange}
-                className={styles.select}
-              >
-                <option value="3">3%</option>
-                <option value="4">4%</option>
-                <option value="5">5% (Recommended)</option>
-                <option value="6">6%</option>
-                <option value="8">8%</option>
-              </select>
+                className={styles.input}
+                placeholder="Enter SL price"
+                step="0.01"
+                min="0"
+              />
             </div>
             <div className={styles.inputGroup}>
               <label className={styles.label}>Entry Slippage %</label>
@@ -345,16 +247,56 @@ function RiskManagement() {
                 onChange={handleInputChange}
                 className={styles.select}
               >
-                <option value="0">0% (Limit order)</option>
-                <option value="0.1">0.1%</option>
+                <option value="0">0% (Clean)</option>
                 <option value="0.25">0.25%</option>
                 <option value="0.5">0.5%</option>
+                <option value="0.75">0.75%</option>
                 <option value="1.0">1.0%</option>
-                <option value="1.5">1.5%</option>
-                <option value="2.0">2.0%</option>
+              </select>
+            </div>
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>SL Slippage %</label>
+              <select
+                name="slippageSl"
+                value={formData.slippageSl}
+                onChange={handleInputChange}
+                className={styles.select}
+              >
+                <option value="0">0% (Clean)</option>
+                <option value="0.25">0.25%</option>
+                <option value="0.5">0.5%</option>
+                <option value="0.75">0.75%</option>
+                <option value="1.0">1.0%</option>
               </select>
             </div>
           </div>
+
+          {/* ── R-Multiple Targets ───────────────────────────────────── */}
+          {formData.stockPrice && formData.stopLoss && (() => {
+            const entry = parseFloat(formData.stockPrice);
+            const sl = parseFloat(formData.stopLoss);
+            const ePct = parseFloat(formData.slippage) / 100;
+            const sPct = parseFloat(formData.slippageSl) / 100;
+            const actualEntry = entry * (1 + ePct);
+            const actualSl = sl - entry * sPct;
+            if (!actualEntry || !actualSl || actualEntry <= actualSl) return null;
+            const oneR = actualEntry - actualSl;
+            return (
+              <div className={styles.subPanel}>
+                <div className={styles.subPanelTitle}>R-Multiple Targets</div>
+                <div className={styles.rMultiGrid}>
+                  {[1, 2, 3, 4].map(n => (
+                    <div key={n} className={styles.rMultiCell}>
+                      <span className={styles.rMultiLabel}>{n}R</span>
+                      <span className={styles.rMultiPrice}>₹{(actualEntry + n * oneR).toFixed(2)}</span>
+                      <span className={styles.rMultiGain}>+₹{(n * oneR).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
         </div>
         <div className={styles.resultsSection}>
           <h2 className={styles.sectionTitle}>Calculated Results</h2>
@@ -362,15 +304,17 @@ function RiskManagement() {
             <div className={styles.resultCard}>
               <div className={styles.resultLabel}>Position Size</div>
               <div className={styles.resultValue}>{formatNumber(calculations.shares)} shares</div>
+              {calculations.actualFillPrice > 0 && (
+                <div className={styles.resultNote}>@ {formatCurrency(calculations.actualFillPrice)} fill</div>
+              )}
             </div>
             <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Stop Loss</div>
-              <div className={styles.resultValue}>{calculations.slPercentage.toFixed(2)}% </div>
-              <div className={styles.resultNote}>
-                {formatCurrency(calculations.stopLossPrice)}
+              <div className={styles.resultLabel}>Final SL %</div>
+              <div className={styles.resultValue}>
+                {calculations.finalSlPct > 0 ? `${calculations.finalSlPct.toFixed(2)}%` : '—'}
               </div>
+              <div className={styles.resultNote}>After entry + SL slippage</div>
             </div>
-            
             <div className={styles.resultCard}>
               <div className={styles.resultLabel}>Risk Amount</div>
               <div className={styles.resultValue}>{formatCurrency(calculations.riskAmount)}</div>
@@ -378,166 +322,102 @@ function RiskManagement() {
             <div className={styles.resultCard}>
               <div className={styles.resultLabel}>Break-Even Trigger</div>
               <div className={styles.resultValue}>
-                {formData.stockPrice && calculations.breakEvenPrice > 0 ? formatCurrency(calculations.breakEvenPrice) : '—'}
+                {calculations.breakEvenPrice > 0 ? formatCurrency(calculations.breakEvenPrice) : '—'}
               </div>
-              <div className={styles.resultNote}>When price hits T1 (1:2R), move SL to entry (break-even)</div>
+              <div className={styles.resultNote}>At 2R from fill — move SL to entry</div>
             </div>
             <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Total Investment</div>
+              <div className={styles.resultLabel}>Total Invested</div>
               <div className={styles.resultValue}>{formatCurrency(calculations.totalInvestment)}</div>
             </div>
             <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>SL Position</div>
-              <div className={styles.resultValue}>{formatCurrency(calculations.stopLossPrice)}</div>
+              <div className={styles.resultLabel}>Final SL Value</div>
+              <div className={styles.resultValue}>
+                {calculations.finalSlPrice > 0 ? formatCurrency(calculations.finalSlPrice) : '—'}
+              </div>
               <div className={styles.resultNote}>
-                SL: {calculations.slPercentage.toFixed(2)}% ({formatCurrency(Math.abs(parseFloat(formData.stockPrice || 0) - calculations.stopLossPrice))})
+                {calculations.stopLossPrice > 0 ? `Clean SL: ${formatCurrency(calculations.stopLossPrice)}` : ''}
               </div>
             </div>
-            {/* <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Target 1</div>
-              <div className={styles.resultValue}>{formatCurrency(calculations.target1Price)}</div>
-              <div className={styles.resultProfit}>
-                {(() => {
-                  const entry = parseFloat(formData.stockPrice || 0);
-                  const profit = (calculations.target1Price - entry) * calculations.shares * (formData.positionType === "Long" ? 1 : -1);
-                  const percent = entry > 0 ? ((calculations.target1Price - entry) / entry) * 100 * (formData.positionType === "Long" ? 1 : -1) : 0;
-                  return `Profit: ${formatCurrency(profit)} (${percent.toFixed(2)}%)`;
-                })()}
-              </div>
-            </div>
-            <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Target 2</div>
-              <div className={styles.resultValue}>{formatCurrency(calculations.target2Price)}</div>
-              <div className={styles.resultProfit}>
-                {(() => {
-                  const entry = parseFloat(formData.stockPrice || 0);
-                  const profit = (calculations.target2Price - entry) * calculations.shares * (formData.positionType === "Long" ? 1 : -1);
-                  const percent = entry > 0 ? ((calculations.target2Price - entry) / entry) * 100 * (formData.positionType === "Long" ? 1 : -1) : 0;
-                  return `Profit: ${formatCurrency(profit)} (${percent.toFixed(2)}%)`;
-                })()}
-              </div>
-            </div>
-            <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Target 3</div>
-              <div className={styles.resultValue}>{formatCurrency(calculations.target3Price)}</div>
-              <div className={styles.resultProfit}>
-                {(() => {
-                  const entry = parseFloat(formData.stockPrice || 0);
-                  const profit = (calculations.target3Price - entry) * calculations.shares * (formData.positionType === "Long" ? 1 : -1);
-                  const percent = entry > 0 ? ((calculations.target3Price - entry) / entry) * 100 * (formData.positionType === "Long" ? 1 : -1) : 0;
-                  return `Profit: ${formatCurrency(profit)} (${percent.toFixed(2)}%)`;
-                })()}
-              </div>
-            </div> */}
-            {/* Slippage Impact Card */}
-            {parseFloat(formData.slippage) > 0 && formData.stockPrice && formData.stopLoss && (
-              <div className={styles.resultCard} style={{ gridColumn: '1 / -1', border: '1px solid #f59e0b' }}>
-                <div className={styles.resultLabel} style={{ color: '#f50b0b' }}>⚠ Slippage-Adjusted Plan ({formData.slippage}%)</div>
-                <div className={styles.slippageGrid}>
-                  <div className={styles.slippageRow}>
-                    <span className={styles.slippageCol}></span>
-                    <span className={styles.slippageColHead}>Clean Entry</span>
-                    <span className={styles.slippageColHead}>Worst Fill (+{formData.slippage}%)</span>
-                  </div>
-                  <div className={styles.slippageRow}>
-                    <span className={styles.slippageCol}>Fill Price</span>
-                    <span className={styles.slippageVal}>{formatCurrency(parseFloat(formData.stockPrice) || 0)}</span>
-                    <span className={styles.slippageValWarn}>{formatCurrency(calculations.slippagePrice)}</span>
-                  </div>
-                  <div className={styles.slippageRow}>
-                    <span className={styles.slippageCol}>Risk / Share</span>
-                    <span className={styles.slippageVal}>{formatCurrency(Math.abs((parseFloat(formData.stockPrice) || 0) - calculations.stopLossPrice))}</span>
-                    <span className={styles.slippageValWarn}>{formatCurrency(calculations.slippageRiskPerShare)}</span>
-                  </div>
-                  <div className={styles.slippageRow}>
-                    <span className={styles.slippageCol}>Shares</span>
-                    <span className={styles.slippageVal}>{formatNumber(calculations.shares)}</span>
-                    <span className={styles.slippageValWarn}>{formatNumber(calculations.slippageShares)}</span>
-                  </div>
-                  <div className={styles.slippageRow}>
-                    <span className={styles.slippageCol}>Total Risk</span>
-                    <span className={styles.slippageVal}>{formatCurrency(calculations.riskAmount)}</span>
-                    <span className={styles.slippageValWarn}>{formatCurrency(calculations.slippageRiskAmount)}</span>
-                  </div>
-                </div>
-                <div className={styles.resultNote} style={{ marginTop: 8, color: '#f5490b' }}>
-                  Use <b>{formatNumber(calculations.slippageShares)} shares</b> to stay within your {formData.riskPerShare}% risk budget even with slippage.
-                </div>
-              </div>
-            )}
-            {/* Trailing Stop 1 (ATR) and Trailing Stop 2 (ATR) removed as per user request */}
-            
           </div>
-          {/* <div className={styles.summarySection}>
-            <h3 className={styles.summaryTitle}>Risk Summary</h3>
-            <div className={styles.summaryGrid}>
-              <div className={styles.summaryItem}>
-                <span className={styles.summaryLabel}>Capital Allocated:</span>
-                <span className={styles.summaryValue}>{formatCurrency(calculations.maxRisk)}</span>
-              </div>
-              <div className={styles.summaryItem}>
-                <span className={styles.summaryLabel}>Portfolio Exposure:</span>
-                <span className={styles.summaryValue}>
-                  {((calculations.totalInvestment / (parseFloat(formData.capital) || 1)) * 100).toFixed(2)}%
-                </span>
-              </div>
-              <div className={styles.summaryItem}>
-                <span className={styles.summaryLabel}>Risk per Share:</span>
-                <span className={styles.summaryValue}>
-                  {formatCurrency(Math.abs(parseFloat(formData.stockPrice || 0) - calculations.stopLossPrice))}
-                </span>
-              </div>
-            </div>
-          </div> */}
 
-          {/* Setup Gate */}
-          {formData.stockPrice && formData.stopLoss && (
-            <div className={`${styles.gateSection} ${
-              calculations.rrGatePass && calculations.slGatePass && calculations.sizeGatePass
-                ? styles.gateSectionPass
-                : styles.gateSectionFail
-            }`}>
-              <h3 className={styles.gateTitle}>Setup Gate</h3>
-              <div className={styles.gateChecks}>
-                <div className={`${styles.gateCheck} ${calculations.rrGatePass ? styles.gateCheckPass : styles.gateCheckFail}`}>
-                  <span className={styles.gateIcon}>{calculations.rrGatePass ? '✓' : '✗'}</span>
-                  <span className={styles.gateCheckLabel}>R:R at T1:</span>
-                  <span className={styles.gateCheckValue}>
-                    {calculations.rrRatio > 0 ? `${calculations.rrRatio.toFixed(1)}:1` : '—'}
-                    <span className={styles.gateCheckNote}> (Min: {formData.minRR}R)</span>
-                  </span>
-                </div>
-                <div className={`${styles.gateCheck} ${calculations.slGatePass ? styles.gateCheckPass : styles.gateCheckFail}`}>
-                  <span className={styles.gateIcon}>{calculations.slGatePass ? '✓' : '✗'}</span>
-                  <span className={styles.gateCheckLabel}>SL Distance:</span>
-                  <span className={styles.gateCheckValue}>
-                    {calculations.slPercentage > 0 ? `${calculations.slPercentage.toFixed(2)}%` : '—'}
-                    <span className={styles.gateCheckNote}> (Max: {formData.maxSlPercent}%)</span>
-                  </span>
-                </div>
-                <div className={`${styles.gateCheck} ${calculations.sizeGatePass ? styles.gateCheckPass : styles.gateCheckFail}`}>
-                  <span className={styles.gateIcon}>{calculations.sizeGatePass ? '✓' : '✗'}</span>
-                  <span className={styles.gateCheckLabel}>Position Size:</span>
-                  <span className={styles.gateCheckValue}>
-                    {calculations.shares > 0 ? `${calculations.shares} shares` : 'Too small / 0'}
-                  </span>
+          {/* ── Fill Buffer Analysis ─────────────────────────────────── */}
+          {formData.stockPrice && formData.stopLoss && (() => {
+            const entry = parseFloat(formData.stockPrice);
+            const sl = parseFloat(formData.stopLoss);
+            const risk = (parseFloat(formData.capital) || 0) * ((parseFloat(formData.riskPerShare) || 0) / 100);
+            if (!entry || !sl || !risk || entry <= sl) return null;
+
+            const capital = parseFloat(formData.capital) || 0;
+            const maxPos = parseFloat(formData.maxPosition) / 100;
+            const ePct = parseFloat(formData.slippage) / 100;
+            const sPct = parseFloat(formData.slippageSl) / 100;
+
+            const entryBufAmt = entry * ePct;
+            const entryWorst = entry + entryBufAmt;
+            const slBufAmt = entry * sPct;
+            const slWorst = sl - slBufAmt;
+
+            const cleanRPS = entry - sl;
+            const buffRPS = entryWorst - slWorst;
+
+            const maxQtyByPos      = entry      > 0 ? Math.floor((capital * maxPos) / entry)      : 0;
+            const maxQtyByPosWorst = entryWorst > 0 ? Math.floor((capital * maxPos) / entryWorst) : 0;
+            const qtyClean = cleanRPS > 0 ? Math.min(Math.floor(risk / cleanRPS), maxQtyByPos)      : 0;
+            const qtyBuff  = buffRPS  > 0 ? Math.min(Math.floor(risk / buffRPS),  maxQtyByPosWorst) : 0;
+            const allocClean = qtyClean * entry;
+            const allocBuff  = qtyBuff  * entryWorst;
+
+            return (
+              <div className={styles.subPanel}>
+                <div className={styles.subPanelTitle}>Fill Buffer Analysis</div>
+                <div className={styles.bufferTable}>
+                  <div className={`${styles.bufferRow} ${styles.bufferRowHead}`}>
+                    <span></span>
+                    <span>Clean</span>
+                    <span>Buffer</span>
+                    <span>Worst-case</span>
+                  </div>
+                  <div className={styles.bufferRow}>
+                    <span className={styles.bufferMuted}>Entry</span>
+                    <span>₹{entry.toFixed(2)}</span>
+                    <span className={styles.bufferMuted}>+₹{entryBufAmt.toFixed(4)}</span>
+                    <span className={styles.bufferWorst}>₹{entryWorst.toFixed(4)}</span>
+                  </div>
+                  <div className={styles.bufferRow}>
+                    <span className={styles.bufferMuted}>SL</span>
+                    <span>₹{sl.toFixed(2)}</span>
+                    <span className={styles.bufferMuted}>-₹{slBufAmt.toFixed(4)}</span>
+                    <span className={styles.bufferWorst}>₹{slWorst.toFixed(4)}</span>
+                  </div>
+                  <div className={styles.bufferRow}>
+                    <span className={styles.bufferMuted}>Risk/share</span>
+                    <span>₹{cleanRPS.toFixed(2)}</span>
+                    <span></span>
+                    <span className={styles.bufferWorst}>₹{buffRPS.toFixed(2)}</span>
+                  </div>
+                  <div className={`${styles.bufferRow} ${styles.bufferQtyRow}`}>
+                    <span className={styles.bufferMuted}>Qty</span>
+                    <span className={styles.bufferQtyClean}>{qtyClean} sh</span>
+                    <span></span>
+                    <span className={styles.bufferQtyBuff}>{qtyBuff} sh</span>
+                  </div>
+                  <div className={styles.bufferRow}>
+                    <span className={styles.bufferMuted}>Allocation</span>
+                    <span>₹{allocClean.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                    <span></span>
+                    <span className={styles.bufferMuted}>₹{allocBuff.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                  </div>
                 </div>
               </div>
-              <div className={styles.gateVerdict}>
-                {calculations.rrGatePass && calculations.slGatePass && calculations.sizeGatePass ? (
-                  <span className={styles.gateVerdictPass}>SETUP QUALIFIES — Safe to trade</span>
-                ) : (
-                  <span className={styles.gateVerdictFail}>
-                    SETUP DISQUALIFIED —
-                    {!calculations.slGatePass && calculations.slPercentage > 0 && ` SL ${calculations.slPercentage.toFixed(2)}% exceeds ${formData.maxSlPercent}% max.`}
-                    {!calculations.rrGatePass && calculations.rrRatio > 0 && ` R:R ${calculations.rrRatio.toFixed(1)}:1 below ${formData.minRR}R minimum.`}
-                    {!calculations.sizeGatePass && ' Position size is 0 — adjust capital or price.'}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+            );
+          })()}
+
+
         </div>
+        </div>{/* end mainGrid */}
+
+
       </div>
     </div>
   );
