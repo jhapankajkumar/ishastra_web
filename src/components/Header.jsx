@@ -9,6 +9,7 @@ const navLinks = [
   { to: "/risk-management", label: "Risk Management", icon: "⚖️" },
   { to: "/trades", label: "Trades", icon: "💼" },
   { to: "/watchlist", label: "Watchlist", icon: "👀" },
+  { to: "/scan", label: "Scan", icon: "🔎" },
   { to: "/chart", label: "Chart", icon: "📈" },
   { to: "/investments", label: "Investments", icon: "💰" },
   { to: "/recommendations", label: "Recommendations", icon: "💡" },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getWatchlist, runWatchlistDailyScan, deleteSymbolFromWatchlist, refreshStockInWatchlist } from '../api/analysisApi';
+import { getWatchlist, deleteSymbolFromWatchlist, refreshStockInWatchlist } from '../api/analysisApi';
 import { convertWatchlistToTradeEntryForm, validateWatchlistForConversion, hasBuySignal } from '../common/WatchlistToTradeConverter';
 import { useNotification } from '../components/NotificationProvider';
 import styles from './Watchlist.module.css';
@@ -54,21 +54,6 @@ const Watchlist = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
-  // Refresh handler for daily scan
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    notification.info('Running daily scan. This may take a few seconds...');
-    try {
-      await runWatchlistDailyScan();
-      notification.success('Daily scan complete! Watchlist refreshed.');
-      await fetchWatchlist();
-    } catch (err) {
-      notification.error('Failed to run daily scan. Please try again.');
-    } finally {
-      setRefreshing(false);
-    }
-  };
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('watchlistActiveTab') || 'INDIA';
   });

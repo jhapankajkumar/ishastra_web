@@ -1,6 +1,257 @@
+/* Scan Button */
+.scanBtn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+  transition: background 0.2s, transform 0.1s;
+  flex-shrink: 0;
+}
+.scanBtn:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  transform: translateY(-1px);
+}
+
+/* Scan Modal */
+.scanModal {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22);
+  padding: 2rem 2rem 1.5rem;
+  width: min(600px, 94vw);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  border: 1px solid #e5e7eb;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.scanModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scanModalTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e40af;
+  margin: 0;
+}
+
+.scanModalClose {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: #6b7280;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0.25rem;
+  transition: color 0.2s;
+}
+.scanModalClose:hover:not(:disabled) {
+  color: #111827;
+}
+.scanModalClose:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.scanInputSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scanInputLabel {
+  font-size: 0.9rem;
+  color: #374151;
+  margin: 0;
+}
+
+.scanFileRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.scanFileBtn {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.scanFileBtn:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+.scanFileBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.scanSymbolCount {
+  font-size: 0.85rem;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.scanTextarea {
+  width: 100%;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: #111827;
+  resize: vertical;
+  font-family: 'Courier New', monospace;
+  background: #f9fafb;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.scanTextarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #fff;
+}
+.scanTextarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Scan loading */
+.scanLoading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+.scanSpinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Scan Results */
+.scanResults {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: #f0f7ff;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  border: 1px solid #bfdbfe;
+}
+
+.scanStats {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.scanStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid #dbeafe;
+  min-width: 70px;
+  gap: 0.15rem;
+}
+.scanStat span {
+  font-size: 0.72rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.scanStat strong {
+  font-size: 1.15rem;
+  color: #111827;
+}
+.scanBuy {
+  color: #16a34a !important;
+}
+
+.scanResultsLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0;
+}
+
+.scanCopyRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.scanResultInput {
+  flex: 1;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  color: #111827;
+  background: #fff;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scanCopyBtn {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.scanCopyBtn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
+}
+.scanCopyBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.scanModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
 /* Delete Confirmation Dialog Styles */
 .deleteConfirmOverlay {
-  position: fixed;
   top: 0;
   left: 0;
   width: 100vw;

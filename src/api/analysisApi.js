@@ -114,11 +114,11 @@ export const refreshStockInWatchlist = async (stock) => {
 
 /**
  * Trigger daily scan for watchlist (POST)
- * No input required
+ * @param {string[]|'ALL'} stocksUniverse - Array of symbols or 'ALL'
  */
-export const runWatchlistDailyScan = async () => {
+export const runWatchlistDailyScan = async (stocksUniverse = 'ALL') => {
   try {
-    const response = await AnalysisAPI_Instance.post('/watchlist/daily-scan');
+    const response = await AnalysisAPI_Instance.post('/watchlist/daily-scan', { stocksUniverse });
     return response.data;
   } catch (error) {
     console.error('Error running daily scan:', error);
