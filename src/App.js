@@ -6,6 +6,7 @@ import TickerAnalysis from './pages/TickerAnalysisNew'; // Simple Ticker Analysi
 import TradeList from './pages/trade/TradeList';
 import TradeAdd from './pages/trade/TradeAdd'; // Import your new TradeAdd page
 import TradeUpdate from './pages/trade/TradeUpdate'; // Import TradeUpdate page
+import TradeEdit from './pages/trade/TradeEdit';
 import TradeReview from './pages/trade/TradeReview'; // Import TradeReview page
 import JournalList from './pages/analysis/JournalList';
 import JournalLog from './pages/analysis/JournalLog';
@@ -44,6 +45,7 @@ function App() {
             <Route path="/trades" element={<TradeList />} />
             <Route path="/trades/new" element={<TradeAdd />} />
             <Route path="/trades/update/:id" element={<TradeUpdate />} />
+            <Route path="/trades/edit/:id" element={<TradeEdit />} />
             <Route path="/trades/review/:id" element={<TradeReview />} />
             <Route path="/journal" element={<JournalList />} />
             <Route path="/journal/new" element={<JournalLog />} />

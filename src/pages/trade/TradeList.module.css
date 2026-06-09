@@ -846,6 +846,7 @@
     border-radius: 12px;
     padding: 10px 12px;
     box-shadow: var(--shadow-sm);
+    cursor: pointer;
   }
   .mobileTopRow {
     display: flex;

@@ -795,6 +795,15 @@ export default function TradeList() {
                 const stopLossDistance = entryPrice > 0 ? (entryPrice - stopLoss) / entryPrice * 100 : 0;
                 return (
                   <div key={trade.id} className={styles.mobileCard}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleShowDetails(trade)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleShowDetails(trade);
+                      }
+                    }}
                   >
                     <div className={styles.mobileTopRow}>
                       <div className={styles.mobileTicker}>{trade.ticker}</div>
@@ -803,11 +812,18 @@ export default function TradeList() {
                         <button
                           className={styles.editIconBtn}
                           onClick={(e) => { e.stopPropagation(); handleEdit(trade); }}
-                          title="Edit Trade"
+                          title="Update Trade"
                         >
-                          ✏️ Edit
+                          ✏️ Update
                         </button>
                       )}
+                      <button
+                        className={styles.editIconBtn}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/trades/edit/${trade.id}`); }}
+                        title="Edit Trade"
+                      >
+                        📝 Edit
+                      </button>
                     </div>
                     <div className={styles.mobileTopRow}>
                       <div>
@@ -1044,9 +1060,16 @@ export default function TradeList() {
                             status === 'CLOSED' ? handleReview(trade) : handleEdit(trade);
                           }}
                           className={`${styles.actionBtn} ${status === 'CLOSED' ? styles.reviewBtn : styles.editBtn}`}
-                          title={status === 'CLOSED' ? "Add Review" : "Edit Trade"}
+                          title={status === 'CLOSED' ? "Add Review" : "Update Trade"}
                         >
                           {status === 'CLOSED' ? '📝' : '✏️'}
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); navigate(`/trades/edit/${trade.id}`); }}
+                          className={`${styles.actionBtn} ${styles.viewBtn}`}
+                          title="Edit Trade"
+                        >
+                          📝
                         </button>
                         <button
                           onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}

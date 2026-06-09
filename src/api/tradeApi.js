@@ -12,6 +12,23 @@ export const getAllTrades = (isPaperTrade) => {
 };
 export const getTradeById = (id) => API.get(`/trades/${id}`);
 
+export async function editTrade(id, form) {
+  const formData = new FormData();
+  formData.append('entryDate', form.entryDate);
+  formData.append('entryPrice', form.entryPrice);
+  formData.append('stopLoss', form.stopLoss);
+  formData.append('quantity', form.quantity);
+  if (form.reasonForEntry !== undefined) {
+    formData.append('reasonForEntry', form.reasonForEntry);
+  }
+  if (form.notes !== undefined) {
+    formData.append('notes', form.notes);
+  }
+  return API.put(`/trades/${id}/edit`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+}
+
 // Update trade (exit) - now supports partial exits
 export async function updateTrade(id, form) {
   const formData = new FormData();
