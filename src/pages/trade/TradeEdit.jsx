@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import styles from "./TradeAdd.module.css";
 import PageHeader from "../../components/PageHeader";
 import ErrorPage from "../../components/ErrorPage";
@@ -22,6 +23,7 @@ export default function TradeEdit() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [trade, setTrade] = useState(null);
+  const isQuantityLocked = trade?.status === 'Partial Closed' || trade?.status === 'Closed' || (trade?.tradeTransactions || []).length > 0;
   const [form, setForm] = useState({
     entryDate: "",
     entryPrice: "",
@@ -157,13 +159,25 @@ export default function TradeEdit() {
                   onChange={handleChange}
                   className={styles.input}
                   placeholder="100"
+                  disabled={isQuantityLocked}
+                  readOnly={isQuantityLocked}
                 />
+                {isQuantityLocked && (
+                  <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: 6 }}>
+                    Quantity is locked because this trade already has exit activity.
+                  </small>
+                )}
               </div>
             </div>
           </div>
 
           <button type="submit" className={styles.submitButton} disabled={submitting}>
-            {submitting ? "Updating..." : "Update Trade"}
+            {submitting ? "Updating..." : (
+              <>
+                <SaveOutlinedIcon fontSize="inherit" />
+                <span>Update Trade</span>
+              </>
+            )}
           </button>
         </form>
       </div>

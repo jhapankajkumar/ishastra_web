@@ -856,6 +856,85 @@
     color: var(--text-secondary);
     font-size: 12px;
   }
+  .mobileCardShell {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .mobileMainCard {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 10px 11px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mobileCompactSummary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.15;
+  }
+  .mobileActionRail {
+    width: 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-top: 0;
+  }
+  .mobileActionPanel {
+    flex-shrink: 0;
+    padding: 4px;
+    background: linear-gradient(180deg, var(--bg-secondary), var(--bg-tertiary));
+    border: 1px solid var(--border-primary);
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .mobileActionBtn {
+    width: 100%;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+    box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+    border: 1px solid var(--border-primary);
+  }
+  .mobileActionBtn:hover {
+    transform: translateY(-1px);
+  }
+  .updateActionBtn:hover {
+    background: var(--success-bg);
+    color: var(--success-color);
+    border-color: var(--success-color);
+  }
+  .editActionBtn:hover {
+    background: var(--info-bg);
+    color: var(--info-color);
+    border-color: var(--info-color);
+  }
+  .reviewActionBtn:hover {
+    background: var(--warning-bg);
+    color: var(--warning-color);
+    border-color: var(--warning-color);
+  }
+  .deleteActionBtn:hover {
+    background: var(--error-bg);
+    color: var(--error-color);
+    border-color: var(--error-color);
+  }
   .dim { color: var(--text-muted); }
   .dot { margin: 0 6px; opacity: 0.6; }
   .mobileTicker { font-size: 15px; font-weight: 800; letter-spacing: 0.3px; color: var(--text-primary); }
@@ -878,6 +957,71 @@
     align-items: flex-end;
     gap: 4px;
   }
+  .mobileStatsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 10px;
+    margin-top: 2px;
+    padding-top: 5px;
+    border-top: 1px solid var(--border-primary);
+    align-items: start;
+  }
+  .mobileStatItem {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .mobileStatLabel {
+    font-size: 9px;
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .mobileStatValue {
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mobilePriceLine {
+    font-size: 12px;
+    font-weight: 400;
+    color: #111827;
+    line-height: 1.08;
+    margin: 0;
+  }
+  .mobilePriceLabel {
+    font-weight: 400;
+    color: #111827;
+  }
+  .mobilePriceLine span:not(.mobilePriceLabel) {
+    font-weight: 800;
+  }
+  .mobileDateBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-primary);
+    font-size: 10px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .footerPositive {
+    color: var(--profit-color);
+  }
+  .footerNegative {
+    color: var(--loss-color);
+  }
+  .footerMuted {
+    color: var(--text-secondary);
+  }
   .plValue { font-size: 12px; font-weight: 800; }
   .plPositive { color: var(--profit-color); }
   .plNegative { color: var(--loss-color); }
@@ -890,6 +1034,10 @@
     border-radius: 8px;
     padding: 4px 8px;
     font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1;
   }
 }
 

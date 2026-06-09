@@ -339,6 +339,10 @@
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
   transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .submitButton:hover:not(:disabled) {

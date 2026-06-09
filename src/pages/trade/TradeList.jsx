@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
 import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from "../../api/tradeApi";
 import { getCapitalInfo } from "../../api/capitalApi";
 import TradeAdd from "./TradeAdd";
@@ -787,6 +791,7 @@ export default function TradeList() {
                 const plValue = Number((showCombined ? trade.aggregatedPL : getPartialPL(trade)) || 0);
                 const plPct = invested>0? (plValue/invested)*100:0;
                 const ltp = Number(trade.currentPrice ?? trade.entryPrice ?? 0);
+                const todaysPL = getTodaysPL(trade);
                 const avgSellPrice = getAverageSellPrice(trade);
                 const ltpPct = (trade.lastDayPrice!=null && Number(trade.lastDayPrice)>0)
                   ? ((ltp-Number(trade.lastDayPrice))/Number(trade.lastDayPrice))*100
@@ -794,7 +799,7 @@ export default function TradeList() {
                 const stopLoss = trade.stopLoss ? Number(trade.stopLoss) : 0;
                 const stopLossDistance = entryPrice > 0 ? (entryPrice - stopLoss) / entryPrice * 100 : 0;
                 return (
-                  <div key={trade.id} className={styles.mobileCard}
+                  <div key={trade.id} className={styles.mobileCardShell}
                     role="button"
                     tabIndex={0}
                     onClick={() => handleShowDetails(trade)}
@@ -805,74 +810,120 @@ export default function TradeList() {
                       }
                     }}
                   >
-                    <div className={styles.mobileTopRow}>
-                      <div className={styles.mobileTicker}>{trade.ticker}</div>
-                      <div>{formatDate(trade.entryDate)}</div>
-                      {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
-                        <button
-                          className={styles.editIconBtn}
-                          onClick={(e) => { e.stopPropagation(); handleEdit(trade); }}
-                          title="Update Trade"
-                        >
-                          ✏️ Update
-                        </button>
-                      )}
-                      <button
-                        className={styles.editIconBtn}
-                        onClick={(e) => { e.stopPropagation(); navigate(`/trades/edit/${trade.id}`); }}
-                        title="Edit Trade"
-                      >
-                        📝 Edit
-                      </button>
-                    </div>
-                    <div className={styles.mobileTopRow}>
-                      <div>
-                        <span className={styles.dim}>Qty.</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{Number(trade.quantity||0).toLocaleString()}</span>
-                        <span className={styles.dot}>•</span>
-                        <span className={styles.dim}>Buy Avg.</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{Number(trade.entryPrice||0).toLocaleString(undefined,{maximumFractionDigits:2})} </span>
+                    <div className={styles.mobileMainCard}>
+                      <div className={styles.mobileTopRow}>
+                        <div className={styles.mobileTicker}>{trade.ticker}</div>
+                        <div className={styles.mobileDateBadge}>{formatDate(trade.entryDate)}</div>
                       </div>
-                    </div>
-                    <div className={styles.mobileRow}>
-                      <div className={styles.mobileLeft}>
-                        <div className={styles.mobileTopRow}>
-                          <span className={styles.dim}>Invested:</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{symbol}{invested.toLocaleString(undefined, { maximumFractionDigits: 0})}</span>
+                      <div className={styles.mobileTopRow}>
+                        <div className={styles.mobileCompactSummary}>
+                          <span className={styles.dim}>Qty.</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{Number(trade.quantity||0).toLocaleString()}</span>
+                          <span className={styles.dot}>•</span>
+                          <span className={styles.dim}>Buy Avg.</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{Number(trade.entryPrice||0).toLocaleString(undefined,{maximumFractionDigits:2})} </span>
                         </div>
-                        {(getTradeStatusDetailed(trade) == 'CLOSED') && (
+                      </div>
+                      <div className={styles.mobileRow}>
+                        <div className={styles.mobileLeft}>
                           <div className={styles.mobileTopRow}>
-                          <span className={styles.dim}>Sell Avg: </span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{symbol}{avgSellPrice.toLocaleString(undefined, { maximumFractionDigits: 0})}</span>
-                        </div>
+                            <span className={styles.dim}>Invested:</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{symbol}{invested.toLocaleString(undefined, { maximumFractionDigits: 0})}</span>
+                          </div>
+                          {(getTradeStatusDetailed(trade) == 'CLOSED') && (
+                            <div className={styles.mobileTopRow}>
+                            <span className={styles.dim}>Sell Avg: </span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{symbol}{avgSellPrice.toLocaleString(undefined, { maximumFractionDigits: 0})}</span>
+                          </div>
+                          )}
+
+                          {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
+                          <div className={styles.mobilePriceLine}><span className={styles.mobilePriceLabel}>LTP</span> {symbol}{ltp.toLocaleString(undefined, { maximumFractionDigits: 2})} {ltpPct==null? '' : (
+                            <span className={ltpPct>=0? styles.plPositive: styles.plNegative}>
+                              ({ltpPct>=0?'+':''}{ltpPct.toFixed(2)}%)
+                            </span>
+                          )}
+                          </div>
                         )}
 
                         {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
-                        <div className={styles.ltpRow}>LTP {symbol}{ltp.toLocaleString(undefined, { maximumFractionDigits: 2})} {ltpPct==null? '' : (
-                          <span className={ltpPct>=0? styles.plPositive: styles.plNegative}>
-                            ({ltpPct>=0?'+':''}{ltpPct.toFixed(2)}%)
-                          </span>
+                          <div className={styles.mobilePriceLine}><span className={styles.mobilePriceLabel}>Stop</span> {symbol}{trade.stopLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
+                          <span >
+                            {" • "}
+                             </span>
+                            {stopLossDistance && (
+                              <span className={`${styles.ltpRow} ${stopLossDistance > 0 ? styles.negative : styles.positive}`}>
+                                {(stopLossDistance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                              </span>
+                            )}
+                          </div>
                         )}
-                        </div>
-                      )}
 
-                      {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
-                        <div className={styles.ltpRow}>Stop {symbol}{trade.stopLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
-                        <span >
-                          {" • "}
-                           </span>
-                          {stopLossDistance && (
-                            <span className={`${styles.ltpRow} ${stopLossDistance > 0 ? styles.negative : styles.positive}`}>
-                              {(stopLossDistance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
-                            </span>
-                          )}
                         </div>
-                      )}
-
+                        <div className={styles.mobileRight}>
+                          <div className={`${styles.plValue} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
+                           {symbol}{Math.abs(plValue).toLocaleString()}
+                          </div>
+                          <div className={`${styles.plValue} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
+                            {plPct>=0?'+':''}{plPct.toFixed(2)}%
+                          </div>
+                        </div>
                       </div>
-                      <div className={styles.mobileRight}>
-                        <div className={`${styles.plValue} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
-                         {symbol}{Math.abs(plValue).toLocaleString()}
+                      <div className={styles.mobileStatsGrid}>
+                        <div className={styles.mobileStatItem}>
+                          <span className={styles.mobileStatLabel}>P&L</span>
+                          <span className={`${styles.mobileStatValue} ${plValue >= 0 ? styles.footerPositive : styles.footerNegative}`}>
+                            {plValue >= 0 ? '+' : ''}{formatCurrency(plValue, currency)}
+                          </span>
                         </div>
-                        <div className={`${styles.plValue} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
-                          {plPct>=0?'+':''}{plPct.toFixed(2)}%
-                        </div>
+                        {status !== 'CLOSED' && (
+                          <div className={styles.mobileStatItem}>
+                            <span className={styles.mobileStatLabel}>Today</span>
+                            <span className={`${styles.mobileStatValue} ${todaysPL.value >= 0 ? styles.footerPositive : styles.footerNegative}`}>
+                              {`${todaysPL.value >= 0 ? '+' : ''}${formatCurrency(todaysPL.value, currency)}`}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className={styles.mobileActionPanel}>
+                      <div className={styles.mobileActionRail}>
+                        <button
+                          className={styles.mobileActionBtn}
+                          onClick={(e) => { e.stopPropagation(); handleShowDetails(trade); }}
+                          title="View Details"
+                        >
+                          <VisibilityOutlinedIcon fontSize="inherit" />
+                        </button>
+                        {getTradeStatusDetailed(trade) === 'CLOSED' ? (
+                          <button
+                            className={`${styles.mobileActionBtn} ${styles.reviewActionBtn}`}
+                            onClick={(e) => { e.stopPropagation(); handleReview(trade); }}
+                            title="Add Review"
+                          >
+                            <EditOutlinedIcon fontSize="inherit" />
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              className={`${styles.mobileActionBtn} ${styles.updateActionBtn}`}
+                              onClick={(e) => { e.stopPropagation(); handleEdit(trade); }}
+                              title="Update Trade"
+                            >
+                              <EditOutlinedIcon fontSize="inherit" />
+                            </button>
+                            <button
+                              className={`${styles.mobileActionBtn} ${styles.editActionBtn}`}
+                              onClick={(e) => { e.stopPropagation(); navigate(`/trades/edit/${trade.id}`); }}
+                              title="Edit Trade"
+                            >
+                              <AutoFixHighOutlinedIcon fontSize="inherit" />
+                            </button>
+                          </>
+                        )}
+                        <button
+                          className={`${styles.mobileActionBtn} ${styles.deleteActionBtn}`}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(trade); }}
+                          title="Delete Trade"
+                        >
+                          <DeleteOutlineOutlinedIcon fontSize="inherit" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1052,31 +1103,46 @@ export default function TradeList() {
                           className={`${styles.actionBtn} ${styles.viewBtn}`}
                           title="View Details"
                         >
-                          👁️
+                          <VisibilityOutlinedIcon fontSize="inherit" />
                         </button>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            status === 'CLOSED' ? handleReview(trade) : handleEdit(trade);
-                          }}
-                          className={`${styles.actionBtn} ${status === 'CLOSED' ? styles.reviewBtn : styles.editBtn}`}
-                          title={status === 'CLOSED' ? "Add Review" : "Update Trade"}
-                        >
-                          {status === 'CLOSED' ? '📝' : '✏️'}
-                        </button>
-                        <button
-                          onClick={e => { e.stopPropagation(); navigate(`/trades/edit/${trade.id}`); }}
-                          className={`${styles.actionBtn} ${styles.viewBtn}`}
-                          title="Edit Trade"
-                        >
-                          📝
-                        </button>
+                        {status === 'CLOSED' ? (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleReview(trade);
+                            }}
+                            className={`${styles.actionBtn} ${styles.reviewBtn}`}
+                            title="Add Review"
+                          >
+                            📝
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleEdit(trade);
+                              }}
+                            className={`${styles.actionBtn} ${styles.editBtn}`}
+                            title="Update Trade"
+                          >
+                              <EditOutlinedIcon fontSize="inherit" />
+                            </button>
+                            <button
+                              onClick={e => { e.stopPropagation(); navigate(`/trades/edit/${trade.id}`); }}
+                              className={`${styles.actionBtn} ${styles.viewBtn}`}
+                              title="Edit Trade"
+                            >
+                              <AutoFixHighOutlinedIcon fontSize="inherit" />
+                            </button>
+                          </>
+                        )}
                         <button
                           onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}
                           className={`${styles.actionBtn} ${styles.deleteBtn}`}
                           title="Delete Trade"
                         >
-                          🗑️
+                          <DeleteOutlineOutlinedIcon fontSize="inherit" />
                         </button>
                       </div>
                     </td>
