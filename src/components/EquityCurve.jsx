@@ -1,180 +1,221 @@
 // src/components/EquityCurve.jsx
-import React from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import React, { useMemo } from 'react';
+import {
+  AreaChart, Area,
+  XAxis, YAxis, Tooltip, ResponsiveContainer,
+  CartesianGrid, ReferenceLine
+} from 'recharts';
 import { useTheme } from '../contexts/ThemeContext';
-import styles from './EquityCurve.module.css';
 
-// Helper to format month from date string
 const getMonthShort = (dateStr) => {
+  if (!dateStr) return '';
   const date = new Date(dateStr);
-  return date.toLocaleString('en-US', { month: 'short' });
+  return date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
 };
 
-// Helper to calculate P&L for each trade
-const calculatePnl = (trade) => {
-  if (
-    trade.entryPrice == null ||
-    trade.quantity == null ||
-    !trade.direction
-  ) return 0;
-  // If exitPrice is missing (open trade), use entryPrice (P&L = 0)
-  const exit = trade.exitPrice != null ? trade.exitPrice : trade.entryPrice;
-  const priceDiff =
-    trade.direction.toLowerCase() === 'long'
-      ? exit - trade.entryPrice
-      : trade.entryPrice - exit;
-  return priceDiff * trade.quantity;
+const fmtRupee = (val) => {
+  if (val == null || isNaN(val)) return '₹0';
+  const abs = Math.abs(val);
+  if (abs >= 10_000_000) return `₹${(val / 10_000_000).toFixed(2)}Cr`;
+  if (abs >= 100_000) return `₹${(val / 100_000).toFixed(2)}L`;
+  if (abs >= 1_000) return `₹${(val / 1_000).toFixed(1)}K`;
+  return `₹${val.toFixed(0)}`;
 };
 
-const INITIAL_CAPITAL = 100000; // Set your starting capital here
+const CustomTooltip = ({ active, payload, label, theme, initialCapital }) => {
+  if (!active || !payload || !payload.length) return null;
+  const equity = payload[0]?.value;
+  const change = equity - initialCapital;
+  const changePct = ((change / initialCapital) * 100).toFixed(2);
+  const isUp = change >= 0;
+  const isDark = theme !== 'light';
+  return (
+    <div style={{
+      background: isDark ? '#1A2332' : '#fff',
+      border: `1px solid ${isUp ? '#10B981' : '#EF4444'}`,
+      borderRadius: 10,
+      padding: '12px 16px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+      minWidth: 170,
+    }}>
+      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 6, fontWeight: 600, letterSpacing: 0.3 }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 800, color: isDark ? '#fff' : '#1e293b', marginBottom: 4 }}>
+        {fmtRupee(equity)}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: isUp ? '#10B981' : '#EF4444' }}>
+        {isUp ? '▲ +' : '▼ '}{fmtRupee(Math.abs(change))}
+        <span style={{ marginLeft: 6, fontSize: 12, opacity: 0.85 }}>({isUp ? '+' : ''}{changePct}%)</span>
+      </div>
+    </div>
+  );
+};
 
-const EquityCurve = ({ trades }) => {
+const EquityCurve = ({ trades, initialCapital: propInitial }) => {
   const { theme } = useTheme();
-  
-  // Calculate P&L for each trade
-  const tradesWithPnl = trades
-    .sort((a, b) => new Date(a.exitDate) - new Date(b.exitDate))
-    .map(trade => ({
-      ...trade,
-      pnl: calculatePnl(trade)
-    }));
+  const isDark = theme !== 'light';
+  const INITIAL_CAPITAL = propInitial > 0 ? propInitial : 100000;
 
-  // Build cumulative equity curve
-  let equity = INITIAL_CAPITAL;
-  const data = tradesWithPnl.map(trade => {
-    equity += trade.pnl || 0;
+  const { chartData, minEquity, maxEquity, totalReturn, isProfit, currentEquity } = useMemo(() => {
+    const INIT = propInitial > 0 ? propInitial : 100000;
+    if (!trades || trades.length === 0) {
+      return { chartData: [], minEquity: INIT * 0.97, maxEquity: INIT * 1.03, totalReturn: 0, isProfit: true, currentEquity: INIT };
+    }
+
+    const sorted = [...trades]
+      .filter(t => t.exitDate)
+      .sort((a, b) => new Date(a.exitDate) - new Date(b.exitDate));
+
+    const allExits = [];
+    sorted.forEach(trade => {
+      const entry = Number(trade.entryPrice || 0);
+      const sign = (trade.direction || 'long').toLowerCase() === 'long' ? 1 : -1;
+      const txs = trade.exitTransactions || [];
+      if (txs.length === 0 && trade.exitPrice != null && trade.exitDate) {
+        const soldQty = Number(trade.quantity || 0) - Number(trade.remainingQuantity || 0);
+        if (soldQty > 0) {
+          allExits.push({ date: trade.exitDate, pnl: sign * (Number(trade.exitPrice) - entry) * soldQty });
+        }
+      } else {
+        txs.forEach(tx => {
+          if (!tx.transactionDate || tx.price == null || tx.quantity == null) return;
+          const d = typeof tx.transactionDate === 'number'
+            ? new Date(tx.transactionDate).toISOString().slice(0, 10)
+            : String(tx.transactionDate).slice(0, 10);
+          allExits.push({ date: d, pnl: sign * (Number(tx.price) - entry) * Number(tx.quantity) });
+        });
+      }
+    });
+    allExits.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    let equity = INIT;
+    const raw = allExits.map(exit => {
+      equity += exit.pnl;
+      return { date: exit.date, label: getMonthShort(exit.date), equity: parseFloat(equity.toFixed(2)) };
+    });
+
+    const monthMap = new Map();
+    raw.forEach(d => { monthMap.set(d.label, d); });
+    const chartData = [{ label: 'Start', equity: INIT }, ...Array.from(monthMap.values())];
+
+    const equities = chartData.map(d => d.equity);
+    const minE = Math.min(...equities);
+    const maxE = Math.max(...equities);
+    // Ensure at least 5% of initial capital as visual padding so tiny moves still show curve
+    const minPad = INIT * 0.05;
+    const dataPad = (maxE - minE) * 0.25;
+    const padding = Math.max(minPad, dataPad);
+
     return {
-      date: trade.exitDate?.slice(0, 10),
-      month: getMonthShort(trade.exitDate),
-      equity: parseFloat(equity.toFixed(2))
+      chartData,
+      minEquity: Math.floor((minE - padding) / 1000) * 1000,
+      maxEquity: Math.ceil((maxE + padding) / 1000) * 1000,
+      totalReturn: ((equity - INIT) / INIT) * 100,
+      isProfit: equity >= INIT,
+      currentEquity: equity,
     };
-  });
+  }, [trades, propInitial]);
 
-  // Get unique months with their first date
-  const uniqueMonthTicks = [];
-  const seenMonths = new Set();
-  data.forEach(d => {
-    const month = getMonthShort(d.date);
-    if (!seenMonths.has(month)) {
-      uniqueMonthTicks.push(d.date);
-      seenMonths.add(month);
-    }
-  });
+  const formatYAxis = (val) => {
+    if (Math.abs(val) >= 10_000_000) return (val / 10_000_000).toFixed(1) + 'Cr';
+    if (Math.abs(val) >= 100_000) return (val / 100_000).toFixed(1) + 'L';
+    if (Math.abs(val) >= 1_000) return (val / 1_000).toFixed(0) + 'K';
+    return val;
+  };
 
-  // Find the first trade's month
-  // const firstTradeMonth = data.length > 0 ? data[0].month : null; // Reserved for future use
+  const lineColor = isProfit ? '#10B981' : '#EF4444';
+  const gradientStart = isProfit ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
+  const gradientId = isProfit ? 'eqGradUp' : 'eqGradDn';
+  const pnlAbs = currentEquity - INITIAL_CAPITAL;
 
-  // Add initial capital point at the very start
-  const monthlyData = [{
-    month: "",
-    equity: INITIAL_CAPITAL
-  }];
-
-  // Then fill in the rest as before
-  let lastMonth = null;
-  data.forEach(d => {
-    if (d.month !== lastMonth) {
-      monthlyData.push(d);
-      lastMonth = d.month;
-    } else {
-      // Replace the last entry for this month with the latest one
-      monthlyData[monthlyData.length - 1] = d;
-    }
-  });
-
-  const minEquity = INITIAL_CAPITAL;
-  const maxEquity = Math.ceil(Math.max(...monthlyData.map(d => d.equity)) / 1000) * 1000;
-
-  // Calculate dynamic interval for at least 10 ticks
-  const range = maxEquity - minEquity;
-  const approxInterval = range / 10;
-
-  // Helper to round interval to a "nice" value (1K, 2K, 5K, 10K, etc.)
-  function niceInterval(val) {
-    if (val <= 1000) return 1000;
-    if (val <= 2000) return 2000;
-    if (val <= 5000) return 5000;
-    if (val <= 10000) return 10000;
-    if (val <= 20000) return 20000;
-    if (val <= 50000) return 50000;
-    if (val <= 100000) return 100000;
-    if (val <= 200000) return 200000;
-    if (val <= 500000) return 500000;
-    return Math.ceil(val / 100000) * 100000;
-  }
-  const interval = niceInterval(approxInterval);
-
-  // Generate yTicks dynamically
-  const yTicks = [];
-  for (let i = minEquity; i <= maxEquity; i += interval) {
-    yTicks.push(i);
-  }
-  if (yTicks[yTicks.length - 1] < maxEquity) yTicks.push(maxEquity);
-
-  // Helper to format large numbers as 109K, 1.2M, etc.
-  function formatYAxisTick(value) {
-    if (value >= 1_000_000) return (value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 1) + 'M';
-    if (value >= 1_000) return (value / 1_000).toFixed(value % 1_000 === 0 ? 0 : 1) + 'K';
-    return value;
-  }
-
-  function formatTooltipValue(value) {
-    if (value >= 1_000_000) return (value / 1_000_000).toFixed(2) + 'M';
-    if (value >= 1_000) return (value / 1_000).toFixed(2) + 'K';
-    return value.toFixed(2);
+  if (!chartData.length) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, color: '#9CA3AF', fontSize: 14 }}>
+        No exit history to display
+      </div>
+    );
   }
 
   return (
-    <div className={styles.chartContainer}>
-      <ResponsiveContainer width="100%" height={250}>
-        <LineChart data={monthlyData}>
-          <CartesianGrid 
-            stroke={theme === 'light' ? '#e2e8f0' : "#22304a"} 
-            strokeDasharray="3 3" 
+    <div style={{ width: '100%' }}>
+      {/* Stats row */}
+      <div style={{ display: 'flex', gap: 20, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>Current Value</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: isDark ? '#fff' : '#1e293b', lineHeight: 1 }}>{fmtRupee(currentEquity)}</div>
+        </div>
+        <div style={{ width: 1, height: 36, background: isDark ? '#2D3748' : '#E2E8F0' }} />
+        <div>
+          <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>Total P&amp;L</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: lineColor, lineHeight: 1 }}>
+            {pnlAbs >= 0 ? '+' : ''}{fmtRupee(pnlAbs)}
+          </div>
+        </div>
+        <div style={{ width: 1, height: 36, background: isDark ? '#2D3748' : '#E2E8F0' }} />
+        <div>
+          <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>Return</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: lineColor, lineHeight: 1 }}>
+            {isProfit ? '+' : ''}{totalReturn.toFixed(2)}%
+          </div>
+        </div>
+        <div style={{ width: 1, height: 36, background: isDark ? '#2D3748' : '#E2E8F0' }} />
+        <div>
+          <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>Starting Capital</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: isDark ? '#9CA3AF' : '#64748b', lineHeight: 1 }}>{fmtRupee(INITIAL_CAPITAL)}</div>
+        </div>
+      </div>
+
+      <ResponsiveContainer width="100%" height={260}>
+        <AreaChart data={chartData} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={gradientStart} stopOpacity={1} />
+              <stop offset="100%" stopColor={gradientStart} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid
+            stroke={isDark ? 'rgba(45,55,72,0.8)' : 'rgba(226,232,240,0.8)'}
+            strokeDasharray="4 4"
+            vertical={false}
           />
           <XAxis
-            dataKey="month"
-            stroke={theme === 'light' ? '#64748b' : "#b3b8c7"}
-            tick={{ fontSize: 13, fill: theme === 'light' ? '#64748b' : "#b3b8c7" }}
+            dataKey="label"
+            stroke="transparent"
+            tick={{ fontSize: 10, fill: isDark ? '#6B7280' : '#94a3b8' }}
+            tickLine={false}
+            axisLine={false}
+            interval="preserveStartEnd"
           />
           <YAxis
-            stroke={theme === 'light' ? '#64748b' : "#b3b8c7"}
-            tick={{ fontSize: 13, fill: theme === 'light' ? '#64748b' : "#b3b8c7" }}
-            tickFormatter={formatYAxisTick}
+            stroke="transparent"
+            tick={{ fontSize: 10, fill: isDark ? '#6B7280' : '#94a3b8' }}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={formatYAxis}
             domain={[minEquity, maxEquity]}
-            ticks={yTicks}
-            label={{ 
-              value: 'Equity ($)', 
-              angle: -90, 
-              position: 'insideLeft', 
-              fill: theme === 'light' ? '#64748b' : '#b3b8c7', 
-              fontSize: 13 
-            }}
+            width={42}
           />
           <Tooltip
-            contentStyle={{ 
-              background: theme === 'light' ? "#ffffff" : "#1a2233", 
-              border: theme === 'light' ? "1px solid #e2e8f0" : "none", 
-              color: theme === 'light' ? "#1e293b" : "#fff",
-              borderRadius: 8,
-              boxShadow: theme === 'light' ? "0 4px 6px -1px rgba(0, 0, 0, 0.1)" : "0 4px 6px -1px rgba(0, 0, 0, 0.4)"
-            }}
-            labelStyle={{ color: theme === 'light' ? "#1e293b" : "#fff" }}
-            itemStyle={{ color: theme === 'light' ? "#1e293b" : "#fff" }}
-            formatter={(value, name) =>
-              name === "equity"
-                ? [formatTooltipValue(value), "Equity"]
-                : [value, name]
-            }
+            content={<CustomTooltip theme={theme} initialCapital={INITIAL_CAPITAL} />}
+            cursor={{ stroke: isDark ? '#4B5563' : '#94a3b8', strokeWidth: 1, strokeDasharray: '4 4' }}
           />
-          <Line
+          <ReferenceLine
+            y={INITIAL_CAPITAL}
+            stroke={isDark ? '#374151' : '#CBD5E1'}
+            strokeDasharray="6 4"
+            strokeWidth={1.5}
+            label={{ value: 'Start', position: 'insideTopLeft', fontSize: 9, fill: isDark ? '#6B7280' : '#94a3b8' }}
+          />
+          <Area
             type="monotone"
             dataKey="equity"
-            stroke="#4f8cff"
+            stroke={lineColor}
             strokeWidth={2.5}
+            fill={`url(#${gradientId})`}
             dot={false}
+            activeDot={{ r: 5, fill: lineColor, strokeWidth: 2, stroke: isDark ? '#1A2332' : '#fff' }}
+            animationDuration={900}
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

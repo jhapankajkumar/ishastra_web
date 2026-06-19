@@ -1,27 +1,32 @@
 import React from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, ReferenceLine } from "recharts";
+import { useTheme } from '../contexts/ThemeContext';
 import { getPartialPL } from "../common/Helper";
 
 function formatYAxisTick(value) {
-  if (value >= 1000 || value <= -1000) return (value / 1000) + 'K';
-  return value;
+  if (Math.abs(value) >= 1_000_000) return (value / 1_000_000).toFixed(1) + 'M';
+  if (Math.abs(value) >= 1_000) return Math.round(value / 1000) + 'K';
+  return Math.round(value);
 }
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, currency }) => {
   if (active && payload && payload.length) {
     const value = payload[0].value;
+    const sym = currency === 'USD' ? '$' : '₹';
+    const isPos = value >= 0;
     return (
       <div style={{
-        background: "linear-gradient(90deg, #1A2332 60%, #232e42 100%)",
-        border: "1px solid #2A3441",
-        borderRadius: "10px",
-        padding: "14px 18px",
+        background: "linear-gradient(135deg, #1A2332 60%, #232e42 100%)",
+        border: `1px solid ${isPos ? '#10B981' : '#EF4444'}`,
+        borderRadius: 10,
+        padding: "12px 16px",
         color: "#fff",
-        boxShadow: "0 2px 8px rgba(0, 0, 246, 0)"
+        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+        minWidth: 140
       }}>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{label}</div>
-        <div style={{ fontWeight: 600, fontSize: 16, color: value >= 0 ? "#10B981" : "#EF4444" }}>
-          {`P&L: ${value >= 0 ? '+' : ''}$${value.toLocaleString()}`}
+        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: '#9CA3AF' }}>{label}</div>
+        <div style={{ fontWeight: 800, fontSize: 18, color: isPos ? "#10B981" : "#EF4444" }}>
+          {isPos ? '+' : ''}{sym}{Math.abs(value).toLocaleString('en-US', { maximumFractionDigits: 0 })}
         </div>
       </div>
     );
@@ -29,16 +34,13 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-
-// Accepts either 'trades' (raw trade array) or 'data' (already aggregated)
 const PerformanceChart = (props) => {
-  // Support both 'trades' and 'data' props for backward compatibility
+  const { theme } = useTheme();
+  const currency = props.currency || 'INR';
+
   let data = Array.isArray(props.data) ? props.data : undefined;
-  // If 'trades' is provided, aggregate to monthly PnL (last 6 months)
   if (!data && Array.isArray(props.trades)) {
-    // Defensive: fallback to empty array if not an array
     const trades = props.trades;
-    // Build last 12 months keys
     const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const now = new Date();
     const last12Months = [];
@@ -46,18 +48,15 @@ const PerformanceChart = (props) => {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       last12Months.push({ month: MONTHS[d.getMonth()], year: d.getFullYear(), key: `${d.getFullYear()}-${d.getMonth()}` });
     }
-    // Build a map for last 6 months only
     const monthlyPnlMap = {};
-    last12Months.forEach(({ key }) => {
-      monthlyPnlMap[key] = 0;
-    });
+    last12Months.forEach(({ key }) => { monthlyPnlMap[key] = 0; });
     trades.forEach(trade => {
       const exits = trade.exitTransactions || [];
-      if (!exits || exits.length === 0) return; // Skip trades without exits
+      if (!exits || exits.length === 0) return;
       exits.forEach(tx => {
-        if (!tx.transactionDate) return; // Skip if no transaction date
+        if (!tx.transactionDate) return;
         const date = typeof tx.transactionDate === 'number' ? new Date(tx.transactionDate) : new Date(tx.transactionDate);
-        if (isNaN(date)) return; // Skip if date is invalid
+        if (isNaN(date)) return;
         const key = `${date.getFullYear()}-${date.getMonth()}`;
         if (monthlyPnlMap.hasOwnProperty(key)) {
           let pl = 0;
@@ -70,23 +69,48 @@ const PerformanceChart = (props) => {
           }
         }
       });
-
     });
     data = last12Months.map(({ month, key }) => ({
       month,
       pnl: monthlyPnlMap[key] || 0
     }));
   }
-  // Defensive: always use an array
   data = Array.isArray(data) ? data : [];
+
+  const maxAbs = Math.max(...data.map(d => Math.abs(d.pnl)), 1);
+  const yDomain = [-(maxAbs * 1.15), maxAbs * 1.15];
+
   return (
     <ResponsiveContainer width="99%" height="100%" debounce={200}>
-      <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#232e42" />
-        <XAxis dataKey="month" stroke="#9CA3AF" fontSize={12} />
-        <YAxis stroke="#9CA3AF" fontSize={12} tickFormatter={formatYAxisTick} width={56} allowDecimals={false} />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-        <Bar dataKey="pnl" radius={[6, 6, 0, 0]} isAnimationActive={false} >
+      <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+        <CartesianGrid
+          strokeDasharray="3 3"
+          vertical={false}
+          stroke={theme === 'light' ? 'rgba(226,232,240,0.7)' : 'rgba(42,52,65,0.8)'}
+        />
+        <XAxis
+          dataKey="month"
+          stroke="transparent"
+          tick={{ fontSize: 11, fill: theme === 'light' ? '#64748b' : '#6B7280' }}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          stroke="transparent"
+          tick={{ fontSize: 11, fill: theme === 'light' ? '#64748b' : '#6B7280' }}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={formatYAxisTick}
+          width={44}
+          domain={yDomain}
+        />
+        <ReferenceLine
+          y={0}
+          stroke={theme === 'light' ? '#94a3b8' : '#374151'}
+          strokeWidth={1.5}
+        />
+        <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+        <Bar dataKey="pnl" radius={[5, 5, 0, 0]} maxBarSize={40} isAnimationActive={true} animationDuration={600}>
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? "#10B981" : "#EF4444"} />
           ))}
