@@ -58,15 +58,43 @@ export const getUnifiedAnalysis = async (symbol, period = '3mo', capital = 12000
 /**
  * Get unified AI analysis combining all services
  */
-export const getChartData = async (symbol) => {
+export const getChartData = async (symbol, period = '2y') => {
   try {
     const params = new URLSearchParams({
       symbol: symbol,
+      period: period,
     });
     const response = await AnalysisAPI_Instance.get(`/trading/chart?${params}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching chart data:', error);
+    throw error;
+  }
+};
+
+/**
+ * Review one rendered chart image with OpenAI vision.
+ */
+export const reviewAISetup = async (payload) => {
+  try {
+    const response = await AnalysisAPI_Instance.post('/trading/ai-setup-review', payload);
+    return response.data;
+  } catch (error) {
+    console.error('Error reviewing AI setup:', error);
+    throw error;
+  }
+};
+
+/**
+ * Review multiple rendered chart images with OpenAI vision.
+ * Keep batches modest in the UI because each chart is a separate model call.
+ */
+export const reviewAISetupBulk = async (items) => {
+  try {
+    const response = await AnalysisAPI_Instance.post('/trading/ai-setup-review/bulk', { items });
+    return response.data;
+  } catch (error) {
+    console.error('Error reviewing AI setup batch:', error);
     throw error;
   }
 };
@@ -129,6 +157,9 @@ export const runWatchlistDailyScan = async (stocksUniverse = 'ALL') => {
 // Export all analysis functions as a default object for convenience
 const AnalysisAPI = {
   getUnifiedAnalysis,
+  getChartData,
+  reviewAISetup,
+  reviewAISetupBulk,
   getWatchlist,
   runWatchlistDailyScan,
 };
