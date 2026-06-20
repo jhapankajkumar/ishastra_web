@@ -47,6 +47,7 @@ const StockScan = () => {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [copiedFailed, setCopiedFailed] = useState(false);
 
   const symbolCount = parseSymbols(inputText).length;
 
@@ -91,10 +92,19 @@ const StockScan = () => {
     });
   };
 
+  const handleCopyFailed = () => {
+    if (!result?.failedSymbols) return;
+    navigator.clipboard.writeText(result.failedSymbols).then(() => {
+      setCopiedFailed(true);
+      setTimeout(() => setCopiedFailed(false), 2000);
+    });
+  };
+
   const handleClear = () => {
     setInputText('');
     setResult(null);
     setCopied(false);
+    setCopiedFailed(false);
   };
 
   return (
@@ -236,6 +246,31 @@ const StockScan = () => {
                 </button>
               </div>
             </div>
+
+            {/* Failed Stocks Output */}
+            {(result.failedCount > 0 || result.failedSymbols) && (
+              <div className={styles.failedOutputSection}>
+                <p className={styles.failedOutputLabel}>
+                  ⚠️ Failed Stocks ({result.failedCount ?? 0}) — could not fetch data:
+                </p>
+                <div className={styles.copyRow}>
+                  <input
+                    type="text"
+                    className={styles.failedOutputInput}
+                    value={result.failedSymbols || 'None'}
+                    readOnly
+                  />
+                  <button
+                    type="button"
+                    className={`${styles.failedCopyBtn} ${copiedFailed ? styles.failedCopyBtnSuccess : ''}`}
+                    onClick={handleCopyFailed}
+                    disabled={!result.failedSymbols}
+                  >
+                    {copiedFailed ? '✅ Copied!' : '📋 Copy'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
