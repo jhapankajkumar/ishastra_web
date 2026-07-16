@@ -26,6 +26,7 @@ import StockScan from './pages/StockScan'; // Import StockScan component
 import StockDetail from './pages/StockDetail'; // Import StockDetail component
 import './styles/themes.css'; // Import global theme styles
 import Chart from './pages/Chart'; // Import Chart component
+import QuickReview from './pages/QuickReview'; // Import QuickReview component
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
             <Route path="/analysis" element={<TickerAnalysis />} />
             <Route path="/chart" element={<Chart />} />
             <Route path="/chart/:symbol" element={<Chart />} />
+            <Route path="/quick-review" element={<QuickReview />} />
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/scan" element={<StockScan />} />
             <Route path="/stock-detail/:symbol" element={<StockDetail />} />

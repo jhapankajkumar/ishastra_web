@@ -10,11 +10,11 @@ const navLinks = [
   { to: "/trades", label: "Trades", icon: "💼" },
   { to: "/watchlist", label: "Watchlist", icon: "👀" },
   { to: "/scan", label: "Scan", icon: "🔎" },
-  { to: "/chart", label: "Chart", icon: "📈" },
+  { to: "/chart", label: "Analysis", icon: "📈" },
+  { to: "/quick-review", label: "Quick Review", icon: "🔍" },
   { to: "/investments", label: "Investments", icon: "💰" },
   { to: "/recommendations", label: "Recommendations", icon: "💡" },
   { to: "/journal", label: "Journal", icon: "📝" },
-  { to: "/analysis", label: "Analysis", special: true, icon: "🔍" },
 ];
 
 export default function Header() {

@@ -214,7 +214,7 @@ const Dashboard = () => {
     const initialCap = Number(cap.total || 0);
 
     let closedTradePnl = 0, openTradePnl = 0, capitalDeployed = 0, currentVal = 0;
-    let activeTrades = 0, closedCount = 0, wins = 0;
+    let activeTrades = 0, closedCount = 0, wins = 0, breakEvens = 0, losses = 0;
     let todayChange = 0, todayBase = 0;
 
     currencyTrades.forEach(t => {
@@ -235,15 +235,21 @@ const Dashboard = () => {
         }
       } else {
         closedCount++;
-        closedTradePnl += getRealizedPnLSafe(t);
-        if (getRealizedPnLSafe(t) > 0) wins++;
+        const realizedPnL = getRealizedPnLSafe(t);
+        closedTradePnl += realizedPnL;
+        const invested = Number(t.entryPrice || 0) * Number(t.quantity || 0);
+        const tradePnlPct = invested > 0 ? (realizedPnL / invested) * 100 : 0;
+        if (tradePnlPct > 1) wins++;
+        else if (tradePnlPct >= -1) breakEvens++;
+        else losses++;
       }
     });
 
     const finalPnl = closedTradePnl + openTradePnl - totalCommissions;
     const portfolioValue = initialCap + finalPnl;
     const pnlPct = initialCap > 0 ? (finalPnl / initialCap) * 100 : 0;
-    const winRate = closedCount > 0 ? (wins / closedCount) * 100 : null;
+    const decidedCount = wins + losses;
+    const winRate = decidedCount > 0 ? (wins / decidedCount) * 100 : null;
     const todayPct = todayBase > 0 ? (todayChange / todayBase) * 100 : null;
     const unrealizedPnl = currencyTrades.reduce((s, t) => {
       const rem = getRemainingQtySafe(t);
@@ -253,7 +259,7 @@ const Dashboard = () => {
     return {
       initialCap, portfolioValue, finalPnl, pnlPct,
       capitalDeployed, currentVal, closedTradePnl, openTradePnl,
-      winRate, wins, closedCount, activeTrades,
+      winRate, wins, breakEvens, losses, closedCount, activeTrades,
       totalTrades: currencyTrades.length,
       todayChange, todayBase, todayPct, unrealizedPnl
     };
@@ -291,7 +297,7 @@ const Dashboard = () => {
   }
 
   const { portfolioValue, finalPnl, pnlPct, capitalDeployed, currentVal,
-          winRate, totalTrades, activeTrades, closedCount,
+          winRate, totalTrades, activeTrades, closedCount, breakEvens,
           todayChange, todayBase, todayPct, unrealizedPnl } = capitalMetrics;
 
   // Recent trades (sorted by entry date desc)
@@ -359,7 +365,7 @@ const Dashboard = () => {
             <KpiCard
               label="Win Rate"
               value={winRate != null ? `${winRate.toFixed(1)}%` : '—'}
-              sub={`${capitalMetrics.wins}W / ${closedCount - capitalMetrics.wins}L`}
+              sub={`${capitalMetrics.wins}W · ${breakEvens}BE · ${capitalMetrics.losses}L`}
               subColor="var(--text-muted)"
               theme={theme}
             />

@@ -510,7 +510,8 @@ const LightweightChart = ({ ohlcv, height = 500, onVisibleRangeChange, annotatio
       chart.removeSeries(seriesRefs.current[indicator]);
     }
     seriesOptions.priceScaleId = priceScaleId;
-    seriesOptions.lastValueVisible = false;
+    // Show EMA values on the right price scale with their line colors
+    seriesOptions.lastValueVisible = ['ema10', 'ema13', 'ema20', 'ema26', 'ema50', 'ema200'].includes(indicator);
     seriesOptions.priceLineVisible = false;
     series = chart.addSeries(LineSeries, seriesOptions);
     series.setData(seriesData);

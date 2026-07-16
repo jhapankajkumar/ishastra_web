@@ -74,6 +74,29 @@ const getVisibleWindowData = (data, visibleRange) => {
   });
 };
 
+// As-of view for AI review: scrolling the chart back must rewind ALL data,
+// not just the visible candles — otherwise EMAs/52w stats leak future bars
+// and contradict the image (mixed-date payload). Also drops today's
+// still-forming candle so reviews only ever see completed daily bars.
+const getAsOfData = (data, visibleRange) => {
+  if (!Array.isArray(data) || data.length === 0) return [];
+
+  let asOf = data;
+  if (visibleRange?.to) {
+    asOf = asOf.filter((bar) => {
+      const date = bar.date ? bar.date.substring(0, 10) : null;
+      return date && date <= visibleRange.to;
+    });
+  }
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  if (asOf.length && asOf[asOf.length - 1].date?.substring(0, 10) === todayStr) {
+    asOf = asOf.slice(0, -1);
+  }
+
+  return asOf;
+};
+
 const buildAIChartMetadata = (data, visibleRange = null) => {
   if (!Array.isArray(data) || data.length === 0) {
     return {
@@ -253,8 +276,12 @@ export default function ChartPage() {
       const imageDataUrl = captureElementCanvasesAsDataUrl(chartWrapperRef.current, {
         pixelRatio: 2
       });
-      const lastBar = chartData[chartData.length - 1];
-      const chartMetadata = buildAIChartMetadata(chartData, chartVisibleRange);
+      const asOfData = getAsOfData(chartData, chartVisibleRange);
+      if (!asOfData.length) {
+        throw new Error('No completed bars available for the selected chart window');
+      }
+      const lastBar = asOfData[asOfData.length - 1];
+      const chartMetadata = buildAIChartMetadata(asOfData, chartVisibleRange);
       const response = await reviewAISetup({
         symbol: selectedTicker,
         timeframe: '1D',
@@ -284,7 +311,7 @@ export default function ChartPage() {
       const chartImageDataUrl = await captureElementVisualAsDataUrl(chartWrapperRef.current, {
         pixelRatio: 2
       });
-      const metadata = buildAIChartMetadata(chartData, chartVisibleRange);
+      const metadata = buildAIChartMetadata(getAsOfData(chartData, chartVisibleRange), chartVisibleRange);
       const generatedAt = new Date();
       const html = buildSetupReportHtml({
         symbol: selectedTicker,
@@ -310,6 +337,43 @@ export default function ChartPage() {
     if (!reportHtml || !reportFileName) return;
     downloadHtmlReport(reportHtml, reportFileName);
   };
+
+  // Auto-generate report when AI review completes
+  useEffect(() => {
+    if (!aiReview || !chartWrapperRef.current || !chartData?.length || !selectedTicker) return;
+    if (reportHtml) return; // Already generated
+
+    const generateReport = async () => {
+      setReportGenerating(true);
+      try {
+        const chartImageDataUrl = await captureElementVisualAsDataUrl(chartWrapperRef.current, {
+          pixelRatio: 2
+        });
+        const metadata = buildAIChartMetadata(getAsOfData(chartData, chartVisibleRange), chartVisibleRange);
+        const generatedAt = new Date();
+        const html = buildSetupReportHtml({
+          symbol: selectedTicker,
+          chartImageDataUrl,
+          review: aiReview,
+          metadata,
+          generatedAt
+        });
+        const timestamp = generatedAt.toISOString().replace(/[:.]/g, '-');
+        setReportHtml(html);
+        setReportFileName(`${selectedTicker}_swing_setup_report_${timestamp}.html`);
+        window.requestAnimationFrame(() => {
+          reportPreviewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      } catch (err) {
+        console.error('Failed to auto-generate report:', err);
+      } finally {
+        setReportGenerating(false);
+      }
+    };
+
+    generateReport();
+    // eslint-disable-next-line
+  }, [aiReview]);
 
   // Auto-load chart if symbol param is present
   useEffect(() => {
@@ -352,14 +416,6 @@ export default function ChartPage() {
               disabled={aiReviewLoading}
             >
               {aiReviewLoading ? 'Reviewing...' : 'AI Review'}
-            </button>
-            <button
-              type="button"
-              className={styles.reportButton}
-              onClick={handleGenerateReport}
-              disabled={!aiReview || reportGenerating || aiReviewLoading}
-            >
-              {reportGenerating ? 'Generating...' : 'Render HTML Report'}
             </button>
           </div>
           <div className={styles.chartWrapper} ref={chartWrapperRef}>
