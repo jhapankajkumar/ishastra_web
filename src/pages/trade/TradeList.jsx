@@ -121,6 +121,11 @@ export default function TradeList() {
           bValue = todaysB.value || 0;
           break;
 
+        case 'rMultiple':
+          aValue = getRMultiple(a, getAverageSellPrice(a)) ?? -Infinity;
+          bValue = getRMultiple(b, getAverageSellPrice(b)) ?? -Infinity;
+          break;
+
         default:
           return 0;
       }
@@ -732,6 +737,21 @@ export default function TradeList() {
   const marketGroups = groupTradesByMarketAndStatus();
 
 
+  // R Multiple = (exit - entry) / (entry - stopLoss), sign-flipped for SHORT.
+  // Risk (entry - stopLoss) is what was known when the trade was placed, so
+  // this stays comparable across trades sized differently. Returns null when
+  // stopLoss is missing/equal to entry (risk was never defined) — render
+  // that as 'N/A' rather than a divide-by-zero artifact.
+  const getRMultiple = (trade, exitPrice) => {
+    const entryPrice = Number(trade.entryPrice || 0);
+    const stopLoss = trade.stopLoss ? Number(trade.stopLoss) : 0;
+    const isShort = (trade.direction || 'LONG').toUpperCase() === 'SHORT';
+    const risk = isShort ? (stopLoss - entryPrice) : (entryPrice - stopLoss);
+    if (!entryPrice || !stopLoss || risk <= 0 || exitPrice == null) return null;
+    const reward = isShort ? (entryPrice - exitPrice) : (exitPrice - entryPrice);
+    return reward / risk;
+  };
+
   // Calculate Today's P&L for a trade
   const getTodaysPL = (trade) => {
     const currentPrice = trade.currentPrice !== undefined ? Number(trade.currentPrice) : Number(trade.entryPrice || 0);
@@ -872,7 +892,17 @@ export default function TradeList() {
                             {plValue >= 0 ? '+' : ''}{formatCurrency(plValue, currency)}
                           </span>
                         </div>
-                        {status !== 'CLOSED' && (
+                        {status === 'CLOSED' ? (() => {
+                          const rMultiple = getRMultiple(trade, avgSellPrice);
+                          return (
+                            <div className={styles.mobileStatItem}>
+                              <span className={styles.mobileStatLabel}>R Multiple</span>
+                              <span className={`${styles.mobileStatValue} ${rMultiple == null ? '' : rMultiple >= 0 ? styles.footerPositive : styles.footerNegative}`}>
+                                {rMultiple == null ? 'N/A' : `${rMultiple >= 0 ? '+' : ''}${rMultiple.toFixed(2)}R`}
+                              </span>
+                            </div>
+                          );
+                        })() : (
                           <div className={styles.mobileStatItem}>
                             <span className={styles.mobileStatLabel}>Today</span>
                             <span className={`${styles.mobileStatValue} ${todaysPL.value >= 0 ? styles.footerPositive : styles.footerNegative}`}>
@@ -970,7 +1000,11 @@ export default function TradeList() {
                 )}
                 
                 {renderSortableHeader('P&L', 'pl')}
-                {renderSortableHeader("Today's P&L", 'todaysPL')}
+                {status === 'CLOSED' ? (
+                  renderSortableHeader('R Multiple', 'rMultiple')
+                ) : (
+                  renderSortableHeader("Today's P&L", 'todaysPL')
+                )}
                 <th className={styles.tableHeaderCell}>Actions</th>
               </tr>
             </thead>
@@ -1083,9 +1117,19 @@ export default function TradeList() {
                         </span>
                       </div>
                     </td>
-                    {/* Today's P&L */}
+                    {/* R Multiple for closed trades, Today's P&L otherwise */}
                     <td>
-                      {status === 'CLOSED' ? '-' : (
+                      {status === 'CLOSED' ? (
+                        (() => {
+                          const rMultiple = getRMultiple(trade, avgSellPrice);
+                          if (rMultiple == null) return 'N/A';
+                          return (
+                            <span className={rMultiple >= 0 ? styles.profit : styles.loss}>
+                              {rMultiple >= 0 ? '+' : ''}{rMultiple.toFixed(2)}R
+                            </span>
+                          );
+                        })()
+                      ) : (
                         <div className={styles.priceWithChange}>
                           <span className={todaysPL.value >= 0 ? styles.profit : styles.loss}>
                             {todaysPL.value >= 0 ? '+' : ''}{formatCurrency(todaysPL.value, currency)}
