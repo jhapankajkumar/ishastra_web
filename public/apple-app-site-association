@@ -1,0 +1,71 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "G2U3W248Y7.sg.com.income.snack.prod",
+        "paths": [
+          "/verify/signup/*",
+          "/signup/singpass",
+          "/signup/singpass/*",
+          "/signup/resubmit",
+          "/verify/password/*",
+          "/welcome",
+          "/product/*",
+          "/snackup/merchant",
+          "/home",
+          "/payment/product/*",
+          "/page/*",
+          "/singpass/oauth/*",
+          "/oauth/singpass/*",
+          "/callback/singpass/*"
+        ]
+      },
+      {
+        "appID": "G2U3W248Y7.sg.com.income.snack-sit",
+        "paths": [
+          "/verify/signup/*",
+          "/signup/singpass",
+          "/signup/singpass/*",
+          "/signup/resubmit",
+          "/verify/password/*",
+          "/welcome",
+          "/product/*",
+          "/snackup/merchant",
+          "/home",
+          "/payment/product/*",
+          "/page/*",
+          "/singpass/oauth/*",
+          "/oauth/singpass/*",
+          "/callback/singpass/*"
+        ]
+      },
+      {
+        "appID": "G2U3W248Y7.sg.com.income.snack-uat",
+        "paths": [
+          "/verify/signup/*",
+          "/signup/singpass",
+          "/signup/singpass/*",
+          "/signup/resubmit",
+          "/verify/password/*",
+          "/welcome",
+          "/product/*",
+          "/snackup/merchant",
+          "/home",
+          "/payment/product/*",
+          "/page/*",
+          "/singpass/oauth/*",
+          "/oauth/singpass/*",
+          "/callback/singpass/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "G2U3W248Y7.sg.com.income.snack.prod",
+      "G2U3W248Y7.sg.com.income.snack-uat",
+      "G2U3W248Y7.sg.com.income.snack-sit"
+    ]
+  }
+}
