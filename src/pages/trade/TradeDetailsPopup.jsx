@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ImageGallery from "../../components/ImageGallery";
 import styles from "./TradeDetailsPopup.module.css";
 import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
@@ -7,6 +8,7 @@ import config from "../../config/environment";
 
 export default function TradeDetailsPopup({ trade, onClose }) {
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const [exitTactics, setExitTactics] = useState([]);
   const [setups, setSetups] = useState([]);
 
@@ -89,6 +91,24 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     });
 
     return totalPL.toFixed(2);
+  };
+
+  const handleViewOnChart = () => {
+    const exitSummary = getExitTransactionsSummary();
+    const exitDate = exitSummary?.lastExitDate ? exitSummary.lastExitDate.toISOString() : trade.exitDate;
+    const exitPrice = exitSummary?.avgExitPrice || trade.exitPrice;
+    // Strip any exchange suffix Yahoo/chart data doesn't expect (kept simple —
+    // the chart page's own ticker search already normalizes this elsewhere).
+    navigate(`/chart/${trade.ticker}`, {
+      state: {
+        tradeContext: {
+          entryDate: trade.entryDate,
+          entryPrice: trade.entryPrice,
+          exitDate,
+          exitPrice
+        }
+      }
+    });
   };
 
   const getRemainingQuantity = () => {
@@ -295,6 +315,23 @@ export default function TradeDetailsPopup({ trade, onClose }) {
               <h1 className={styles.tickerTitle}>
                 {trade.ticker}
               </h1>
+              <button
+                type="button"
+                onClick={handleViewOnChart}
+                style={{
+                  marginLeft: 'auto',
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border-secondary)',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                📈 View on Chart
+              </button>
             </div>
             <p className={styles.companyName}>
               Trade Details & Analysis

@@ -5,9 +5,16 @@ import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAuth } from "../../contexts/AuthContext";
+import EmptyState from "../../components/EmptyState";
+import SearchBar from "../../components/SearchBar";
+import Pagination from "../../components/Pagination";
 import styles from "./RecommendationList.module.css";
 
+const PAGE_SIZE = 20;
+
 export default function RecommendationList() {
+    const { user } = useAuth();
     const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
     useEffect(() => {
         const onResize = () => setIsMobile(window.innerWidth <= 768);
@@ -23,8 +30,15 @@ export default function RecommendationList() {
     const [recToDelete, setRecToDelete] = useState(null);
     const [sortBy, setSortBy] = useState('ticker');
     const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc'
+    const [searchText, setSearchText] = useState('');
+    const [page, setPage] = useState(1);
     const notification = useNotification();
     const navigate = useNavigate();
+
+    const handleSearchChange = (text) => {
+        setSearchText(text);
+        setPage(1);
+    };
 
     useEffect(() => {
         loadRecommendations();
@@ -113,7 +127,10 @@ export default function RecommendationList() {
 
 
     // Sorting logic
-    const sortedRecommendations = [...recommendations].sort((a, b) => {
+    const filteredRecommendations = recommendations.filter(rec =>
+        !searchText || (rec.ticker || '').toLowerCase().includes(searchText.toLowerCase())
+    );
+    const sortedRecommendations = [...filteredRecommendations].sort((a, b) => {
         let valA, valB;
         switch (sortBy) {
             case 'ticker':
@@ -134,6 +151,7 @@ export default function RecommendationList() {
                 return 0;
         }
     });
+    const pagedRecommendations = sortedRecommendations.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     return (
         <div className={`${styles.container} ${theme}`}>
@@ -144,6 +162,7 @@ export default function RecommendationList() {
             {/* Action Bar */}
             <div className={styles.actionBar}>
                 <div className={styles.filters}>
+                    <SearchBar value={searchText} onChange={handleSearchChange} placeholder="Search by ticker..." />
                     <label>Sort By:</label>
                     <select
                         value={sortBy}
@@ -173,7 +192,7 @@ export default function RecommendationList() {
             {/* Mobile card list */}
             {isMobile ? (
                 <div className={styles.mobileList}>
-                    {[...sortedRecommendations]
+                    {[...pagedRecommendations]
                       .sort((a,b)=> (a.ticker||'').localeCompare(b.ticker||''))
                       .map(rec => {
                         const diffPct = rec.differencePercentage ?? null;
@@ -215,7 +234,7 @@ export default function RecommendationList() {
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedRecommendations.map(rec => {
+                        {pagedRecommendations.map(rec => {
                             return (
                                 <tr key={rec.id} className={styles.tableRow}>
                                     <td className={`${styles.tableCell} ${styles.tickerCell}`}>
@@ -249,26 +268,24 @@ export default function RecommendationList() {
                                             <span className={styles.noPrice}>-</span>
                                         )}
                                     </td>
-                                    <td className={styles.tableCell}>
+                                    <td
+                                        className={`${styles.tableCell} ${rec.priceDifference !== null && rec.differencePercentage > 7.0
+                                                ? styles.bgGreen
+                                                : rec.priceDifference !== null && rec.differencePercentage < 7.0 && rec.differencePercentage > 0
+                                                    ? styles.bgRed
+                                                    : ''
+                                            }`}
+                                    >
                                         {rec.priceDifference !== null ? (
-                                            <td
-                                                className={`${styles.tableCell} ${rec.differencePercentage > 7.0
-                                                        ? styles.bgGreen
-                                                        : rec.differencePercentage < 7.0 && rec.differencePercentage > 0
-                                                            ? styles.bgRed
-                                                            : ''
-                                                    }`}
-                                            >
-                                                <div className={styles.opportunityCell}>
-                                                    <span className={rec.differencePercentage > 7 ? styles.opportunityBadge : styles.noOpportunityBadge}>
-                                                        {rec.differencePercentage > 7 ? `+ ${rec.differencePercentage}%` : `${rec.differencePercentage}%`}
-                                                    </span>
-                                                    <span className={styles.priceDiff}>
-                                                        {rec.differencePercentage > 0 ? '+' : ''}
-                                                        {rec.priceDifference.toFixed(2)}
-                                                    </span>
-                                                </div>
-                                            </td>
+                                            <div className={styles.opportunityCell}>
+                                                <span className={rec.differencePercentage > 7 ? styles.opportunityBadge : styles.noOpportunityBadge}>
+                                                    {rec.differencePercentage > 7 ? `+ ${rec.differencePercentage}%` : `${rec.differencePercentage}%`}
+                                                </span>
+                                                <span className={styles.priceDiff}>
+                                                    {rec.differencePercentage > 0 ? '+' : ''}
+                                                    {rec.priceDifference.toFixed(2)}
+                                                </span>
+                                            </div>
                                         ) : (
                                             <span className={styles.noData}>-</span>
                                         )}
@@ -283,12 +300,14 @@ export default function RecommendationList() {
                                             >
                                                 Edit
                                             </button>
-                                            <button
-                                                onClick={() => handleDeleteClick(rec)}
-                                                className={`${styles.actionButton} ${styles.deleteButton}`}
-                                            >
-                                                Delete
-                                            </button>
+                                            {user && (
+                                                <button
+                                                    onClick={() => handleDeleteClick(rec)}
+                                                    className={`${styles.actionButton} ${styles.deleteButton}`}
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -299,17 +318,20 @@ export default function RecommendationList() {
             </div>
             )}
 
-            {recommendations.length === 0 && (
-                <div className={styles.emptyState}>
-                    <h3>No recommendations found</h3>
-                    <p>Start by adding your first recommendation  to track your portfolio.</p>
-                    <button
-                        className={styles.addButton}
-                        onClick={() => navigate('/recommendations/new')}
-                    >
-                        + Add First Recommendation
-                    </button>
-                </div>
+            {sortedRecommendations.length > 0 && (
+                <Pagination page={page} pageSize={PAGE_SIZE} total={sortedRecommendations.length} onPageChange={setPage} />
+            )}
+
+            {recommendations.length === 0 ? (
+                <EmptyState
+                    icon="💡"
+                    title="No recommendations yet"
+                    message="Start by adding your first stock recommendation to track."
+                    actionLabel="+ Add your first recommendation"
+                    onAction={() => navigate('/recommendations/new')}
+                />
+            ) : sortedRecommendations.length === 0 && (
+                <EmptyState icon="🔍" title="No matches" message={`No recommendations match "${searchText}".`} />
             )}
 
             {/* Delete Confirmation Dialog */}

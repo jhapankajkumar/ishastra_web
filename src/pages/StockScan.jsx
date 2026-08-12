@@ -116,6 +116,9 @@ const StockScan = () => {
           <p className={styles.subtitle}>
             Upload your stock universe file or paste symbols to scan for BUY signals.
           </p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+            Based on a rules-based template (Minervini-style) for journaling/review purposes — not financial advice or a trading signal.
+          </p>
         </div>
       </div>
 

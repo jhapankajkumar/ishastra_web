@@ -110,3 +110,21 @@ export function getInvested(trade) {
     }
     return "-";
 };
+
+// R Multiple = (exit - entry) / (entry - stopLoss), sign-flipped for SHORT.
+// Mirrors the per-row calculation in TradeList.jsx so analytics (histograms,
+// win-rate stats) agree with what a user sees in the table. Returns null
+// when stopLoss is missing/on the wrong side of entry (risk was never
+// defined) or the trade has no exit yet — callers should treat null as
+// "excluded from R-based stats", not zero.
+export function getRMultiple(trade) {
+    const entryPrice = Number(trade.entryPrice || 0);
+    const stopLoss = trade.stopLoss ? Number(trade.stopLoss) : 0;
+    const isShort = (trade.direction || 'LONG').toUpperCase() === 'SHORT';
+    const risk = isShort ? (stopLoss - entryPrice) : (entryPrice - stopLoss);
+    const avgExit = getAverageExitPrice(trade);
+    const exitPrice = avgExit === '-' ? null : Number(avgExit);
+    if (!entryPrice || !stopLoss || risk <= 0 || exitPrice == null) return null;
+    const reward = isShort ? (entryPrice - exitPrice) : (exitPrice - entryPrice);
+    return reward / risk;
+};

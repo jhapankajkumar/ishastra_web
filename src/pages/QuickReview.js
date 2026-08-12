@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
-import axios from 'axios';
-import config from '../config/environment';
+import { API } from '../api/baseApi';
 import TickerSearch from '../components/TickerSearch';
 import styles from './QuickReview.module.css';
 
@@ -80,7 +79,7 @@ export default function QuickReview() {
       const blob = await response.blob();
       formData.append('image', blob, 'chart.png');
 
-      const result = await axios.post(`${config.API_BASE_URL}/api/ai/quick-review`, formData, {
+      const result = await API.post('/ai/quick-review', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -124,6 +123,9 @@ export default function QuickReview() {
       <div className={styles.header}>
         <h1>Quick Review</h1>
         <p>Upload a chart image for instant AI analysis</p>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+          Based on a rules-based template (Minervini-style) for journaling/review purposes — not financial advice or a trading signal.
+        </p>
       </div>
 
       <div className={styles.formSection}>

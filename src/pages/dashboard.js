@@ -8,11 +8,14 @@ import InvestmentValueChart from '../components/InvestmentValueChart';
 import SectorDonutChart from '../components/SectorDonutChart';
 import TopHoldingsBarChart from '../components/TopHoldingsBarChart';
 import MarketCapPieChart from '../components/MarketCapPieChart';
+import DrawdownChart from '../components/DrawdownChart';
+import RMultipleHistogram from '../components/RMultipleHistogram';
+import CalendarHeatmap from '../components/CalendarHeatmap';
 import ErrorPage from '../components/ErrorPage';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import styles from './Dashboard.module.css';
 import { getExitTransactions, getAverageExitPrice, getPartialPL, formatDate, getInvested } from '../common/Helper';
-import { fetchSetups } from "../api/firebaseMetaApi";
 import { getCapitalInfo } from '../api/capitalApi';
 
 // ---- Pure helpers ----
@@ -98,6 +101,7 @@ const StatusBadge = ({ status }) => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +119,9 @@ const Dashboard = () => {
   const [investments, setInvestments] = useState([]);
   const [investmentLoading, setInvestmentLoading] = useState(false);
   const [investmentError, setInvestmentError] = useState(null);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('ishastra-welcomed') === 'true' : true
+  );
 
   // Viewport listener
   useEffect(() => {
@@ -123,7 +130,10 @@ const Dashboard = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Load trading data
+  // Load trading data — re-runs on login/logout (`user` changes identity),
+  // not just on mount. Without this, logging out left the previous user's
+  // (or guest's) cached trades/capital on screen until a manual page
+  // reload, since nothing else ever told this effect to refetch.
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -152,6 +162,8 @@ const Dashboard = () => {
           const map = {};
           arr.forEach(item => { if (item?.currency) map[item.currency.toUpperCase()] = item; });
           setCapitalMap(map);
+        } else {
+          setCapitalMap({});
         }
 
         setError(networkErr ? { type: 'NETWORK_ERROR', message: 'Unable to connect to server.' } : null);
@@ -162,7 +174,12 @@ const Dashboard = () => {
       }
     };
     load();
-  }, []);
+  }, [user]);
+
+  const dismissWelcome = () => {
+    setWelcomeDismissed(true);
+    if (typeof window !== 'undefined') localStorage.setItem('ishastra-welcomed', 'true');
+  };
 
   // Load investment data
   useEffect(() => {
@@ -195,13 +212,22 @@ const Dashboard = () => {
       })
       .catch(setInvestmentError)
       .finally(() => setInvestmentLoading(false));
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   // ---- Derived trading data ----
   const currencySymbol = tradingCurrency === 'USD' ? '$' : '₹';
+  // For a logged-in user, excludes isPaperTrade=true rows from all dashboard
+  // analytics (KPIs, equity curve, drawdown, R-multiple, calendar, recent
+  // trades) — those are still visible/manageable on the Trades list, just
+  // not counted toward real performance numbers here. This must NOT apply
+  // to guests: every guest-sandbox row is isPaperTrade=true by definition
+  // (that's the guest-sandbox signal itself), so applying the same filter
+  // there would strip 100% of the guest dashboard's data.
   const currencyTrades = React.useMemo(() =>
-    trades.filter(t => (t.currency || 'INR').toUpperCase() === tradingCurrency),
-    [trades, tradingCurrency]
+    trades.filter(t =>
+      (t.currency || 'INR').toUpperCase() === tradingCurrency && (!user || t.isPaperTrade !== true)
+    ),
+    [trades, tradingCurrency, user]
   );
 
   const totalCommissions = React.useMemo(() =>
@@ -321,6 +347,22 @@ const Dashboard = () => {
         ))}
       </div>
 
+      {/* ========== WELCOME CARD (guest visitors only) ========== */}
+      {!welcomeDismissed && !user && (
+        <div className={styles.welcomeCard}>
+          <button className={styles.welcomeClose} onClick={dismissWelcome} aria-label="Dismiss">✕</button>
+          <h3 className={styles.welcomeTitle}>👋 Welcome to Ishastra</h3>
+          <p className={styles.welcomeText}>
+            This is a trade journal and review tool — not a trading signal system. A few things to try first:
+          </p>
+          <div className={styles.welcomeActions}>
+            <button className={styles.welcomeActionBtn} onClick={() => navigate('/trades/new')}>+ Add a Trade</button>
+            <button className={styles.welcomeActionBtn} onClick={() => navigate('/scan')}>🔎 Run a Scan</button>
+            <button className={styles.welcomeActionBtn} onClick={() => navigate('/chart')}>📈 Try Chart Review</button>
+          </div>
+        </div>
+      )}
+
       {/* ========== TRADING TAB ========== */}
       {activeTab === 'trading' && (
         <>
@@ -425,6 +467,25 @@ const Dashboard = () => {
             {/* Portfolio Value Over Time */}
             <ChartCard title="Portfolio Growth" subtitle="Monthly portfolio value (realized P&L + current unrealized)">
               <InvestmentValueChart investments={currencyTrades} isTrade={true} initialCapital={equityCurveInitial} />
+            </ChartCard>
+
+            {/* Drawdown — full width, the equity curve alone can hide a bad stretch */}
+            <ChartCard
+              full
+              title="Drawdown"
+              subtitle="How far equity has fallen from its running peak"
+            >
+              <DrawdownChart trades={currencyTrades} initialCapital={equityCurveInitial} currencySymbol={currencySymbol} />
+            </ChartCard>
+
+            {/* R-Multiple distribution */}
+            <ChartCard title="R-Multiple Distribution" subtitle="Are you a few big winners, or death by 1000 cuts?">
+              <RMultipleHistogram trades={currencyTrades} />
+            </ChartCard>
+
+            {/* Calendar heatmap — full width */}
+            <ChartCard full title="Daily P&L Calendar" subtitle="Trailing 12 months, colored by realized P&L">
+              <CalendarHeatmap trades={currencyTrades} currencySymbol={currencySymbol} />
             </ChartCard>
           </div>
 
