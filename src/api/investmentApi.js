@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { attachAuthInterceptors } from './httpClient';
+import { refresh } from './authApi';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
@@ -7,7 +9,10 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
+
+attachAuthInterceptors(api, refresh);
 
 // Get all investments
 export const getAllInvestments = async (isGroupByTicker = null, status = null, ticker = null) => {

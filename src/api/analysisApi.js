@@ -5,12 +5,17 @@
 
 import axios from 'axios';
 import config from '../config/environment';
+import { attachAuthInterceptors } from './httpClient';
+import { refresh } from './authApi';
 
 // Create a separate API instance for analysis with longer timeout
 const AnalysisAPI_Instance = axios.create({
   baseURL: config.API_ENDPOINT,
   timeout: 120000, // 2 minutes timeout for analysis operations
+  withCredentials: true,
 });
+
+attachAuthInterceptors(AnalysisAPI_Instance, refresh);
 
 // Add request and response interceptors for better error handling
 AnalysisAPI_Instance.interceptors.response.use(

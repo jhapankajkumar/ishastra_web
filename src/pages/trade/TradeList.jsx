@@ -15,13 +15,21 @@ import { useNotification } from "../../components/NotificationProvider";
 import { getTickerBySymbol } from '../../data/tickerData';
 import styles from "./TradeList.module.css";
 import { getExitTransactions, getLastExitDate, getAverageExitPrice, getPartialPL } from '../../common/Helper';
+import { useAuth } from "../../contexts/AuthContext";
+import EmptyState from "../../components/EmptyState";
+import Pagination from "../../components/Pagination";
+import { exportToCsv } from "../../utils/exportCsv";
+
+const CLOSED_PAGE_SIZE = 20;
 
 export default function TradeList() {
+  const { user } = useAuth();
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
   // Tab state for NASDAQ/NSE separation
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('tradeListActiveTab') || 'NASDAQ';
   });
+  const [closedPage, setClosedPage] = useState(1);
 
   // Track viewport for responsive font sizing
     useEffect(() => {
@@ -32,6 +40,7 @@ export default function TradeList() {
 
   const setActiveTabWithPersist = (tab) => {
     setActiveTab(tab);
+    setClosedPage(1);
     localStorage.setItem('tradeListActiveTab', tab);
   };
   const showIndiaMarket = false
@@ -161,26 +170,33 @@ export default function TradeList() {
       setLoadingCapital(true);
 
       try {
-        // Fetch trades and capital data in parallel
-        const [tradesResponse, capitalResponse] = await Promise.all([
+        // Fetch trades and capital data independently — /api/capital requires
+        // login and always 403s for guests, but that must never block the
+        // trades list itself (guests are meant to see the shared sandbox).
+        // Promise.all would let one 403 kill both; allSettled keeps them separate.
+        const [tradesResult, capitalResult] = await Promise.allSettled([
           getAllTrades(),
           getCapitalInfo()
         ]);
 
-        // Process trades with exit transactions
-        const tradesWithExits = await Promise.all(tradesResponse.data.map(async trade => {
-          try {
-            const txRes = await getTradeTransactions(trade.id);
-            const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
-            return { ...trade, exitTransactions: exitTx };
-          } catch (e) {
-            return { ...trade, exitTransactions: [] };
-          }
-        }));
+        if (tradesResult.status === 'fulfilled') {
+          // Process trades with exit transactions
+          const tradesWithExits = await Promise.all(tradesResult.value.data.map(async trade => {
+            try {
+              const txRes = await getTradeTransactions(trade.id);
+              const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
+              return { ...trade, exitTransactions: exitTx };
+            } catch (e) {
+              return { ...trade, exitTransactions: [] };
+            }
+          }));
+          setTrades(tradesWithExits);
+          setError(null);
+        } else if (tradesResult.reason?.type === 'NETWORK_ERROR') {
+          setError(tradesResult.reason);
+        }
 
-        setTrades(tradesWithExits);
-        setCapitalData(capitalResponse.data || []);
-        setError(null);
+        setCapitalData(capitalResult.status === 'fulfilled' ? (capitalResult.value.data || []) : []);
       } catch (err) {
         console.error('Failed to fetch data:', err);
         setError(err);
@@ -301,24 +317,29 @@ export default function TradeList() {
 
     const fetchData = async () => {
       try {
-        const [tradesResponse, capitalResponse] = await Promise.all([
+        // See the same allSettled fix + comment in the initial-load effect above.
+        const [tradesResult, capitalResult] = await Promise.allSettled([
           getAllTrades(),
           getCapitalInfo()
         ]);
 
-        const tradesWithExits = await Promise.all(tradesResponse.data.map(async trade => {
-          try {
-            const txRes = await getTradeTransactions(trade.id);
-            const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
-            return { ...trade, exitTransactions: exitTx };
-          } catch (e) {
-            return { ...trade, exitTransactions: [] };
-          }
-        }));
+        if (tradesResult.status === 'fulfilled') {
+          const tradesWithExits = await Promise.all(tradesResult.value.data.map(async trade => {
+            try {
+              const txRes = await getTradeTransactions(trade.id);
+              const exitTx = (txRes.data || []).filter(tx => tx.transactionType === 'Exit');
+              return { ...trade, exitTransactions: exitTx };
+            } catch (e) {
+              return { ...trade, exitTransactions: [] };
+            }
+          }));
+          setTrades(tradesWithExits);
+          setError(null);
+        } else if (tradesResult.reason?.type === 'NETWORK_ERROR') {
+          setError(tradesResult.reason);
+        }
 
-        setTrades(tradesWithExits);
-        setCapitalData(capitalResponse.data || []);
-        setError(null);
+        setCapitalData(capitalResult.status === 'fulfilled' ? (capitalResult.value.data || []) : []);
       } catch (err) {
         console.error('Failed to fetch data:', err);
         setError(err);
@@ -752,6 +773,54 @@ export default function TradeList() {
     return reward / risk;
   };
 
+  // Strip exchange suffixes (.NS, .BO, etc.) — a CSV for personal records
+  // reads better with the bare ticker than with data-source plumbing.
+  const stripExchangeSuffix = (ticker) => (ticker || '').replace(/\.(NS|BO)$/i, '');
+  const toDateOnly = (value) => value ? String(value).slice(0, 10) : '';
+
+  const handleExportCsv = () => {
+    // Only the currently visible market/currency — matching what's on
+    // screen, not silently including the other currency's trades too.
+    const visibleCurrency = activeTab === 'NASDAQ' ? 'USD' : activeTab === 'NSE' ? 'INR' : null;
+    const exportTrades = visibleCurrency
+      ? displayedTrades.filter(trade => getCurrency(trade) === visibleCurrency)
+      : displayedTrades;
+
+    const rows = exportTrades.map(trade => {
+      const avgSellPrice = getAverageSellPrice(trade);
+      const rMultiple = getRMultiple(trade, avgSellPrice);
+      const pl = Number(showCombined ? trade.aggregatedPL : getPartialPL(trade)) || 0;
+      return {
+        ticker: stripExchangeSuffix(trade.ticker),
+        currency: getCurrency(trade),
+        status: getTradeStatusDetailed(trade),
+        entryDate: toDateOnly(trade.entryDate),
+        entryPrice: trade.entryPrice != null ? Number(trade.entryPrice).toFixed(2) : '',
+        quantity: trade.quantity,
+        exitPrice: avgSellPrice != null ? Number(avgSellPrice).toFixed(2) : '',
+        exitDate: toDateOnly(getLastExitDate(trade)),
+        pl: Math.round(pl),
+        rMultiple: rMultiple == null ? '' : rMultiple.toFixed(2),
+      };
+    });
+    exportToCsv(
+      rows,
+      [
+        { key: 'ticker', label: 'Ticker' },
+        { key: 'currency', label: 'Currency' },
+        { key: 'status', label: 'Status' },
+        { key: 'entryDate', label: 'Entry Date' },
+        { key: 'entryPrice', label: 'Entry Price' },
+        { key: 'quantity', label: 'Quantity' },
+        { key: 'exitPrice', label: 'Avg Exit Price' },
+        { key: 'exitDate', label: 'Last Exit Date' },
+        { key: 'pl', label: 'P&L' },
+        { key: 'rMultiple', label: 'R Multiple' },
+      ],
+      `trades_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+  };
+
   // Calculate Today's P&L for a trade
   const getTodaysPL = (trade) => {
     const currentPrice = trade.currentPrice !== undefined ? Number(trade.currentPrice) : Number(trade.entryPrice || 0);
@@ -775,8 +844,13 @@ export default function TradeList() {
   const renderTradeTable = (trades, status, currency) => {
     if (trades.length === 0) return null;
     const symbol = currency === 'INR' ? '₹' : '$';
-    const sortedTrades = sortTrades(trades);
-    
+    const allSortedTrades = sortTrades(trades);
+    // Paginate only the Closed section — Open/Partial are usually small,
+    // and pagination there would just add UI noise.
+    const sortedTrades = status === 'CLOSED'
+      ? allSortedTrades.slice((closedPage - 1) * CLOSED_PAGE_SIZE, closedPage * CLOSED_PAGE_SIZE)
+      : allSortedTrades;
+
     // Calculate total P&L for closed trades section
     let totalClosedPL = 0;
     if (status === 'CLOSED') {
@@ -897,8 +971,11 @@ export default function TradeList() {
                           return (
                             <div className={styles.mobileStatItem}>
                               <span className={styles.mobileStatLabel}>R Multiple</span>
-                              <span className={`${styles.mobileStatValue} ${rMultiple == null ? '' : rMultiple >= 0 ? styles.footerPositive : styles.footerNegative}`}>
-                                {rMultiple == null ? 'N/A' : `${rMultiple >= 0 ? '+' : ''}${rMultiple.toFixed(2)}R`}
+                              <span
+                                className={`${styles.mobileStatValue} ${rMultiple == null ? '' : rMultiple >= 0 ? styles.footerPositive : styles.footerNegative}`}
+                                title={rMultiple == null ? 'No stop-loss recorded for this trade' : undefined}
+                              >
+                                {rMultiple == null ? 'No stop' : `${rMultiple >= 0 ? '+' : ''}${rMultiple.toFixed(2)}R`}
                               </span>
                             </div>
                           );
@@ -947,13 +1024,15 @@ export default function TradeList() {
                             </button>
                           </>
                         )}
-                        <button
-                          className={`${styles.mobileActionBtn} ${styles.deleteActionBtn}`}
-                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(trade); }}
-                          title="Delete Trade"
-                        >
-                          <DeleteOutlineOutlinedIcon fontSize="inherit" />
-                        </button>
+                        {user && (
+                          <button
+                            className={`${styles.mobileActionBtn} ${styles.deleteActionBtn}`}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(trade); }}
+                            title="Delete Trade"
+                          >
+                            <DeleteOutlineOutlinedIcon fontSize="inherit" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1122,7 +1201,9 @@ export default function TradeList() {
                       {status === 'CLOSED' ? (
                         (() => {
                           const rMultiple = getRMultiple(trade, avgSellPrice);
-                          if (rMultiple == null) return 'N/A';
+                          if (rMultiple == null) {
+                            return <span title="No stop-loss recorded for this trade" style={{ color: 'var(--text-muted)', cursor: 'help' }}>No stop</span>;
+                          }
                           return (
                             <span className={rMultiple >= 0 ? styles.profit : styles.loss}>
                               {rMultiple >= 0 ? '+' : ''}{rMultiple.toFixed(2)}R
@@ -1181,13 +1262,15 @@ export default function TradeList() {
                             </button>
                           </>
                         )}
-                        <button
-                          onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}
-                          className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                          title="Delete Trade"
-                        >
-                          <DeleteOutlineOutlinedIcon fontSize="inherit" />
-                        </button>
+                        {user && (
+                          <button
+                            onClick={e => { e.stopPropagation(); handleDeleteClick(trade); }}
+                            className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                            title="Delete Trade"
+                          >
+                            <DeleteOutlineOutlinedIcon fontSize="inherit" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1196,6 +1279,9 @@ export default function TradeList() {
             </tbody>
           </table>
         </div>
+        )}
+        {status === 'CLOSED' && (
+          <Pagination page={closedPage} pageSize={CLOSED_PAGE_SIZE} total={allSortedTrades.length} onPageChange={setClosedPage} />
         )}
       </div>
     );
@@ -1322,12 +1408,19 @@ export default function TradeList() {
             />
           </div>
         </div>
-        <button
-          className={styles.addButton}
-          onClick={() => navigate('/trades/new')}
-        >
-          + Add Trade
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {displayedTrades.length > 0 && (
+            <button className={styles.filterSelect} onClick={handleExportCsv}>
+              ⬇ Export CSV
+            </button>
+          )}
+          <button
+            className={styles.addButton}
+            onClick={() => navigate('/trades/new')}
+          >
+            + Add Trade
+          </button>
+        </div>
       </div>
 
       {/* Market Tabs */}
@@ -1371,7 +1464,7 @@ export default function TradeList() {
             {/* Partial Trades */}
             {renderTradeTable(marketData.trades.PARTIAL, 'PARTIAL', currency)}
 
-            {/* Closed Trades */}
+            {/* Closed Trades — paginated internally, real accounts can have 50+ */}
             {renderTradeTable(marketData.trades.CLOSED, 'CLOSED', currency)}
           </div>
         );
@@ -1379,16 +1472,13 @@ export default function TradeList() {
 
       {/* Empty State */}
       {displayedTrades.length === 0 && !loading && (
-        <div className={styles.emptyState}>
-          <h3>No trades found</h3>
-          <p>Start by adding your first trade to track your portfolio.</p>
-          <button
-            className={styles.addButton}
-            onClick={() => navigate('/trades/new')}
-          >
-            + Add First Trade
-          </button>
-        </div>
+        <EmptyState
+          icon="💼"
+          title="No trades yet"
+          message="Start by adding your first trade to track your portfolio."
+          actionLabel="+ Add your first trade"
+          onAction={() => navigate('/trades/new')}
+        />
       )}
 
       {/* Trade Details Popup */}

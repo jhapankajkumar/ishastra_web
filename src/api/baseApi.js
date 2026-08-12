@@ -1,21 +1,15 @@
 import axios from 'axios';
 import config from '../config/environment';
+import { attachAuthInterceptors } from './httpClient';
+import { refresh } from './authApi';
 
 export const API = axios.create({
   baseURL: config.API_ENDPOINT,
   timeout: 60000, // 60 second timeout for longer analysis operations
+  withCredentials: true,
 });
 
-// Request interceptor
-API.interceptors.request.use(
-  (config) => {
-    // You can add auth tokens here if needed
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+attachAuthInterceptors(API, refresh);
 
 // Response interceptor for handling errors globally
 API.interceptors.response.use(

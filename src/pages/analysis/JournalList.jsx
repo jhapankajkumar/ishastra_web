@@ -6,10 +6,18 @@ import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAuth } from "../../contexts/AuthContext";
+import EmptyState from "../../components/EmptyState";
+import SearchBar from "../../components/SearchBar";
+import Pagination from "../../components/Pagination";
+import { exportToCsv } from "../../utils/exportCsv";
 import styles from "./JournalList.module.css";
+
+const PAGE_SIZE = 20;
 
 export default function JournalList() {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const [journals, setJournals] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [popupJournal, setPopupJournal] = useState(null);
@@ -19,6 +27,8 @@ export default function JournalList() {
   const [journalToDelete, setJournalToDelete] = useState(null);
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [searchText, setSearchText] = useState('');
+  const [page, setPage] = useState(1);
   const notification = useNotification();
   const navigate = useNavigate();
 
@@ -120,7 +130,9 @@ export default function JournalList() {
 
   // Sorting logic
   const getSortedJournals = () => {
-    let sorted = [...journals];
+    let sorted = journals.filter(j =>
+      !searchText || (j.ticker || '').toLowerCase().includes(searchText.toLowerCase())
+    );
     if (sortBy === 'ticker') {
       sorted.sort((a, b) => {
         if (!a.ticker) return 1;
@@ -149,6 +161,29 @@ export default function JournalList() {
 
   const handleEdit = (journal) => {
     navigate(`/journal/update/${journal.id}`);
+  };
+
+  const handleSearchChange = (text) => {
+    setSearchText(text);
+    setPage(1);
+  };
+
+  const handleExportCsv = () => {
+    const rows = getSortedJournals();
+    exportToCsv(
+      rows,
+      [
+        { key: 'ticker', label: 'Ticker' },
+        { key: 'entryDate', label: 'Date' },
+        { key: 'trend', label: 'Trend' },
+        { key: 'setupConfidence', label: 'Setup Confidence' },
+        { key: 'entryConsidered', label: 'Entry Considered' },
+        { key: 'actionPlan', label: 'Action Plan' },
+        { key: 'entryNotes', label: 'Entry Notes' },
+        { key: 'reviewNotes', label: 'Review Notes' },
+      ],
+      `journal_${new Date().toISOString().slice(0, 10)}.csv`
+    );
   };
 
   const formatDate = (dateStr) => {
@@ -209,6 +244,7 @@ export default function JournalList() {
 
       <div className={styles.actionBar}>
               <div className={styles.filters}>
+                <SearchBar value={searchText} onChange={handleSearchChange} placeholder="Search by ticker..." />
                 <label>Sort By:</label>
                 <select
                   value={sortBy}
@@ -227,15 +263,26 @@ export default function JournalList() {
                   {sortOrder === 'asc' ? '▲' : '▼'}
                 </button>
               </div>
-              <button
-                className={styles.addButton}
-                onClick={() => navigate('/journal/new')}
-              >
-                + Add Journal
-              </button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {journals.length > 0 && (
+                  <button className={styles.filterSelect} onClick={handleExportCsv}>
+                    ⬇ Export CSV
+                  </button>
+                )}
+                <button
+                  className={styles.addButton}
+                  onClick={() => navigate('/journal/new')}
+                >
+                  + Add Journal
+                </button>
+              </div>
             </div>
 
       {/* Modern Table */}
+      {(() => {
+        const sortedJournals = getSortedJournals();
+        const pagedJournals = sortedJournals.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+        return sortedJournals.length === 0 ? null : (
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead className={styles.tableHeader}>
@@ -249,7 +296,7 @@ export default function JournalList() {
             </tr>
           </thead>
           <tbody>
-            {getSortedJournals().map(journal => (
+            {pagedJournals.map(journal => (
               <tr
                 key={journal.id}
                 className={styles.tableRow}
@@ -299,30 +346,38 @@ export default function JournalList() {
                     >
                       Update
                     </button>
-                    <button 
-                      onClick={e => { e.stopPropagation(); handleDeleteClick(journal); }}
-                      className={`${styles.actionButton} ${styles.deleteButton}`}
-                    >
-                      Delete
-                    </button>
+                    {user && (
+                      <button
+                        onClick={e => { e.stopPropagation(); handleDeleteClick(journal); }}
+                        className={`${styles.actionButton} ${styles.deleteButton}`}
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        <Pagination page={page} pageSize={PAGE_SIZE} total={sortedJournals.length} onPageChange={setPage} />
       </div>
-      {journals.length === 0 && (
-        <div className={styles.emptyState}>
-          <h3>No journal found</h3>
-          <p>Start by adding your first journal entry to track your thoughts.</p>
-          <button
-            className={styles.addButton}
-            onClick={() => navigate('/journal/new')}
-          >
-            + Add First Journal
-          </button>
-        </div>
+        );
+      })()}
+      {journals.length === 0 ? (
+        <EmptyState
+          icon="📝"
+          title="No journal entries yet"
+          message="Start by adding your first journal entry to track your chart-reading notes."
+          actionLabel="+ Add your first journal entry"
+          onAction={() => navigate('/journal/new')}
+        />
+      ) : getSortedJournals().length === 0 && (
+        <EmptyState
+          icon="🔍"
+          title="No matches"
+          message={`No journal entries match "${searchText}".`}
+        />
       )}
       {/* Journal Details Popup */}
       {showPopup && popupJournal && (

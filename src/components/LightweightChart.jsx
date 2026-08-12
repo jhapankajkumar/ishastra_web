@@ -257,17 +257,19 @@ const calculateSupertrend = (data, period = 10, multiplier = 3) => {
   return { supertrend, trend };
 };
 
-const LightweightChart = ({ ohlcv, height = 500, onVisibleRangeChange, annotations }) => {
+const LightweightChart = ({ ohlcv, height = 500, onVisibleRangeChange, annotations, markers }) => {
   const chartContainerRef = useRef();
   const mainChartRef = useRef();
   const volumeChartRef = useRef();
   const seriesRefs = useRef({});
   const annotationsRef = useRef(annotations);
+  const markersRef = useRef(markers);
   const updateAnnotationOverlayRef = useRef(() => {});
   const [annotationShapes, setAnnotationShapes] = useState({
     lines: [],
     zones: [],
-    priceLines: []
+    priceLines: [],
+    markers: []
   });
 
   const cleanedData = useMemo(() => ohlcv.filter(candle =>
@@ -314,6 +316,13 @@ const LightweightChart = ({ ohlcv, height = 500, onVisibleRangeChange, annotatio
       updateAnnotationOverlayRef.current();
     });
   }, [annotations]);
+
+  useEffect(() => {
+    markersRef.current = markers;
+    requestAnimationFrame(() => {
+      updateAnnotationOverlayRef.current();
+    });
+  }, [markers]);
 
   const handleIndicatorToggle = (indicator) => {
     setIndicators(prev => ({
@@ -594,11 +603,12 @@ const LightweightChart = ({ ohlcv, height = 500, onVisibleRangeChange, annotatio
     candlestickSeries.setData(candleData);
 
     const updateAnnotationOverlay = () => {
-      const currentAnnotations = annotationsRef.current;
-      if (!currentAnnotations) {
-        setAnnotationShapes({ lines: [], zones: [], priceLines: [] });
-        return;
-      }
+      // Default to {} rather than early-returning when there's no AI-review
+      // annotation data (the common case for a plain "View on Chart" trade
+      // marker, which has nothing to do with annotations) — every addLine/
+      // addZone/addPriceLine call below already no-ops on an undefined
+      // config, so trade markers still get computed either way.
+      const currentAnnotations = annotationsRef.current || {};
 
       const toDate = (value) => value ? String(value).substring(0, 10) : null;
       const toX = (date) => {
@@ -689,10 +699,29 @@ const LightweightChart = ({ ohlcv, height = 500, onVisibleRangeChange, annotatio
       addPriceLine('stopLoss', currentAnnotations.stopLoss, '#dc2626', true);
       addZone('targetZone', currentAnnotations.targetZone, '#16a34a', 'rgba(34, 197, 94, 0.10)', true);
 
+      // Trade entry/exit markers — same overlay mechanism as the other
+      // annotations above, so they pan/zoom/resize in lockstep with the
+      // candles instead of needing a separate lightweight-charts series.
+      const markerShapes = [];
+      (markersRef.current || []).forEach((marker, idx) => {
+        const x = toX(marker.date);
+        const y = toY(marker.price);
+        if (!isNumber(x) || !isNumber(y)) return;
+        markerShapes.push({
+          key: `marker-${idx}`,
+          x,
+          y,
+          type: marker.type,
+          color: marker.type === 'exit' ? '#dc2626' : '#16a34a',
+          label: marker.label || (marker.type === 'exit' ? 'Exit' : 'Entry'),
+        });
+      });
+
       setAnnotationShapes({
         lines: lineShapes,
         zones: zoneShapes,
-        priceLines: priceLineShapes
+        priceLines: priceLineShapes,
+        markers: markerShapes
       });
     };
     updateAnnotationOverlayRef.current = updateAnnotationOverlay;
@@ -1014,6 +1043,24 @@ const LightweightChart = ({ ohlcv, height = 500, onVisibleRangeChange, annotatio
                   strokeWidth="1.8"
                   strokeDasharray={line.dashed ? '7 5' : undefined}
                 />
+              </g>
+            ))}
+            {annotationShapes.markers.map((marker) => (
+              <g key={marker.key}>
+                <circle cx={marker.x} cy={marker.y} r="6" fill={marker.color} stroke="#fff" strokeWidth="1.5" />
+                <text
+                  x={marker.x}
+                  y={marker.type === 'exit' ? marker.y + 20 : marker.y - 12}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fontWeight="700"
+                  fill={marker.color}
+                  stroke="#fff"
+                  strokeWidth="3"
+                  paintOrder="stroke"
+                >
+                  {marker.label}
+                </text>
               </g>
             ))}
           </svg>

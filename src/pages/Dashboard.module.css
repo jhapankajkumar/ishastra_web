@@ -407,3 +407,63 @@
   .tableTitle { font-size: 14px; }
   .hideOnMobile { display: none; }
 }
+
+.welcomeCard {
+  position: relative;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-md);
+}
+
+.welcomeClose {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.welcomeClose:hover {
+  color: var(--text-primary);
+}
+
+.welcomeTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.welcomeText {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.welcomeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.welcomeActionBtn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-secondary);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.welcomeActionBtn:hover {
+  border-color: var(--accent-primary);
+}

@@ -1,0 +1,28 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-secondary);
+  background: var(--bg-tertiary);
+  min-width: 200px;
+}
+
+.icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.input {
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  width: 100%;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}

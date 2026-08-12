@@ -1,26 +1,49 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getMarketIndices } from "../api/marketApi";
 import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../contexts/AuthContext";
+import config from "../config/environment";
 import styles from "./Header.module.css";
 
+// `access`: 'guest' (visible to everyone), 'auth' (any logged-in user),
+// 'superuser' (SUPERUSER only) — see isVisible() below. This is the single
+// source of truth all three nav render sites (desktop slice, mobile drawer,
+// bottom bar) derive from, instead of drifting apart independently.
 const navLinks = [
-  { to: "/", label: "Dashboard", icon: "📊" },
-  { to: "/risk-management", label: "Risk Management", icon: "⚖️" },
-  { to: "/trades", label: "Trades", icon: "💼" },
-  { to: "/watchlist", label: "Watchlist", icon: "👀" },
-  { to: "/scan", label: "Scan", icon: "🔎" },
-  { to: "/chart", label: "Analysis", icon: "📈" },
-  { to: "/quick-review", label: "Quick Review", icon: "🔍" },
-  { to: "/investments", label: "Investments", icon: "💰" },
-  { to: "/recommendations", label: "Recommendations", icon: "💡" },
-  { to: "/journal", label: "Journal", icon: "📝" },
+  { to: "/", label: "Dashboard", icon: "📊", access: "guest" },
+  { to: "/risk-management", label: "Risk Management", icon: "⚖️", access: "auth" },
+  { to: "/trades", label: "Trades", icon: "💼", access: "guest" },
+  { to: "/watchlist", label: "Watchlist", icon: "👀", access: "auth" },
+  { to: "/scan", label: "Scan", icon: "🔎", access: "auth" },
+  { to: "/chart", label: "Analysis", icon: "📈", access: "guest" },
+  { to: "/quick-review", label: "Quick Review", icon: "🔍", access: "superuser" },
+  { to: "/investments", label: "Investments", icon: "💰", access: "guest" },
+  { to: "/recommendations", label: "Recommendations", icon: "💡", access: "guest" },
+  { to: "/journal", label: "Journal", icon: "📝", access: "guest" },
+  { to: "/capital", label: "Capital", icon: "🏦", access: "auth" },
 ];
+
+function isVisible(link, user) {
+  if (link.access === "guest") return true;
+  if (link.access === "auth") return !!user;
+  if (link.access === "superuser") return user?.role === "SUPERUSER";
+  return false;
+}
 
 export default function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const visibleLinks = navLinks.filter((link) => isVisible(link, user));
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
   const [indices, setIndices] = useState({
     nifty50: { value: null, change: null, changePercent: null },
     sensex: { value: null, change: null, changePercent: null },
@@ -97,7 +120,7 @@ export default function Header() {
           </div>
         </div>
         <nav className={styles.nav}>
-          {navLinks.slice(0, 3).map(link => (
+          {visibleLinks.slice(0, 3).map(link => (
             <Link
               key={link.to}
               to={link.to}
@@ -111,18 +134,23 @@ export default function Header() {
             </Link>
           ))}
           <button
-            className={styles.sideMenuButton}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            title="Open menu"
-          >
-            <span className={styles.navIcon}>☰</span>
-          </button>
-          <button
             className={styles.themeToggle}
             onClick={toggleTheme}
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
           >
             {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+          {/* Account details live inside the main (hamburger) menu now —
+              a separate top-bar dropdown used to get clipped/hidden behind
+              page content (e.g. the Trades table) on some pages, since it
+              wasn't part of the same full-screen overlay stacking context
+              as the side menu. One menu, positioned rightmost. */}
+          <button
+            className={styles.sideMenuButton}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            title="Open menu"
+          >
+            <span className={styles.navIcon}>☰</span>
           </button>
         </nav>
       </div>
@@ -143,8 +171,31 @@ export default function Header() {
               <span className={styles.logoText}>Menu</span>
               <button className={styles.closeButton} onClick={() => setMobileMenuOpen(false)}>✕</button>
             </div>
+            {user && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid var(--border-primary)' }}>
+                {user.avatarUrl ? (
+                  <img
+                    src={config.getImageUrl(user.avatarUrl)}
+                    alt="Avatar"
+                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 22 }}>👤</span>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user.email}
+                  </span>
+                  {user.role === 'SUPERUSER' && (
+                    <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--btn-primary-bg)', color: 'var(--text-white)', borderRadius: 4, padding: '2px 6px', width: 'fit-content' }}>
+                      SUPERUSER
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
             <div className={styles.sideMenuItems}>
-              {navLinks.map(link => (
+              {visibleLinks.map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
@@ -155,6 +206,47 @@ export default function Header() {
                   {link.label}
                 </Link>
               ))}
+              <div style={{ borderTop: '1px solid var(--border-primary)', margin: '8px 0' }} />
+              {!user ? (
+                <Link
+                  to="/login"
+                  className={styles.sideMenuItem}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className={styles.navIcon}>🔑</span>
+                  Login
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/profile"
+                    className={styles.sideMenuItem}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className={styles.navIcon}>👤</span>
+                    Profile{user.role === 'SUPERUSER' ? ' (Superuser)' : ''}
+                  </Link>
+                  <Link
+                    to="/profile/password"
+                    className={styles.sideMenuItem}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className={styles.navIcon}>🔒</span>
+                    Update Password
+                  </Link>
+                  <button
+                    className={styles.sideMenuItem}
+                    onClick={async () => {
+                      setMobileMenuOpen(false);
+                      await handleLogout();
+                    }}
+                    style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
+                  >
+                    <span className={styles.navIcon}>🚪</span>
+                    Logout
+                  </button>
+                </>
+              )}
             </div>
             <div className={styles.sideMenuFooter}>
               <button
@@ -170,29 +262,21 @@ export default function Header() {
         </div>
       )}
 
-      {/* Mobile Bottom Navigation Bar (unchanged) */}
+      {/* Mobile Bottom Navigation Bar — derives from the same visibleLinks
+          source of truth as the desktop nav and drawer, so it can no longer
+          silently drift out of sync with what a guest/user/superuser can
+          actually see. */}
       <nav className={styles.bottomNav}>
-        <Link
-          to="/"
-          className={`${styles.bottomNavItem} ${location.pathname === '/' ? styles.bottomNavItemActive : ''}`}
-        >
-          <span className={styles.bottomNavIcon}>📊</span>
-          Dashboard
-        </Link>
-        <Link
-          to="/risk-management"
-          className={`${styles.bottomNavItem} ${location.pathname === '/risk-management' ? styles.bottomNavItemActive : ''}`}
-        >
-          <span className={styles.bottomNavIcon}>⚖️</span>
-          Risk Management
-        </Link>
-        <Link
-          to="/trades"
-          className={`${styles.bottomNavItem} ${location.pathname === '/trades' ? styles.bottomNavItemActive : ''}`}
-        >
-          <span className={styles.bottomNavIcon}>💼</span>
-          Trades
-        </Link>
+        {visibleLinks.slice(0, 3).map(link => (
+          <Link
+            key={link.to}
+            to={link.to}
+            className={`${styles.bottomNavItem} ${location.pathname === link.to ? styles.bottomNavItemActive : ''}`}
+          >
+            <span className={styles.bottomNavIcon}>{link.icon}</span>
+            {link.label}
+          </Link>
+        ))}
       </nav>
     </header>
   );

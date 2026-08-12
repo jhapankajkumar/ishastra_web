@@ -348,6 +348,12 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
     e.preventDefault();
     try {
       if (isAdd) {
+        if (!form.stopLossPrice) {
+          // Not a hard block — some trades (long-term holds) genuinely have
+          // no stop. But R-multiple can never be computed without one, so
+          // the gap should be visible now rather than a silent "N/A" later.
+          notification.warning("No stop loss set — R-multiple won't be trackable for this trade.");
+        }
         await createTrade(formDataForBackend);
         notification.success("Trade added successfully!");
         navigate("/trades", { replace: true });

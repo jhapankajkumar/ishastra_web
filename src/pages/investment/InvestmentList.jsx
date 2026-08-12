@@ -6,6 +6,8 @@ import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAuth } from "../../contexts/AuthContext";
+import EmptyState from "../../components/EmptyState";
 import styles from "./InvestmentList.module.css";
 
 export default function InvestmentList() {
@@ -16,6 +18,7 @@ export default function InvestmentList() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
   const { theme } = useTheme();
+  const { user } = useAuth();
   const [investments, setInvestments] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [showCombined, setShowCombined] = useState(true);
@@ -377,10 +380,11 @@ export default function InvestmentList() {
                       ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
-                  {/* Recommendation (not sortable) */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('recommendation')}>Rec
+                  {/* Date */}
+                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('entryDate')}>
+                    Date
                     <span className={styles.sortArrow}>
-                      {sortBy==='recommendation' ? (
+                      {sortBy==='entryDate' ? (
                         sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
                       ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
@@ -448,15 +452,6 @@ export default function InvestmentList() {
                       ) : <span className={styles.sortArrowInactive}>▲</span>}
                     </span>
                   </th>
-                  {/* Date */}
-                  <th className={styles.tableHeaderCell} style={{cursor:'pointer'}} onClick={() => handleSort('entryDate')}>
-                    Date
-                    <span className={styles.sortArrow}>
-                      {sortBy==='entryDate' ? (
-                        sortOrder==='asc' ? <span className={styles.sortArrowActive}>▲</span> : <span className={styles.sortArrowActive}>▼</span>
-                      ) : <span className={styles.sortArrowInactive}>▲</span>}
-                    </span>
-                  </th>
                   {/* Actions (not sortable) */}
                   <th className={styles.tableHeaderCell}>Actions</th>
                 </tr>
@@ -483,15 +478,7 @@ export default function InvestmentList() {
                           </div>
                         </div>
                       </td>
-                      <td className={styles.tableCell} >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'left' }}>
-                          <span>₹{investment.buyBelow ? investment.buyBelow.toFixed(2) : '-'}</span>
-                          <span className={investment.differencePercentage >= 0 ? styles.profit : styles.loss}>
-                            {investment.differencePercentage >= 0 ? '+' : ''}
-                            {investment.differencePercentage}%
-                          </span>
-                        </div>
-                      </td>
+                      <td className={styles.tableCell}>{formatDate(investment.entryDate)}</td>
                       <td className={styles.tableCell} >{investment.quantity}</td>
                       <td className={styles.tableCell} >₹{investment.avgBuyPrice?.toFixed(2)}</td>
                       <td className={styles.tableCell} >
@@ -527,7 +514,6 @@ export default function InvestmentList() {
                           </span>
                         </div>
                       </td>
-                      <td className={styles.tableCell}>{formatDate(investment.entryDate)}</td>
 
                       <td className={styles.tableCell}>
                         <div className={styles.actionButtons}>
@@ -552,15 +538,17 @@ export default function InvestmentList() {
                               Close
                             </button>
                           )} */}
-                          <button
-                            onClick={() => {
-                              setSelectedInvestment(investment);
-                              setShowDeleteConfirm(true);
-                            }}
-                            className={`${styles.actionButton} ${styles.deleteButton}`}
-                          >
-                            Delete
-                          </button>
+                          {user && (
+                            <button
+                              onClick={() => {
+                                setSelectedInvestment(investment);
+                                setShowDeleteConfirm(true);
+                              }}
+                              className={`${styles.actionButton} ${styles.deleteButton}`}
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -573,16 +561,13 @@ export default function InvestmentList() {
       ))}
 
       {investments.length === 0 && (
-        <div className={styles.emptyState}>
-          <h3>No investments found</h3>
-          <p>Start by adding your first investment to track your portfolio.</p>
-          <button
-            className={styles.addButton}
-            onClick={() => navigate('/investments/new')}
-          >
-            + Add First Investment
-          </button>
-        </div>
+        <EmptyState
+          icon="💰"
+          title="No investments yet"
+          message="Start by adding your first investment to track your portfolio."
+          actionLabel="+ Add your first investment"
+          onAction={() => navigate('/investments/new')}
+        />
       )}
 
       {/* Close Investment Modal */}

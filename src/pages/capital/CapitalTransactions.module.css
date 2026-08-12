@@ -1,0 +1,178 @@
+.page {
+  padding: 24px 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 20px;
+}
+
+.balanceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.balanceCard {
+  flex: 1;
+  min-width: 180px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.balanceCurrency {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.balanceAmount {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.actionButton {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.depositButton {
+  background: var(--btn-success-bg);
+  color: var(--text-white);
+}
+
+.depositButton:hover {
+  background: var(--btn-success-hover);
+}
+
+.withdrawButton {
+  background: var(--btn-secondary-bg);
+  color: var(--text-primary);
+}
+
+.withdrawButton:hover {
+  background: var(--btn-secondary-hover);
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.input,
+.select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-secondary);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.error {
+  background: var(--error-bg);
+  color: var(--error-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table th,
+.table td {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-primary);
+  color: var(--text-secondary);
+}
+
+.table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  background: var(--bg-tertiary);
+}
+
+.typeDeposit {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.typeWithdraw {
+  color: var(--error-color);
+  font-weight: 600;
+}
+
+.empty {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-muted);
+}

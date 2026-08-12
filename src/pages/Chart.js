@@ -1,9 +1,9 @@
-import React, { useCallback, useState, useEffect, useRef } from "react";
+import React, { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { getChartData, reviewAISetup } from "../api/analysisApi";
 import LightweightChart from "../components/LightweightChart";
 import TickerSearch from "../components/TickerSearch";
 import styles from "./Chart.module.css";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { captureElementCanvasesAsDataUrl, captureElementVisualAsDataUrl } from "../utils/chartImageCapture";
 import { buildSetupReportHtml, downloadHtmlReport } from "../utils/setupReportHtml";
 
@@ -213,6 +213,7 @@ const buildAIChartMetadata = (data, visibleRange = null) => {
 
 export default function ChartPage() {
   const { symbol } = useParams();
+  const location = useLocation();
   const chartWrapperRef = useRef(null);
   const reportPreviewRef = useRef(null);
   const [selectedTicker, setSelectedTicker] = useState(symbol || "");
@@ -333,6 +334,33 @@ export default function ChartPage() {
     }
   };
 
+  // "View on Chart" from a trade's detail popup passes entry/exit info via
+  // route state (see TradeDetailsPopup.jsx) so this page can overlay markers
+  // without a dedicated backend endpoint — the trade data is already known
+  // by the caller.
+  const tradeMarkers = useMemo(() => {
+    const trade = location.state?.tradeContext;
+    if (!trade) return undefined;
+    const markers = [];
+    if (trade.entryDate && trade.entryPrice != null) {
+      markers.push({
+        date: trade.entryDate,
+        price: Number(trade.entryPrice),
+        type: 'entry',
+        label: `Entry ${Number(trade.entryPrice).toFixed(2)}`
+      });
+    }
+    if (trade.exitDate && trade.exitPrice != null) {
+      markers.push({
+        date: trade.exitDate,
+        price: Number(trade.exitPrice),
+        type: 'exit',
+        label: `Exit ${Number(trade.exitPrice).toFixed(2)}`
+      });
+    }
+    return markers;
+  }, [location.state]);
+
   const handleDownloadReport = () => {
     if (!reportHtml || !reportFileName) return;
     downloadHtmlReport(reportHtml, reportFileName);
@@ -418,12 +446,16 @@ export default function ChartPage() {
               {aiReviewLoading ? 'Reviewing...' : 'AI Review'}
             </button>
           </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 10px' }}>
+            Based on a rules-based template (Minervini-style) for journaling/review purposes — not financial advice or a trading signal.
+          </div>
           <div className={styles.chartWrapper} ref={chartWrapperRef}>
             <LightweightChart
               ohlcv={chartData}
               height={820}
               onVisibleRangeChange={handleVisibleRangeChange}
               annotations={aiReview?.annotations}
+              markers={tradeMarkers}
             />
           </div>
           {aiReviewError && (
