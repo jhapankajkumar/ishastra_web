@@ -1,626 +1,358 @@
-/* Risk Management Calculator Styles */
+/* Risk Management Calculator — position sizing tool */
 .container {
   min-height: 100vh;
   background: var(--bg-primary);
   color: var(--text-primary);
-  padding: 0;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .content {
-  max-width: 1400px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 24px 5% 48px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 20px;
 }
 
 .mainGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 20px;
   align-items: start;
 }
 
-.inputSection {
+/* ── Panels ────────────────────────────────────────────────────────────── */
+.inputSection,
+.resultsSection {
   background: var(--bg-secondary);
-  border-radius: 10px;
-  padding: 14px;
   border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  padding: 22px 24px 24px;
+  box-shadow: var(--shadow-sm);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .resultsSection {
-  background: var(--bg-secondary);
-  border-radius: 10px;
-  padding: 14px;
-  border: 1px solid var(--border-primary);
   position: sticky;
   top: 88px;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .sectionTitle {
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
   font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
-  margin: 0 0 12px 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--btn-primary-bg);
+  margin: 0 0 20px 0;
 }
 
-.subSectionTitle {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin: 16px 0 8px 0;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--border-secondary);
+.sectionTitle::before {
+  content: '';
+  width: 3px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--accent-primary);
+  flex-shrink: 0;
+}
+
+/* ── Field groups ──────────────────────────────────────────────────────── */
+.fieldGroup + .fieldGroup {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--border-secondary);
+}
+
+.fieldGroupLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
 }
 
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.targetsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px 16px;
 }
 
 .inputGroup {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .label {
   font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
 }
 
 .input,
 .select {
-  padding: 6px 10px;
+  height: 38px;
+  padding: 0 12px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-secondary);
-  border-radius: 6px;
+  border-radius: 9px;
   color: var(--text-primary);
-  font-size: 12px;
-  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:hover,
+.select:hover {
+  border-color: var(--border-accent);
 }
 
 .input:focus,
 .select:focus {
-  border-color: var(--btn-primary-bg);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  background: var(--bg-accent);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 18%, transparent);
 }
 
 .input::placeholder {
-  color: #9CA3AF;
+  color: var(--text-disabled);
+  font-weight: 400;
 }
 
 .select {
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 16px) 16px, calc(100% - 11px) 16px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
 }
 
-.select option {
-  background: #374151;
-  color: #fff;
-}
-
-.stopLossSection {
-  background: #374151;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 24px;
-  border: 1px solid #4B5563;
-}
-
-.checkboxGroup {
-  margin-bottom: 16px;
-}
-
-.checkboxLabel {
+/* ── Results: hero card ────────────────────────────────────────────────── */
+.heroCard {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--accent-primary) 14%, var(--bg-tertiary)),
+    var(--bg-tertiary));
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, transparent);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
   display: flex;
-  align-items: center;
-  font-size: 14px;
-  color: #E5E7EB;
-  cursor: pointer;
-  gap: 8px;
-}
-
-.checkbox {
-  width: 16px;
-  height: 16px;
-  accent-color: #4F8CFF;
-  cursor: pointer;
-}
-
-.resultsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-/* Results Display */
-.resultCard {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-secondary);
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-.resultCard:hover {
-  border-color: var(--btn-primary-bg);
-}
-
-.resultLabel {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.resultValue {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.resultPositive {
-  color: var(--profit-color) !important;
-}
-
-.resultNegative {
-  color: var(--loss-color) !important;
-}
-
-.summarySection {
-  background: #475569;
-  border-radius: 8px;
-  padding: 20px;
-  border: 1px solid #64748B;
-}
-
-.summaryTitle {
-  font-size: 18px;
-  font-weight: 600;
-  color: #fff;
-  margin: 0 0 16px 0;
-}
-
-.summaryGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.summaryItem {
-  display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #64748B;
-}
-
-.summaryItem:last-child {
-  border-bottom: none;
-}
-
-.summaryLabel {
-  font-size: 14px;
-  color: #D1D5DB;
-  font-weight: 500;
-}
-
-.summaryValue {
-  font-size: 14px;
-  color: #fff;
-  font-weight: 600;
-}
-
-/* Setup Gate */
-.gateSection {
-  border-radius: 10px;
-  padding: 20px;
-  margin-top: 20px;
-  border: 2px solid transparent;
-}
-
-.gateSectionPass {
-  background: rgba(16, 185, 129, 0.08);
-  border-color: #10b981;
-}
-
-.gateSectionFail {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: #ef4444;
-}
-
-.gateTitle {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin: 0 0 14px 0;
-}
-
-.gateChecks {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.gateCheck {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  padding: 8px 12px;
-  border-radius: 6px;
-}
-
-.gateCheckPass {
-  background: rgba(16, 185, 129, 0.1);
-}
-
-.gateCheckFail {
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.gateIcon {
-  font-size: 15px;
-  font-weight: 700;
-  width: 20px;
-  flex-shrink: 0;
-}
-
-.gateCheckPass .gateIcon { color: #10b981; }
-.gateCheckFail .gateIcon { color: #ef4444; }
-
-.gateCheckLabel {
-  color: var(--text-muted);
-  min-width: 110px;
-}
-
-.gateCheckValue {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.gateCheckNote {
-  color: var(--text-muted);
-  font-weight: 400;
-  font-size: 12px;
-}
-
-.gateVerdict {
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 700;
-  text-align: center;
-  letter-spacing: 0.03em;
-}
-
-.gateVerdictPass {
-  color: #10b981;
-}
-
-.gateVerdictFail {
-  color: #ef4444;
-}
-
-.resultNote {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.resultProfit {
-  font-size: 12px;
-  color: #10b981;
-  margin-top: 4px;
-}
-
-/* Slippage comparison table */
-.slippageGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 10px;
-}
-
-.slippageRow {
-  display: grid;
-  grid-template-columns: 110px 1fr 1fr;
-  gap: 8px;
-  align-items: center;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--border-secondary);
-  font-size: 13px;
-}
-
-.slippageRow:last-child {
-  border-bottom: none;
-}
-
-.slippageCol {
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.slippageColHead {
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.slippageVal {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.slippageValWarn {
-  color: #f59e0b;
-  font-weight: 700;
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .mainGrid {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-  
-  .calcGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .resultsSection {
-    position: static;
-  }
-}
-
-@media (max-width: 768px) {
-  .content {
-    padding: 10px;
-  }
-  
-  .inputSection,
-  .resultsSection {
-    padding: 12px;
-  }
-  
-  .formGrid {
-    grid-template-columns: 1fr;
-  }
-  
-  .targetsGrid {
-    grid-template-columns: 1fr;
-  }
-  
-  .resultsGrid {
-    grid-template-columns: 1fr;
-  }
-  
-  .sectionTitle {
-    font-size: 20px;
-  }
-  
-  .subSectionTitle {
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .content {
-    padding: 12px;
-  }
-  
-  .inputSection,
-  .resultsSection {
-    padding: 16px;
-  }
-  
-  .summaryItem {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-}
-
-/* Enhanced visual feedback for calculations */
-.resultCard[data-positive="true"] {
-  border-color: #10B981;
-}
-
-.resultCard[data-negative="true"] {
-  border-color: #EF4444;
-}
-
-/* Loading state */
-.calculating {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-/* Error state */
-.error {
-  border-color: #EF4444 !important;
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-
-/* Success indicators */
-.positive {
-  color: #10B981 !important;
-}
-
-.negative {
-  color: #EF4444 !important;
-}
-
-/* Animations */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.resultCard {
-  animation: slideIn 0.3s ease-out;
-}
-
-/* Focus indicators for accessibility */
-.input:focus-visible,
-.select:focus-visible,
-.checkbox:focus-visible {
-  outline: 2px solid #4F8CFF;
-  outline-offset: 2px;
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .container {
-    background: #000;
-  }
-  
-  .inputSection,
-  .resultsSection {
-    background: #1a1a1a;
-    border-color: #fff;
-  }
-  
-  .input,
-  .select {
-    background: #000;
-    border-color: #fff;
-  }
-}
-
-/* ── Sub-panels inside Position Setup ──────────────────────────────────── */
-.subPanel {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-secondary);
-}
-
-.subPanelHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  gap: 10px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-.subPanelTitle {
+.heroLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.heroValue {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.heroUnit {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 6px;
+  letter-spacing: 0;
+}
+
+.heroMeta {
+  text-align: right;
   font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.heroMetaValue {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Results: metric cards ─────────────────────────────────────────────── */
+.resultsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 10px;
+}
+
+.resultCard {
+  position: relative;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 11px;
+  padding: 12px 14px 12px 16px;
+  overflow: hidden;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.resultCard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--border-accent);
+}
+
+.resultCard:hover {
+  border-color: var(--border-accent);
+}
+
+.accentDanger::before { background: var(--loss-color); }
+.accentWarning::before { background: var(--warning-color); }
+.accentSuccess::before { background: var(--profit-color); }
+.accentInfo::before { background: var(--accent-primary); }
+
+.resultLabel {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.resultValue {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+}
+
+.resultValueMuted {
+  color: var(--text-disabled);
+  font-weight: 600;
+}
+
+.resultNote {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+/* ── Empty state ───────────────────────────────────────────────────────── */
+.emptyHint {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--accent-primary) 35%, transparent);
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.emptyHintIcon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+/* ── Sub-panels (R-multiple targets, buffer analysis) ──────────────────── */
+.subPanel {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--border-secondary);
+}
+
+.subPanelTitle {
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  margin-bottom: 11px;
 }
 
-/* R-Multiple grid */
+/* R-Multiple targets */
 .rMultiGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .rMultiCell {
   background: var(--bg-tertiary);
-  border-radius: 5px;
-  padding: 6px 8px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 9px;
+  padding: 9px 10px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  border: 1px solid var(--border-secondary);
+  gap: 3px;
+  min-width: 0;
 }
 
 .rMultiLabel {
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--text-muted);
   font-weight: 700;
-  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .rMultiPrice {
   font-size: 13px;
   font-weight: 700;
-  color: #10b981;
+  color: var(--profit-color);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .rMultiGain {
   font-size: 10px;
   color: var(--text-muted);
-}
-
-/* Buffer / Slippage controls */
-.bufferControls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.bufferControlGroup {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.bufferControlLabel {
-  font-size: 10px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Buffer analysis table */
 .bufferTable {
-  border-radius: 6px;
-  overflow: hidden;
   border: 1px solid var(--border-secondary);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .bufferRow {
   display: grid;
-  grid-template-columns: 80px 1fr 1fr 1fr;
-  gap: 4px;
-  padding: 5px 10px;
-  font-size: 11px;
+  grid-template-columns: 84px repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 11.5px;
   border-bottom: 1px solid var(--border-secondary);
   align-items: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .bufferRow:last-child {
@@ -629,20 +361,20 @@
 
 .bufferRowHead {
   background: var(--bg-tertiary);
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 9.5px;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .bufferWorst {
-  color: #f59e0b;
+  color: var(--warning-color);
   font-weight: 700;
 }
 
 .bufferQtyRow {
-  background: rgba(16, 185, 129, 0.05);
+  background: color-mix(in srgb, var(--profit-color) 7%, transparent);
 }
 
 .bufferQtyClean {
@@ -651,7 +383,7 @@
 }
 
 .bufferQtyBuff {
-  color: #10b981;
+  color: var(--profit-color);
   font-weight: 700;
 }
 
@@ -659,109 +391,48 @@
   color: var(--text-muted);
 }
 
-/* ── SL Calculator Cards ─────────────────────────────────────────────────── */
-.calcGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.calcCard {
-  background: var(--bg-secondary);
-  border-radius: 10px;
-  padding: 14px;
-  border: 1px solid var(--border-primary);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-.calcCardTitle {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin: 0 0 4px 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--btn-primary-bg);
-}
-
-.calcCardHint {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin: 0 0 10px 0;
-  font-style: italic;
-}
-
-.calcRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 7px;
-}
-
-.calcLabel {
-  font-size: 11px;
-  color: var(--text-muted);
-  min-width: 72px;
-  font-weight: 500;
-}
-
-.calcInput {
-  flex: 1;
-  padding: 5px 8px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-secondary);
-  border-radius: 5px;
-  color: var(--text-primary);
-  font-size: 12px;
-  outline: none;
-  transition: border-color 0.2s ease;
-  width: 100%;
-}
-
-.calcInput:focus {
-  border-color: var(--btn-primary-bg);
-}
-
-.calcResult {
-  background: var(--bg-tertiary);
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin-top: 10px;
-  border: 1px solid var(--border-secondary);
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.calcResultRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-}
-
-.calcResultLabel {
-  color: var(--text-muted);
-}
-
-.calcResultValue {
-  color: var(--text-primary);
-  font-weight: 700;
-}
-
-.calcResultValueHighlight {
-  color: #10b981;
-  font-weight: 700;
-}
-
-.calcResultValueDanger {
-  color: #ef4444;
-  font-weight: 700;
-}
-
-@media (max-width: 900px) {
-  .calcGrid {
+/* ── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .mainGrid {
     grid-template-columns: 1fr;
+  }
+
+  .resultsSection {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .content {
+    padding: 16px 16px 32px;
+    gap: 16px;
+  }
+
+  .inputSection,
+  .resultsSection {
+    padding: 18px 16px 20px;
+    border-radius: 14px;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .heroValue {
+    font-size: 26px;
+  }
+
+  .heroMeta {
+    text-align: left;
+  }
+
+  .rMultiGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bufferRow {
+    grid-template-columns: 68px repeat(3, minmax(0, 1fr));
+    font-size: 10.5px;
+    padding: 7px 9px;
   }
 }

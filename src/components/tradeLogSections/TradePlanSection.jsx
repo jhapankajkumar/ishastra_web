@@ -2,7 +2,7 @@ import React from "react";
 import TickerSearch from "../TickerSearch";
 import RiskManagementSection from './RiskManagementSection';
 
-export default function TradePlanSection({ form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades, isPopulated, capitalData, capitalLoading }) {
+export default function TradePlanSection({ form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades, isPopulated, capitalData, capitalLoading, hideRiskManagement }) {
   // console.log("TradePlanSection Rendered");
 
   // --- Logic for dynamic fields and calculations ---
@@ -273,19 +273,21 @@ export default function TradePlanSection({ form, handleChange, handleTickerChang
           </div>
         </div>
       </div>
-      <RiskManagementSection
-        handleChange={handleTradePlanChange}
-        entryDisabled={entryDisabled}
-        styles={styles}
-        stopLossMethod={stopLossMethod}
-        fixedPercent={fixedPercentValue}
-        stopLossPrice={stopLossPrice}
-        targets={targets}
-        riskPerTrade={form.riskPerTrade || "1.0"}
-        riskValue={riskValue}
-        accountBalance={accountBalance}
-        market={market}
-      />
+      {!hideRiskManagement && (
+        <RiskManagementSection
+          handleChange={handleTradePlanChange}
+          entryDisabled={entryDisabled}
+          styles={styles}
+          stopLossMethod={stopLossMethod}
+          fixedPercent={fixedPercentValue}
+          stopLossPrice={stopLossPrice}
+          targets={targets}
+          riskPerTrade={form.riskPerTrade || "1.0"}
+          riskValue={riskValue}
+          accountBalance={accountBalance}
+          market={market}
+        />
+      )}
     </>
   );
 }

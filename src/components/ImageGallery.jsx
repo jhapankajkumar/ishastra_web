@@ -10,6 +10,15 @@ import React from "react";
 
 import { useState, useCallback, useEffect } from "react";
 
+const getFileKind = (src = '') => {
+  const clean = src.split('?')[0].toLowerCase();
+  if (clean.endsWith('.pdf')) return 'pdf';
+  if (clean.endsWith('.html') || clean.endsWith('.htm')) return 'html';
+  return 'image';
+};
+
+const getFileName = (src = '') => decodeURIComponent(src.split('?')[0].split('/').pop() || 'file');
+
 const modalStyles = {
   position: 'fixed',
   top: 0,
@@ -126,7 +135,9 @@ const ImageGallery = ({ images = [], maxHeight = 180 }) => {
         alignItems: 'center',
         justifyItems: 'center',
       }}>
-        {images.map((img, idx) => (
+        {images.map((img, idx) => {
+          const kind = getFileKind(img.src);
+          return (
           <div key={idx} style={{
             background: '#151B28',
             borderRadius: 8,
@@ -136,6 +147,7 @@ const ImageGallery = ({ images = [], maxHeight = 180 }) => {
             width: '100%',
             maxWidth: 220,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: 60,
@@ -145,48 +157,111 @@ const ImageGallery = ({ images = [], maxHeight = 180 }) => {
             onClick={() => openModal(idx)}
             title="Click to view fullscreen"
           >
-            <img
-              src={img.src}
-              alt={img.alt || `Image ${idx + 1}`}
-              style={{
+            {kind === 'image' ? (
+              <img
+                src={img.src}
+                alt={img.alt || `Image ${idx + 1}`}
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: maxHeight,
+                  objectFit: 'contain',
+                  display: 'block',
+                  background: '#232B3B',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                }}
+                loading="lazy"
+                draggable={false}
+              />
+            ) : (
+              <div style={{
                 width: '100%',
-                height: 'auto',
-                maxHeight: maxHeight,
+                minHeight: Math.min(maxHeight, 140),
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '16px 12px',
+                background: '#232B3B',
+              }}>
+                <span style={{ fontSize: 32 }} aria-hidden="true">{kind === 'pdf' ? '📄' : '🌐'}</span>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: '#9CA3AF',
+                  textTransform: 'uppercase',
+                }}>{kind}</span>
+                <span style={{
+                  fontSize: 11, color: '#D1D5DB', textAlign: 'center',
+                  wordBreak: 'break-word', maxWidth: '100%',
+                }}>{img.alt || getFileName(img.src)}</span>
+              </div>
+            )}
+          </div>
+          );
+        })}
+      </div>
+      {modalOpen && (() => {
+        const current = images[currentIdx];
+        const kind = getFileKind(current.src);
+        return (
+        <div style={modalStyles} onClick={closeModal}>
+          <button style={{ ...arrowBtn, left: 24 }} onClick={showPrev} aria-label="Previous file">&#8592;</button>
+          {kind === 'image' ? (
+            <img
+              src={current.src}
+              alt={current.alt || `Image ${currentIdx + 1}`}
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '80vh',
+                borderRadius: 12,
+                boxShadow: '0 4px 32px 0 rgba(0,0,0,0.25)',
+                background: '#232B3B',
+                margin: '0 48px',
                 objectFit: 'contain',
                 display: 'block',
-                background: '#232B3B',
-                pointerEvents: 'none',
-                userSelect: 'none',
               }}
-              loading="lazy"
+              onClick={e => e.stopPropagation()}
               draggable={false}
             />
-          </div>
-        ))}
-      </div>
-      {modalOpen && (
-        <div style={modalStyles} onClick={closeModal}>
-          <button style={{ ...arrowBtn, left: 24 }} onClick={showPrev} aria-label="Previous image">&#8592;</button>
-          <img
-            src={images[currentIdx].src}
-            alt={images[currentIdx].alt || `Image ${currentIdx + 1}`}
-            style={{
-              maxWidth: '90vw',
-              maxHeight: '80vh',
-              borderRadius: 12,
-              boxShadow: '0 4px 32px 0 rgba(0,0,0,0.25)',
-              background: '#232B3B',
-              margin: '0 48px',
-              objectFit: 'contain',
-              display: 'block',
-            }}
-            onClick={e => e.stopPropagation()}
-            draggable={false}
-          />
-          <button style={{ ...arrowBtn, right: 24 }} onClick={showNext} aria-label="Next image">&#8594;</button>
+          ) : (
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: '85vw',
+                height: '80vh',
+                margin: '0 48px',
+                borderRadius: 12,
+                overflow: 'hidden',
+                boxShadow: '0 4px 32px 0 rgba(0,0,0,0.25)',
+                background: '#fff',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <iframe
+                src={current.src}
+                title={current.alt || getFileName(current.src)}
+                style={{ flex: 1, border: 'none' }}
+              />
+              <a
+                href={current.src}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: '8px 12px', fontSize: 12, textAlign: 'center',
+                  background: '#151B28', color: '#93C5FD', textDecoration: 'none',
+                }}
+              >
+                Open in new tab ↗
+              </a>
+            </div>
+          )}
+          <button style={{ ...arrowBtn, right: 24 }} onClick={showNext} aria-label="Next file">&#8594;</button>
           <button style={closeBtn} onClick={closeModal} aria-label="Close fullscreen">&#10005;</button>
         </div>
-      )}
+        );
+      })()}
     </>
   );
 };

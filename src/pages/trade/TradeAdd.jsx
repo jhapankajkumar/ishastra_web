@@ -3,11 +3,10 @@ import TradeContextSection from "../../components/tradeLogSections/TradeContextS
 import TradePlanSection from "../../components/tradeLogSections/TradePlanSection";
 import NotesSection from "../../components/tradeLogSections/NotesSection";
 import PostTradeAnalysisSection from "../../components/tradeLogSections/PostTradeAnalysisSection";
-import TechnicalIndicators from "../../components/TechnicalIndicators";
 import { useNavigate, useLocation } from "react-router-dom";
 import styles from "./TradeAdd.module.css";
 import PageHeader from "../../components/PageHeader";
-import { createTrade, updateTrade, addPostAnalysis } from '../../api/tradeApi';
+import { createTrade, updateTrade, addPostAnalysis, getAllTrades, addQuantityToTrade } from '../../api/tradeApi';
 import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
 import { getCurrentPrice, getATR, getTechnicalIndicators } from '../../api/tickerApi';
 import { getCapitalInfo } from '../../api/capitalApi';
@@ -41,7 +40,7 @@ const initialState = {
   timeframesUsed: [],
   riskPerTrade: "1.0",
   stopLossPrice: "",
-  stopLossMethod: "Fixed %",
+  stopLossMethod: "Fixed Value",
   atrMultiplier: 1.5,
   target1: "",
   target2: "",
@@ -167,6 +166,11 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
   const [showPrefilledNotification, setShowPrefilledNotification] = useState(false);
   const [capitalData, setCapitalData] = useState(null);
   const [capitalLoading, setCapitalLoading] = useState(false);
+  // Pyramiding: when the chosen ticker+direction already has an open/partial
+  // trade, offer to merge into it (weighted-average entry) instead of always
+  // creating a second independent row.
+  const [existingPositionTrade, setExistingPositionTrade] = useState(null);
+  const [addToExisting, setAddToExisting] = useState(false);
   const notification = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
@@ -219,6 +223,24 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
     
     // For manual ticker selection (not from watchlist), clear quantity and fetch fresh data
     setForm((prev) => ({ ...prev, ticker: symbol, companyName }));
+
+    // Check for an existing open/partial trade on this ticker+direction so the
+    // user can choose to pyramid into it instead of always opening a new row.
+    setExistingPositionTrade(null);
+    setAddToExisting(false);
+    if (isAdd) {
+      try {
+        const res = await getAllTrades();
+        const match = (res.data || []).find(t =>
+          (t.ticker || '').toUpperCase() === symbol.toUpperCase() &&
+          (t.direction || 'Long').toLowerCase() === (form.direction || 'Long').toLowerCase() &&
+          ['open', 'partial closed'].includes((t.status || '').toLowerCase())
+        );
+        if (match) setExistingPositionTrade(match);
+      } catch (err) {
+        // Non-critical — worst case the user just creates a new independent trade.
+      }
+    }
 
     // Calculate period for ATR: last 30 days from today
     const today = new Date();
@@ -348,6 +370,20 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
     e.preventDefault();
     try {
       if (isAdd) {
+        if (addToExisting && existingPositionTrade) {
+          await addQuantityToTrade(existingPositionTrade.id, {
+            date: form.entryDate,
+            price: form.entryOrderPrice,
+            quantity: form.entryFilledShares,
+            commission: form.entryCommission,
+          });
+          notification.success(`Added to existing ${existingPositionTrade.ticker} position!`);
+          navigate("/trades", { replace: true });
+          window.location.reload();
+          if (onSubmit) onSubmit();
+          return;
+        }
+
         if (!form.stopLossPrice) {
           // Not a hard block — some trades (long-term holds) genuinely have
           // no stop. But R-multiple can never be computed without one, so
@@ -425,19 +461,29 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
         <form onSubmit={handleSubmit}>
           {/* <TradeContextSection {...{form, handleChange, isReview, isUpdate, setups, setupsLoaded, entryDisabled, styles}} /> */}
           {/* <div className={styles.sectionDivider} /> */}
-          <TradePlanSection {...{form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades, isPopulated, capitalData, capitalLoading}} />
-          <div className={styles.sectionDivider} />
-          {form.ticker && (
-            <>
-              <TechnicalIndicators 
-                symbol={form.ticker} 
-                onATRChange={(atr) => {
-                  handleChange({ target: { name: 'atrValue', value: atr } });
-                }}
-              />
-              <div className={styles.sectionDivider} />
-            </>
+          {isAdd && existingPositionTrade && (
+            <div style={{
+              margin: '0 0 16px', padding: '12px 16px', borderRadius: 8,
+              border: '1px solid var(--accent-primary, #10b981)',
+              background: 'var(--bg-secondary, rgba(16,185,129,0.08))'
+            }}>
+              <div style={{ marginBottom: 8, fontSize: 14 }}>
+                You already have an open position in <strong>{existingPositionTrade.ticker}</strong>{' '}
+                ({Number(existingPositionTrade.remainingQuantity ?? existingPositionTrade.quantity).toLocaleString()} shares @{' '}
+                {Number(existingPositionTrade.entryPrice).toFixed(2)} avg). Is this an add to that position, or a separate trade?
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={addToExisting}
+                  onChange={(e) => setAddToExisting(e.target.checked)}
+                />
+                Add these shares to the existing position (averages entry price into one trade)
+              </label>
+            </div>
           )}
+          <TradePlanSection {...{form, handleChange, handleTickerChange, handleTickerSelect, entryDisabled, today, styles, openTrades, isPopulated, capitalData, capitalLoading}} hideRiskManagement={isAdd && addToExisting && !!existingPositionTrade} />
+          <div className={styles.sectionDivider} />
           <NotesSection {...{form, handleChange, entryDisabled, styles}} />
           <div className={styles.sectionDivider} />
           {isReview && <PostTradeAnalysisSection {...{form, handleChange, postDisabled, styles}} />}

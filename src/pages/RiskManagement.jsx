@@ -7,13 +7,13 @@ function RiskManagement() {
 
   // Initial state for formData
   const [formData, setFormData] = useState({
-    capital: '10000',
+    capital: '20000',
     stockPrice: '',
-    maxPosition: '25',
-    riskPerShare: '2.0',
+    maxPosition: '15',
+    riskPerShare: '0.5',
     stopLoss: '',
     slippage: '0',
-    slippageSl: '0.5'
+    slippageSl: '0'
   });
 
   // State for calculated results
@@ -136,6 +136,15 @@ function RiskManagement() {
     }).format(number);
   };
 
+  // Both price levels are needed before any sizing number means anything —
+  // without them the results read as a wall of $0.00 rather than "not yet".
+  const hasLevels = Boolean(
+    parseFloat(formData.stockPrice) > 0 && parseFloat(formData.stopLoss) > 0
+  );
+
+  const capitalNum = parseFloat(formData.capital) || 0;
+  const investedPct = capitalNum > 0 ? (calculations.totalInvestment / capitalNum) * 100 : 0;
+
   return (
     <div className={styles.container}>
       <div className={styles.content}>
@@ -143,6 +152,9 @@ function RiskManagement() {
         <div className={styles.mainGrid}>
           <div className={styles.inputSection}>
           <h3 className={styles.sectionTitle}>Position Setup</h3>
+
+          <div className={styles.fieldGroup}>
+          <div className={styles.fieldGroupLabel}>Account Rules</div>
           <div className={styles.formGrid}>
             <div className={styles.inputGroup}>
               <label className={styles.label}>Trading Capital (USD)</label>
@@ -213,6 +225,12 @@ function RiskManagement() {
                 <option value="2.0">2.0%</option>
               </select>
             </div>
+          </div>
+          </div>
+
+          <div className={styles.fieldGroup}>
+          <div className={styles.fieldGroupLabel}>Trade Levels</div>
+          <div className={styles.formGrid}>
             <div className={styles.inputGroup}>
               <label className={styles.label}>Entry Price</label>
               <input
@@ -239,6 +257,12 @@ function RiskManagement() {
                 min="0"
               />
             </div>
+          </div>
+          </div>
+
+          <div className={styles.fieldGroup}>
+          <div className={styles.fieldGroupLabel}>Execution Assumptions</div>
+          <div className={styles.formGrid}>
             <div className={styles.inputGroup}>
               <label className={styles.label}>Entry Slippage %</label>
               <select
@@ -270,6 +294,7 @@ function RiskManagement() {
               </select>
             </div>
           </div>
+          </div>
 
           {/* ── R-Multiple Targets ───────────────────────────────────── */}
           {formData.stockPrice && formData.stopLoss && (() => {
@@ -288,8 +313,8 @@ function RiskManagement() {
                   {[1, 2, 3, 4].map(n => (
                     <div key={n} className={styles.rMultiCell}>
                       <span className={styles.rMultiLabel}>{n}R</span>
-                      <span className={styles.rMultiPrice}>₹{(actualEntry + n * oneR).toFixed(2)}</span>
-                      <span className={styles.rMultiGain}>+₹{(n * oneR).toFixed(2)}</span>
+                      <span className={styles.rMultiPrice}>${(actualEntry + n * oneR).toFixed(2)}</span>
+                      <span className={styles.rMultiGain}>+${(n * oneR).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -300,44 +325,64 @@ function RiskManagement() {
         </div>
         <div className={styles.resultsSection}>
           <h2 className={styles.sectionTitle}>Calculated Results</h2>
-          <div className={styles.resultsGrid}>
-            <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Position Size</div>
-              <div className={styles.resultValue}>{formatNumber(calculations.shares)} shares</div>
-              {calculations.actualFillPrice > 0 && (
-                <div className={styles.resultNote}>@ {formatCurrency(calculations.actualFillPrice)} fill</div>
-              )}
+
+          {!hasLevels && (
+            <div className={styles.emptyHint}>
+              <span className={styles.emptyHintIcon} aria-hidden="true">💡</span>
+              <span>Enter an <strong>entry price</strong> and <strong>stop loss price</strong> to size the position.</span>
             </div>
-            <div className={styles.resultCard}>
+          )}
+
+          <div className={styles.heroCard}>
+            <div>
+              <div className={styles.heroLabel}>Position Size</div>
+              <div className={styles.heroValue}>
+                {formatNumber(calculations.shares)}<span className={styles.heroUnit}>shares</span>
+              </div>
+            </div>
+            {calculations.actualFillPrice > 0 && (
+              <div className={styles.heroMeta}>
+                at fill price
+                <span className={styles.heroMetaValue}>{formatCurrency(calculations.actualFillPrice)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.resultsGrid}>
+            <div className={`${styles.resultCard} ${styles.accentDanger}`}>
+              <div className={styles.resultLabel}>Risk Amount</div>
+              <div className={styles.resultValue}>{formatCurrency(calculations.riskAmount)}</div>
+              <div className={styles.resultNote}>Max loss if stopped out</div>
+            </div>
+            <div className={`${styles.resultCard} ${styles.accentInfo}`}>
+              <div className={styles.resultLabel}>Total Invested</div>
+              <div className={styles.resultValue}>{formatCurrency(calculations.totalInvestment)}</div>
+              <div className={styles.resultNote}>
+                {investedPct > 0 ? `${investedPct.toFixed(1)}% of capital` : 'Capital deployed'}
+              </div>
+            </div>
+            <div className={`${styles.resultCard} ${styles.accentWarning}`}>
               <div className={styles.resultLabel}>Final SL %</div>
-              <div className={styles.resultValue}>
+              <div className={`${styles.resultValue} ${calculations.finalSlPct > 0 ? '' : styles.resultValueMuted}`}>
                 {calculations.finalSlPct > 0 ? `${calculations.finalSlPct.toFixed(2)}%` : '—'}
               </div>
               <div className={styles.resultNote}>After entry + SL slippage</div>
             </div>
-            <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Risk Amount</div>
-              <div className={styles.resultValue}>{formatCurrency(calculations.riskAmount)}</div>
-            </div>
-            <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Break-Even Trigger</div>
-              <div className={styles.resultValue}>
-                {calculations.breakEvenPrice > 0 ? formatCurrency(calculations.breakEvenPrice) : '—'}
-              </div>
-              <div className={styles.resultNote}>At 2R from fill — move SL to entry</div>
-            </div>
-            <div className={styles.resultCard}>
-              <div className={styles.resultLabel}>Total Invested</div>
-              <div className={styles.resultValue}>{formatCurrency(calculations.totalInvestment)}</div>
-            </div>
-            <div className={styles.resultCard}>
+            <div className={`${styles.resultCard} ${styles.accentWarning}`}>
               <div className={styles.resultLabel}>Final SL Value</div>
-              <div className={styles.resultValue}>
+              <div className={`${styles.resultValue} ${calculations.finalSlPrice > 0 ? '' : styles.resultValueMuted}`}>
                 {calculations.finalSlPrice > 0 ? formatCurrency(calculations.finalSlPrice) : '—'}
               </div>
               <div className={styles.resultNote}>
-                {calculations.stopLossPrice > 0 ? `Clean SL: ${formatCurrency(calculations.stopLossPrice)}` : ''}
+                {calculations.stopLossPrice > 0 ? `Clean SL: ${formatCurrency(calculations.stopLossPrice)}` : 'Worst-case stop fill'}
               </div>
+            </div>
+            <div className={`${styles.resultCard} ${styles.accentSuccess}`}>
+              <div className={styles.resultLabel}>Break-Even Trigger</div>
+              <div className={`${styles.resultValue} ${calculations.breakEvenPrice > 0 ? '' : styles.resultValueMuted}`}>
+                {calculations.breakEvenPrice > 0 ? formatCurrency(calculations.breakEvenPrice) : '—'}
+              </div>
+              <div className={styles.resultNote}>At 2R from fill — move SL to entry</div>
             </div>
           </div>
 
@@ -380,21 +425,21 @@ function RiskManagement() {
                   </div>
                   <div className={styles.bufferRow}>
                     <span className={styles.bufferMuted}>Entry</span>
-                    <span>₹{entry.toFixed(2)}</span>
-                    <span className={styles.bufferMuted}>+₹{entryBufAmt.toFixed(4)}</span>
-                    <span className={styles.bufferWorst}>₹{entryWorst.toFixed(4)}</span>
+                    <span>${entry.toFixed(2)}</span>
+                    <span className={styles.bufferMuted}>+${entryBufAmt.toFixed(4)}</span>
+                    <span className={styles.bufferWorst}>${entryWorst.toFixed(4)}</span>
                   </div>
                   <div className={styles.bufferRow}>
                     <span className={styles.bufferMuted}>SL</span>
-                    <span>₹{sl.toFixed(2)}</span>
-                    <span className={styles.bufferMuted}>-₹{slBufAmt.toFixed(4)}</span>
-                    <span className={styles.bufferWorst}>₹{slWorst.toFixed(4)}</span>
+                    <span>${sl.toFixed(2)}</span>
+                    <span className={styles.bufferMuted}>-${slBufAmt.toFixed(4)}</span>
+                    <span className={styles.bufferWorst}>${slWorst.toFixed(4)}</span>
                   </div>
                   <div className={styles.bufferRow}>
                     <span className={styles.bufferMuted}>Risk/share</span>
-                    <span>₹{cleanRPS.toFixed(2)}</span>
+                    <span>${cleanRPS.toFixed(2)}</span>
                     <span></span>
-                    <span className={styles.bufferWorst}>₹{buffRPS.toFixed(2)}</span>
+                    <span className={styles.bufferWorst}>${buffRPS.toFixed(2)}</span>
                   </div>
                   <div className={`${styles.bufferRow} ${styles.bufferQtyRow}`}>
                     <span className={styles.bufferMuted}>Qty</span>
@@ -404,9 +449,9 @@ function RiskManagement() {
                   </div>
                   <div className={styles.bufferRow}>
                     <span className={styles.bufferMuted}>Allocation</span>
-                    <span>₹{allocClean.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                    <span>${allocClean.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                     <span></span>
-                    <span className={styles.bufferMuted}>₹{allocBuff.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                    <span className={styles.bufferMuted}>${allocBuff.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                   </div>
                 </div>
               </div>

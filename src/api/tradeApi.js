@@ -230,3 +230,9 @@ export async function createTrade(formOrData, options = {}) {
 
 // Delete trade
 export const deleteTrade = (id) => API.delete(`/trades/${id}`);
+
+// Pyramid: add quantity to an existing open/partial trade — merges the new
+// tranche into the same row (weighted-average entry price) rather than
+// creating a second independent trade.
+export const addQuantityToTrade = (id, { date, price, quantity, commission }) =>
+  API.put(`/trades/${id}/add-quantity`, { date, price, quantity, commission });

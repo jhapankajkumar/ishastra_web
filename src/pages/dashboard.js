@@ -293,7 +293,9 @@ const Dashboard = () => {
 
   const equityCurveInitial = capitalMetrics.initialCap > 0 ? capitalMetrics.initialCap : 0;
 
-  // Equity curve total return — derived from realized exits only, matches the chart
+  // Equity curve total return — derived from realized exits only, matches the chart.
+  // Commission is subtracted per trade so this agrees with capitalMetrics.finalPnl,
+  // which already deducts totalCommissions.
   const equityReturn = React.useMemo(() => {
     const init = equityCurveInitial || 100000;
     let eq = init;
@@ -301,7 +303,8 @@ const Dashboard = () => {
       if (t.entryPrice == null || t.quantity == null || !t.direction) return;
       const exit = t.exitPrice != null ? t.exitPrice : t.entryPrice;
       const diff = t.direction.toLowerCase() === 'long' ? exit - t.entryPrice : t.entryPrice - exit;
-      eq += diff * t.quantity;
+      const commission = Number(t.entryCommission || 0) + Number(t.exitCommission || 0);
+      eq += diff * t.quantity - commission;
     });
     return ((eq - init) / init) * 100;
   }, [currencyTrades, equityCurveInitial]);

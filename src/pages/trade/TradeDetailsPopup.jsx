@@ -277,6 +277,14 @@ export default function TradeDetailsPopup({ trade, onClose }) {
     : (exitTransactions && exitTransactions.length ? exitTransactions.reduce((s, tx) => s + (Number(tx.commission) || 0), 0) : null);
   const exitCommissionDisplay = exitCommissionAmount !== null ? formatCurrency(exitCommissionAmount, 2) : '-';
 
+  // Pyramided adds (from the add-quantity endpoint). The trade's original
+  // fill isn't logged as its own transaction row — it's baked into
+  // entryPrice/quantity directly and already shown in the Trade Snapshot
+  // card above — so every row here is strictly an addition on top of that.
+  const entryFills = (trade.tradeTransactions || [])
+    .filter(tx => tx.transactionType === 'Entry')
+    .sort((a, b) => new Date(a.transactionDate) - new Date(b.transactionDate));
+
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const { body } = document;
@@ -315,23 +323,6 @@ export default function TradeDetailsPopup({ trade, onClose }) {
               <h1 className={styles.tickerTitle}>
                 {trade.ticker}
               </h1>
-              <button
-                type="button"
-                onClick={handleViewOnChart}
-                style={{
-                  marginLeft: 'auto',
-                  padding: '6px 14px',
-                  borderRadius: 8,
-                  border: '1px solid var(--border-secondary)',
-                  background: 'var(--bg-tertiary)',
-                  color: 'var(--text-primary)',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                📈 View on Chart
-              </button>
             </div>
             <p className={styles.companyName}>
               Trade Details & Analysis
@@ -434,6 +425,34 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                   )}
                 </div>
               </div>
+              {entryFills.length > 0 && (
+                <div className={styles.detailCard}>
+                  <div className={styles.detailHeading}>Additional Entries — Pyramided ({entryFills.length})</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginBottom: 8 }}>
+                    Beyond the original entry above. Average price shown in Trade Snapshot already includes these.
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase' }}>
+                        <th style={{ padding: '4px 8px 4px 0', fontWeight: 600 }}>Date</th>
+                        <th style={{ padding: '4px 8px', fontWeight: 600 }}>Qty</th>
+                        <th style={{ padding: '4px 8px', fontWeight: 600 }}>Price</th>
+                        <th style={{ padding: '4px 0', fontWeight: 600 }}>Commission</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {entryFills.map(fill => (
+                        <tr key={fill.id} style={{ borderTop: '1px solid var(--border-secondary)' }}>
+                          <td style={{ padding: '6px 8px 6px 0' }}>{formatDate(fill.transactionDate)}</td>
+                          <td style={{ padding: '6px 8px' }}>{Number(fill.quantity).toLocaleString()}</td>
+                          <td style={{ padding: '6px 8px' }}>{formatCurrency(fill.price, 2)}</td>
+                          <td style={{ padding: '6px 0' }}>{fill.commission != null ? formatCurrency(fill.commission, 2) : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <div className={styles.detailCard}>
                 <div className={styles.detailHeading}>Position Metrics</div>

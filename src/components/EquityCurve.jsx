@@ -70,18 +70,27 @@ const EquityCurve = ({ trades, initialCapital: propInitial }) => {
       const entry = Number(trade.entryPrice || 0);
       const sign = (trade.direction || 'long').toLowerCase() === 'long' ? 1 : -1;
       const txs = trade.exitTransactions || [];
+      // Commission is a real cost of the trade — deduct it in full on the trade's
+      // last exit, so the curve's endpoint matches capitalMetrics.finalPnl (which
+      // already subtracts totalCommissions) instead of drifting from Portfolio Value.
+      const commission = Number(trade.entryCommission || 0) + Number(trade.exitCommission || 0);
       if (txs.length === 0 && trade.exitPrice != null && trade.exitDate) {
         const soldQty = Number(trade.quantity || 0) - Number(trade.remainingQuantity || 0);
         if (soldQty > 0) {
-          allExits.push({ date: trade.exitDate, pnl: sign * (Number(trade.exitPrice) - entry) * soldQty });
+          allExits.push({ date: trade.exitDate, pnl: sign * (Number(trade.exitPrice) - entry) * soldQty - commission });
         }
-      } else {
+      } else if (txs.length > 0) {
+        const lastTxDate = txs.reduce((latest, tx) => {
+          const d = tx.transactionDate;
+          return (!latest || new Date(d) > new Date(latest)) ? d : latest;
+        }, null);
         txs.forEach(tx => {
           if (!tx.transactionDate || tx.price == null || tx.quantity == null) return;
           const d = typeof tx.transactionDate === 'number'
             ? new Date(tx.transactionDate).toISOString().slice(0, 10)
             : String(tx.transactionDate).slice(0, 10);
-          allExits.push({ date: d, pnl: sign * (Number(tx.price) - entry) * Number(tx.quantity) });
+          const isLast = tx.transactionDate === lastTxDate;
+          allExits.push({ date: d, pnl: sign * (Number(tx.price) - entry) * Number(tx.quantity) - (isLast ? commission : 0) });
         });
       }
     });

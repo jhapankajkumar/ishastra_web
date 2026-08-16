@@ -85,7 +85,11 @@ export function getPartialPL(trade) {
         unrealizedPL = diff * openQty;
     }
 
-    const totalPL = realizedPL + unrealizedPL;
+    // Commission is a real cost of the trade, so it's a straight deduction —
+    // matches how dashboard.js's capitalMetrics treats it (finalPnl subtracts
+    // totalCommissions), so this per-trade number agrees with the Dashboard.
+    const commission = Number(trade.entryCommission || 0) + Number(trade.exitCommission || 0);
+    const totalPL = realizedPL + unrealizedPL - commission;
     if (trade.currency && trade.currency.toUpperCase() === 'USD') {
         // console.log("Realized PL:", realizedPL, "Unrealized PL:", unrealizedPL, "Total PL:", totalPL);
     }

@@ -18,7 +18,7 @@ export default function CommonAddChart({
                 onChange={addChart}
                 className={styles.fileInput}
                 multiple
-                accept="image/*"
+                accept="image/*,.pdf,application/pdf,.html,.htm,text/html"
             />
             {charts.length > 0 && (
                 <div className={styles.fileList}>

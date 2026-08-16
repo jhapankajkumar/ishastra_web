@@ -24,7 +24,7 @@ export default function NotesSection(props) {
       </div>
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Entry Chart(s)</label>
-        <input type="file" name="entryCharts" accept="image/*" multiple onChange={handleChange} disabled={entryDisabled} className={`${styles.fileInput} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} />
+        <input type="file" name="entryCharts" accept="image/*,.pdf,application/pdf,.html,.htm,text/html" multiple onChange={handleChange} disabled={entryDisabled} className={`${styles.fileInput} ${entryDisabled ? styles.inputDisabled : styles.inputEnabled}`} />
       </div>
     </div>
   );
