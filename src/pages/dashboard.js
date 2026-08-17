@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllTrades, deleteTrade, getTradeTransactions } from "../api/tradeApi";
-import { getAllInvestments, getInvestmentSummary } from '../api/investmentApi';
+import { getAllInvestments } from '../api/investmentApi';
 import EquityCurve from '../components/EquityCurve';
 import PerformanceChart from '../components/PerformanceChart';
 import InvestmentValueChart from '../components/InvestmentValueChart';
@@ -98,6 +98,11 @@ const StatusBadge = ({ status }) => {
 };
 
 // ============================================================
+const CURRENCY_TABS = [
+  { code: 'INR', label: '🇮🇳 India (NSE)' },
+  { code: 'USD', label: '🇺🇸 US (NASDAQ/NYSE)' },
+];
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -181,38 +186,50 @@ const Dashboard = () => {
     if (typeof window !== 'undefined') localStorage.setItem('ishastra-welcomed', 'true');
   };
 
-  // Load investment data
+  // Load investment data — raw list only; currency-scoped summary is
+  // derived below via useMemo so switching currency doesn't need a refetch.
   useEffect(() => {
     if (activeTab !== 'investment') return;
     setInvestmentLoading(true);
     setInvestmentError(null);
-    Promise.all([getInvestmentSummary(), getAllInvestments(true)])
-      .then(([summaryResponse, listResponse]) => {
-        const list = listResponse.data || [];
-        let totalInvested = 0, totalHoldings = 0, unrealizedPnL = 0, avgBuyPrice = 0, todaysPnL = 0;
-        if (Array.isArray(list) && list.length > 0) {
-          totalInvested = list.reduce((s, inv) => s + (inv.avgBuyPrice || 0) * (inv.quantity || 0), 0);
-          totalHoldings = list.reduce((s, inv) => s + (inv.currentPrice || 0) * (inv.quantity || 0), 0);
-          unrealizedPnL = totalHoldings - totalInvested;
-          const totalQty = list.reduce((s, inv) => s + (inv.quantity || 0), 0);
-          avgBuyPrice = totalQty ? totalInvested / totalQty : 0;
-          const lastHoldings = list.reduce((s, inv) => s + (inv.lastDayPrice || 0) * (inv.quantity || 0), 0);
-          todaysPnL = totalHoldings - lastHoldings;
-        }
-        setInvestmentSummary({
-          totalInvested: Math.floor(totalInvested),
-          totalHoldings: Math.floor(totalHoldings),
-          unrealizedPnL: Math.floor(unrealizedPnL),
-          avgBuyPrice: Math.floor(avgBuyPrice),
-          todaysPnL: Math.floor(todaysPnL),
-          pnlPercent: totalHoldings > 0 ? (unrealizedPnL / totalHoldings) * 100 : 0,
-          todaysPnLPercent: totalHoldings > 0 ? (todaysPnL / totalHoldings) * 100 : 0
-        });
-        setInvestments(list);
+    getAllInvestments(true)
+      .then((listResponse) => {
+        setInvestments(listResponse.data || []);
       })
       .catch(setInvestmentError)
       .finally(() => setInvestmentLoading(false));
   }, [activeTab, user]);
+
+  // Investments scoped to the active currency tab — mirrors currencyTrades.
+  const investmentsCurrency = React.useMemo(() =>
+    (Array.isArray(investments) ? investments : []).filter(
+      inv => (inv.currency || 'INR').toUpperCase() === tradingCurrency
+    ),
+    [investments, tradingCurrency]
+  );
+
+  React.useEffect(() => {
+    const list = investmentsCurrency;
+    let totalInvested = 0, totalHoldings = 0, unrealizedPnL = 0, avgBuyPrice = 0, todaysPnL = 0;
+    if (list.length > 0) {
+      totalInvested = list.reduce((s, inv) => s + (inv.avgBuyPrice || 0) * (inv.quantity || 0), 0);
+      totalHoldings = list.reduce((s, inv) => s + (inv.currentPrice || 0) * (inv.quantity || 0), 0);
+      unrealizedPnL = totalHoldings - totalInvested;
+      const totalQty = list.reduce((s, inv) => s + (inv.quantity || 0), 0);
+      avgBuyPrice = totalQty ? totalInvested / totalQty : 0;
+      const lastHoldings = list.reduce((s, inv) => s + (inv.lastDayPrice || 0) * (inv.quantity || 0), 0);
+      todaysPnL = totalHoldings - lastHoldings;
+    }
+    setInvestmentSummary({
+      totalInvested: Math.floor(totalInvested),
+      totalHoldings: Math.floor(totalHoldings),
+      unrealizedPnL: Math.floor(unrealizedPnL),
+      avgBuyPrice: Math.floor(avgBuyPrice),
+      todaysPnL: Math.floor(todaysPnL),
+      pnlPercent: totalHoldings > 0 ? (unrealizedPnL / totalHoldings) * 100 : 0,
+      todaysPnLPercent: totalHoldings > 0 ? (todaysPnL / totalHoldings) * 100 : 0
+    });
+  }, [investmentsCurrency]);
 
   // ---- Derived trading data ----
   const currencySymbol = tradingCurrency === 'USD' ? '$' : '₹';
@@ -371,13 +388,13 @@ const Dashboard = () => {
         <>
           {/* Currency switcher */}
           <div className={styles.currencyBar}>
-            {['INR', 'USD'].map(cur => (
+            {CURRENCY_TABS.map(({ code, label }) => (
               <button
-                key={cur}
-                className={`${styles.currencyBtn} ${tradingCurrency === cur ? styles.currencyBtnActive : ''}`}
-                onClick={() => { setTradingCurrency(cur); localStorage.setItem('dashboardTradingCurrency', cur); }}
+                key={code}
+                className={`${styles.currencyBtn} ${tradingCurrency === code ? styles.currencyBtnActive : ''}`}
+                onClick={() => { setTradingCurrency(code); localStorage.setItem('dashboardTradingCurrency', code); }}
               >
-                {cur}
+                {label}
               </button>
             ))}
           </div>
@@ -459,7 +476,7 @@ const Dashboard = () => {
               badgeLoss={equityReturn < 0}
               height="tall"
             >
-              <EquityCurve trades={currencyTrades} initialCapital={equityCurveInitial} />
+              <EquityCurve trades={currencyTrades} initialCapital={equityCurveInitial} currencySymbol={currencySymbol} />
             </ChartCard>
 
             {/* Monthly P&L */}
@@ -469,7 +486,7 @@ const Dashboard = () => {
 
             {/* Portfolio Value Over Time */}
             <ChartCard title="Portfolio Growth" subtitle="Monthly portfolio value (realized P&L + current unrealized)">
-              <InvestmentValueChart investments={currencyTrades} isTrade={true} initialCapital={equityCurveInitial} />
+              <InvestmentValueChart investments={currencyTrades} isTrade={true} initialCapital={equityCurveInitial} currencySymbol={currencySymbol} />
             </ChartCard>
 
             {/* Drawdown — full width, the equity curve alone can hide a bad stretch */}
@@ -578,24 +595,37 @@ const Dashboard = () => {
             <div style={{ color: 'var(--error-color)', textAlign: 'center', padding: 60 }}>Failed to load investment data.</div>
           ) : (
             <>
+              {/* Currency switcher — shared with Trading tab */}
+              <div className={styles.currencyBar}>
+                {CURRENCY_TABS.map(({ code, label }) => (
+                  <button
+                    key={code}
+                    className={`${styles.currencyBtn} ${tradingCurrency === code ? styles.currencyBtnActive : ''}`}
+                    onClick={() => { setTradingCurrency(code); localStorage.setItem('dashboardTradingCurrency', code); }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               {/* ---- INVESTMENT SUMMARY ---- */}
               <SectionLabel>Portfolio Summary</SectionLabel>
               <div className={styles.invSummaryGrid}>
                 <KpiCard
                   hero
                   label="Total Invested"
-                  value={`₹${fmtNum(investmentSummary?.totalInvested)}`}
+                  value={`${currencySymbol}${fmtNum(investmentSummary?.totalInvested)}`}
                   theme={theme}
                 />
                 <KpiCard
                   label="Current Value"
-                  value={`₹${fmtNum(investmentSummary?.totalHoldings)}`}
+                  value={`${currencySymbol}${fmtNum(investmentSummary?.totalHoldings)}`}
                   accent="var(--profit-color)"
                   theme={theme}
                 />
                 <KpiCard
                   label="Today's P&L"
-                  value={`${(investmentSummary?.todaysPnL || 0) >= 0 ? '+' : ''}₹${fmtNum(Math.abs(investmentSummary?.todaysPnL || 0))}`}
+                  value={`${(investmentSummary?.todaysPnL || 0) >= 0 ? '+' : ''}${currencySymbol}${fmtNum(Math.abs(investmentSummary?.todaysPnL || 0))}`}
                   sub={`${investmentSummary?.todaysPnLPercent?.toFixed(2) ?? '0.00'}%`}
                   accent={(investmentSummary?.todaysPnL || 0) >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'}
                   subColor={(investmentSummary?.todaysPnL || 0) >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'}
@@ -603,7 +633,7 @@ const Dashboard = () => {
                 />
                 <KpiCard
                   label="Unrealized P&L"
-                  value={`${(investmentSummary?.unrealizedPnL || 0) >= 0 ? '+' : ''}₹${fmtNum(Math.abs(investmentSummary?.unrealizedPnL || 0))}`}
+                  value={`${(investmentSummary?.unrealizedPnL || 0) >= 0 ? '+' : ''}${currencySymbol}${fmtNum(Math.abs(investmentSummary?.unrealizedPnL || 0))}`}
                   sub={`${investmentSummary?.pnlPercent?.toFixed(2) ?? '0.00'}%`}
                   accent={(investmentSummary?.unrealizedPnL || 0) >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'}
                   subColor={(investmentSummary?.unrealizedPnL || 0) >= 0 ? 'var(--profit-color)' : 'var(--loss-color)'}
@@ -615,20 +645,20 @@ const Dashboard = () => {
               <SectionLabel>Analytics</SectionLabel>
               <div className={styles.chartsGrid}>
                 <ChartCard title="Investment Value Over Time" subtitle="Cumulative invested vs current market value">
-                  <InvestmentValueChart investments={Array.isArray(investments) ? investments : []} />
+                  <InvestmentValueChart investments={investmentsCurrency} currencySymbol={currencySymbol} />
                 </ChartCard>
                 <ChartCard title="Top Holdings by Value" subtitle="Largest positions by current market value">
-                  <TopHoldingsBarChart investments={Array.isArray(investments) ? investments : []} />
+                  <TopHoldingsBarChart investments={investmentsCurrency} currencySymbol={currencySymbol} />
                 </ChartCard>
               </div>
 
               <SectionLabel>Allocation & Stats</SectionLabel>
               <div className={styles.analyticsGrid3}>
                 <ChartCard title="Sector Allocation" subtitle="Portfolio weight by sector" height="small">
-                  <SectorDonutChart investments={Array.isArray(investments) ? investments : []} />
+                  <SectorDonutChart investments={investmentsCurrency} />
                 </ChartCard>
                 <ChartCard title="Market Cap Allocation" subtitle="Large / Mid / Small cap breakdown" height="small">
-                  <MarketCapPieChart investments={Array.isArray(investments) ? investments : []} />
+                  <MarketCapPieChart investments={investmentsCurrency} />
                 </ChartCard>
 
                 {/* Key Stats Card */}
@@ -640,7 +670,7 @@ const Dashboard = () => {
                       {
                         label: 'Total Return',
                         value: (() => {
-                          const arr = investments;
+                          const arr = investmentsCurrency;
                           const inv = arr.reduce((s, x) => s + (x.avgBuyPrice || 0) * (x.quantity || 0), 0);
                           const cur = arr.reduce((s, x) => s + (x.currentPrice || 0) * (x.quantity || 0), 0);
                           if (!inv) return '—';
@@ -652,7 +682,7 @@ const Dashboard = () => {
                       {
                         label: 'CAGR',
                         value: (() => {
-                          const arr = investments;
+                          const arr = investmentsCurrency;
                           const inv = arr.reduce((s, x) => s + (x.avgBuyPrice || 0) * (x.quantity || 0), 0);
                           const cur = arr.reduce((s, x) => s + (x.currentPrice || 0) * (x.quantity || 0), 0);
                           if (!inv || !arr.length) return '—';
@@ -667,22 +697,22 @@ const Dashboard = () => {
                       {
                         label: 'Best Performer',
                         value: (() => {
-                          const arr = investments;
+                          const arr = investmentsCurrency;
                           if (!arr.length) return '—';
                           const best = [...arr].sort((a, b) => ((b.currentPrice - b.avgBuyPrice) * b.quantity) - ((a.currentPrice - a.avgBuyPrice) * a.quantity))[0];
                           const pnl = (best.currentPrice - best.avgBuyPrice) * best.quantity;
-                          return `${best.ticker} (${pnl >= 0 ? '+' : ''}₹${fmtNum(pnl)})`;
+                          return `${best.ticker} (${pnl >= 0 ? '+' : ''}${currencySymbol}${fmtNum(pnl)})`;
                         })(),
                         color: '#10B981'
                       },
                       {
                         label: 'Worst Performer',
                         value: (() => {
-                          const arr = investments;
+                          const arr = investmentsCurrency;
                           if (!arr.length) return '—';
                           const worst = [...arr].sort((a, b) => ((a.currentPrice - a.avgBuyPrice) * a.quantity) - ((b.currentPrice - b.avgBuyPrice) * b.quantity))[0];
                           const pnl = (worst.currentPrice - worst.avgBuyPrice) * worst.quantity;
-                          return `${worst.ticker} (${pnl >= 0 ? '+' : ''}₹${fmtNum(pnl)})`;
+                          return `${worst.ticker} (${pnl >= 0 ? '+' : ''}${currencySymbol}${fmtNum(pnl)})`;
                         })(),
                         color: '#EF4444'
                       }
@@ -705,7 +735,7 @@ const Dashboard = () => {
                   <h3 className={styles.tableTitle}>Top Gainers</h3>
                   <button className={styles.viewMoreBtn} onClick={() => navigate('/investments')}>View All</button>
                 </div>
-                <InvestmentTable investments={investments} type="gainers" theme={theme} />
+                <InvestmentTable investments={investmentsCurrency} type="gainers" theme={theme} currencySymbol={currencySymbol} />
               </div>
 
               {/* Top Losers */}
@@ -714,7 +744,7 @@ const Dashboard = () => {
                   <h3 className={styles.tableTitle}>Top Losers</h3>
                   <button className={styles.viewMoreBtn} onClick={() => navigate('/investments')}>View All</button>
                 </div>
-                <InvestmentTable investments={investments} type="losers" theme={theme} />
+                <InvestmentTable investments={investmentsCurrency} type="losers" theme={theme} currencySymbol={currencySymbol} />
               </div>
 
               {/* Recent Investments */}
@@ -736,9 +766,9 @@ const Dashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {investments.length === 0 ? (
+                      {investmentsCurrency.length === 0 ? (
                         <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}>No investments found</td></tr>
-                      ) : investments.slice().sort((a, b) => (b.entryDate || 0) - (a.entryDate || 0)).slice(0, 6).map((inv, idx) => {
+                      ) : investmentsCurrency.slice().sort((a, b) => (b.entryDate || 0) - (a.entryDate || 0)).slice(0, 6).map((inv, idx) => {
                         const pnl = (inv.currentPrice - inv.avgBuyPrice) * inv.quantity;
                         const todayPnl = (inv.currentPrice - (inv.lastDayPrice || inv.currentPrice)) * inv.quantity;
                         return (
@@ -746,15 +776,15 @@ const Dashboard = () => {
                             style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
                             <td className={styles.tableTd}><span className={styles.tickerPill}>{inv.ticker}</span></td>
                             <td className={`${styles.tableTd} ${styles.tableTdRight}`}>{inv.quantity}</td>
-                            <td className={`${styles.tableTd} ${styles.tableTdRight}`}>₹{fmtNum(inv.avgBuyPrice)}</td>
-                            <td className={`${styles.tableTd} ${styles.tableTdRight}`}>₹{fmtNum(inv.currentPrice)}</td>
+                            <td className={`${styles.tableTd} ${styles.tableTdRight}`}>{currencySymbol}{fmtNum(inv.avgBuyPrice)}</td>
+                            <td className={`${styles.tableTd} ${styles.tableTdRight}`}>{currencySymbol}{fmtNum(inv.currentPrice)}</td>
                             <td className={`${styles.tableTd} ${styles.tableTdRight} ${styles.tableTdBold}`}
                               style={{ color: todayPnl >= 0 ? 'var(--profit-color)' : 'var(--loss-color)' }}>
-                              {todayPnl >= 0 ? '+' : ''}₹{isNaN(todayPnl) ? '—' : fmtNum(todayPnl)}
+                              {todayPnl >= 0 ? '+' : ''}{currencySymbol}{isNaN(todayPnl) ? '—' : fmtNum(todayPnl)}
                             </td>
                             <td className={`${styles.tableTd} ${styles.tableTdRight} ${styles.tableTdBold}`}
                               style={{ color: pnl >= 0 ? 'var(--profit-color)' : 'var(--loss-color)' }}>
-                              {pnl >= 0 ? '+' : ''}₹{isNaN(pnl) ? '—' : fmtNum(pnl)}
+                              {pnl >= 0 ? '+' : ''}{currencySymbol}{isNaN(pnl) ? '—' : fmtNum(pnl)}
                             </td>
                           </tr>
                         );
@@ -772,7 +802,7 @@ const Dashboard = () => {
 };
 
 // ---- Investment Gainers/Losers sub-table ----
-const InvestmentTable = ({ investments, type, theme }) => {
+const InvestmentTable = ({ investments, type, theme, currencySymbol = '₹' }) => {
   const arr = Array.isArray(investments) ? investments : [];
   if (!arr.length) return <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 24 }}>No data</div>;
 
@@ -809,7 +839,7 @@ const InvestmentTable = ({ investments, type, theme }) => {
               </td>
               <td className={`${styles.tableTd} ${styles.tableTdRight} ${styles.tableTdBold}`}
                 style={{ color: inv.pnl >= 0 ? 'var(--profit-color)' : 'var(--loss-color)' }}>
-                {inv.pnl >= 0 ? '+' : ''}₹{isNaN(inv.pnl) ? '—' : inv.pnl.toLocaleString()}
+                {inv.pnl >= 0 ? '+' : ''}{currencySymbol}{isNaN(inv.pnl) ? '—' : inv.pnl.toLocaleString()}
               </td>
             </tr>
           ))}

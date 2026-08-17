@@ -35,6 +35,7 @@ const InvestmentForm = () => {
         buyBelow: '',
         sector: '',
         marketCap: '',
+        currency: 'INR',
     });
 
     const [isRecommended, setIsRecommended] = useState(false);
@@ -63,6 +64,7 @@ const InvestmentForm = () => {
                 sector: investment.sector || '',
                 marketCap: investment.marketCap || 'Large Cap',
                 buyBelow: investment.buyBelow || '',
+                currency: investment.currency || 'INR',
                 isRecommended: false
             });
         } catch (error) {
@@ -192,7 +194,9 @@ const InvestmentForm = () => {
         if (typeof ticker === 'object') {
             sector = ticker.sector || '';
         }
-        setFormData(prev => ({ ...prev, ticker: symbol, sector }));
+        // Set currency based on exchange — same suffix check as TradeAdd.jsx
+        const currency = (symbol.includes('.NS') || symbol.includes('.BSE') || symbol.includes('.BO')) ? 'INR' : 'USD';
+        setFormData(prev => ({ ...prev, ticker: symbol, sector, currency }));
         setTickerSuggestions([]);
         fetchCurrentPrice(symbol);
         try {
@@ -238,7 +242,8 @@ const InvestmentForm = () => {
                 status: formData.status,
                 sector: formData.sector,
                 marketCap: formData.marketCap,
-                currentPrice: formData.currentPrice
+                currentPrice: formData.currentPrice,
+                currency: formData.currency
             };
 
             if (isEditing) {
@@ -312,7 +317,7 @@ const InvestmentForm = () => {
                                     type="text"
                                     id="currentPrice"
                                     name="currentPrice"
-                                    value={currentPrice !== null && currentPrice !== undefined ? `$${currentPrice.toFixed(2)}` : ''}
+                                    value={currentPrice !== null && currentPrice !== undefined ? `${formData.currency === 'INR' ? '₹' : '$'}${currentPrice.toFixed(2)}` : ''}
                                     className={styles.input}
                                     placeholder="Auto-filled after ticker selection"
                                     readOnly
@@ -388,9 +393,9 @@ const InvestmentForm = () => {
                         </div>
                         <div className={styles.gridTwoCol}>
                             <div className={styles.fieldGroup}>
-                                <label htmlFor="avgBuyPrice" className={styles.label}>Buy Price ($) *</label>
+                                <label htmlFor="avgBuyPrice" className={styles.label}>Buy Price ({formData.currency === 'INR' ? '₹' : '$'}) *</label>
                                 <div className={styles.priceInputWrapper}>
-                                    <span className={styles.currencySymbol}>$</span>
+                                    <span className={styles.currencySymbol}>{formData.currency === 'INR' ? '₹' : '$'}</span>
                                     <input
                                         type="number"
                                         id="avgBuyPrice"

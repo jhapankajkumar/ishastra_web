@@ -120,7 +120,7 @@ function getInvestmentValueHistory(investments) {
   return { labels, invested: investedArr, totalValue: totalValueArr };
 }
 
-const InvestmentValueChart = ({ investments, isTrade = false, initialCapital = 0 }) => {
+const InvestmentValueChart = ({ investments, isTrade = false, initialCapital = 0, currencySymbol = '₹' }) => {
   const { theme } = useTheme();
   const isDark = theme !== 'light';
   const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
@@ -167,7 +167,7 @@ const InvestmentValueChart = ({ investments, isTrade = false, initialCapital = 0
                   const v = ctx.parsed.y;
                   const diff = v - initialCapital;
                   const pct = initialCapital > 0 ? ((diff / initialCapital) * 100).toFixed(2) : '0.00';
-                  return `Portfolio: ₹${v.toLocaleString('en-IN', { maximumFractionDigits: 0 })}  (${diff >= 0 ? '+' : ''}${pct}%)`;
+                  return `Portfolio: ${currencySymbol}${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}  (${diff >= 0 ? '+' : ''}${pct}%)`;
                 }
               }
             }
@@ -178,7 +178,7 @@ const InvestmentValueChart = ({ investments, isTrade = false, initialCapital = 0
               grid: { color: gridColor },
               ticks: {
                 color: tickColor, font: { size: 10 },
-                callback: v => v >= 1000 ? `₹${Math.round(v / 1000)}K` : `₹${v}`
+                callback: v => v >= 1000 ? `${currencySymbol}${Math.round(v / 1000)}K` : `${currencySymbol}${v}`
               }
             }
           }

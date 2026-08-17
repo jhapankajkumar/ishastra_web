@@ -19,6 +19,17 @@ export default function InvestmentList() {
   }, []);
   const { theme } = useTheme();
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('investmentListActiveTab') || 'NASDAQ';
+  });
+  const setActiveTabWithPersist = (tab) => {
+    setActiveTab(tab);
+    localStorage.setItem('investmentListActiveTab', tab);
+  };
+  const getCurrency = (inv) => inv.currency || 'INR';
+  const currencySymbol = activeTab === 'NASDAQ' ? '$' : '₹';
+  const formatCurrency = (amount, opts = {}) =>
+    `${currencySymbol}${Number(amount || 0).toLocaleString('en-US', { maximumFractionDigits: 2, ...opts })}`;
   const [investments, setInvestments] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [showCombined, setShowCombined] = useState(true);
@@ -178,8 +189,13 @@ export default function InvestmentList() {
     );
   }
 
+  // Scope everything to the active currency tab first — mirrors TradeList's
+  // market-tab pattern so US/India holdings never mix in one table.
+  const tabCurrency = activeTab === 'NASDAQ' ? 'USD' : 'INR';
+  const tabInvestments = investments.filter(inv => getCurrency(inv) === tabCurrency);
+
   // Sorting logic
-  const sortedInvestments = [...investments].sort((a, b) => {
+  const sortedInvestments = [...tabInvestments].sort((a, b) => {
     let aValue, bValue;
     switch (sortBy) {
       case 'ticker':
@@ -269,6 +285,22 @@ export default function InvestmentList() {
         title="Long-Term Investments"
         subtitle="Track and monitor your investment portfolio"
       /> */}
+      {/* Market Tabs */}
+      <div className={styles.tabContainer}>
+        <button
+          className={`${styles.tabButton} ${activeTab === 'NASDAQ' ? styles.active : ''}`}
+          onClick={() => setActiveTabWithPersist('NASDAQ')}
+        >
+          🇺🇸 US (NASDAQ/NYSE)
+        </button>
+        <button
+          className={`${styles.tabButton} ${activeTab === 'NSE' ? styles.active : ''}`}
+          onClick={() => setActiveTabWithPersist('NSE')}
+        >
+          🇮🇳 India (NSE)
+        </button>
+      </div>
+
       {/* Action Bar */}
       <div className={styles.actionBar}>
         <div className={styles.filters}>
@@ -308,18 +340,18 @@ export default function InvestmentList() {
           <span className={styles.summaryItem}>
             <span className={styles.summaryIcon}>💰</span>
             <span className={styles.summaryLabel}>Total Invested:</span>
-            <strong className={styles.summaryValue}>₹{summaryTotals.invested.toLocaleString('en-IN', {maximumFractionDigits:2})}</strong>
+            <strong className={styles.summaryValue}>{formatCurrency(summaryTotals.invested)}</strong>
           </span>
           <span className={styles.summaryItem}>
             <span className={styles.summaryIcon}>📈</span>
             <span className={`${styles.summaryLabel} ${styles.summarySuccess}`}>Current Value:</span>
-            <strong className={styles.summaryValue}>₹{summaryTotals.current.toLocaleString('en-IN', {maximumFractionDigits:2})}</strong>
+            <strong className={styles.summaryValue}>{formatCurrency(summaryTotals.current)}</strong>
           </span>
           <span className={styles.summaryItem}>
             <span className={styles.summaryIcon}>{summaryTotals.profit >= 0 ? '🟢' : '🔴'}</span>
             <span className={`${styles.summaryLabel} ${summaryTotals.profit >= 0 ? styles.summarySuccess : styles.summaryError}`}>Profit/Loss:</span>
             <strong className={`${styles.summaryValue} ${summaryTotals.profit >= 0 ? styles.summarySuccess : styles.summaryError}`}>
-              {summaryTotals.profit >= 0 ? '+' : ''}₹{summaryTotals.profit.toLocaleString('en-IN', {maximumFractionDigits:2})}
+              {summaryTotals.profit >= 0 ? '+' : ''}{formatCurrency(summaryTotals.profit)}
               <span className={styles.summaryPercent}>({summaryTotals.profitPercent}%)</span>
             </strong>
           </span>
@@ -343,13 +375,13 @@ export default function InvestmentList() {
                   <div className={styles.mobileMeta}>Qty. {inv.quantity?.toLocaleString()} <span style={{opacity:.6, margin:'0 6px'}}>•</span> Avg. {inv.avgBuyPrice?.toLocaleString()}</div>
                   <div className={styles.mobileRow}>
                     <div className={styles.left}>
-                      <div>Invested ₹{m.investedAmount.toLocaleString('en-IN')}</div>
-                      <div>LTP ₹{(inv.currentPrice||inv.avgBuyPrice)?.toLocaleString('en-IN')} {ltpPct==null?'':(
+                      <div>Invested {formatCurrency(m.investedAmount)}</div>
+                      <div>LTP {formatCurrency(inv.currentPrice||inv.avgBuyPrice)} {ltpPct==null?'':(
                         <span className={ltpPct>=0? styles.plPositive: styles.plNegative}>({ltpPct>=0?'+':''}{ltpPct.toFixed(2)}%)</span>
                       )}</div>
                     </div>
                     <div className={styles.right}>
-                      <div className={`${styles.plValue} ${m.gainLoss>=0? styles.plPositive: styles.plNegative}`}>₹{Math.abs(m.gainLoss).toLocaleString('en-IN')}</div>
+                      <div className={`${styles.plValue} ${m.gainLoss>=0? styles.plPositive: styles.plNegative}`}>{formatCurrency(Math.abs(m.gainLoss))}</div>
                       <div className={m.gainLoss>=0? styles.plPositive: styles.plNegative}>{m.gainLossPercent>=0?'+':''}{m.gainLossPercent}%</div>
                     </div>
                   </div>
@@ -466,7 +498,7 @@ export default function InvestmentList() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <span className={styles.ticker}>{investment.ticker}</span>
                             {investment.buyBelow > 0 && (
-                              <span className={styles.linkedBadge} title={`From recommendation: Buy below ₹${investment.buyBelow}`}>Rec</span>
+                              <span className={styles.linkedBadge} title={`From recommendation: Buy below ${formatCurrency(investment.buyBelow)}`}>Rec</span>
                             )}
                           </div>
                           <div></div>
@@ -480,23 +512,23 @@ export default function InvestmentList() {
                       </td>
                       <td className={styles.tableCell}>{formatDate(investment.entryDate)}</td>
                       <td className={styles.tableCell} >{investment.quantity}</td>
-                      <td className={styles.tableCell} >₹{investment.avgBuyPrice?.toFixed(2)}</td>
+                      <td className={styles.tableCell} >{formatCurrency(investment.avgBuyPrice)}</td>
                       <td className={styles.tableCell} >
                         {investment.currentPrice ? (
                           <span className={styles.currentPrice}>
-                            ₹{metrics.currentPrice.toFixed(2)}
+                            {formatCurrency(metrics.currentPrice)}
                           </span>
                         ) : (
                           <span className={styles.noPrice}>-</span>
                         )}
                       </td>
 
-                      <td className={styles.tableCell} >₹{metrics.investedAmount.toLocaleString('en-IN', {maximumFractionDigits:2})}</td>
-                      <td className={styles.tableCell} >₹{metrics.currentValue.toLocaleString('en-IN', {maximumFractionDigits:2})}</td>
+                      <td className={styles.tableCell} >{formatCurrency(metrics.investedAmount)}</td>
+                      <td className={styles.tableCell} >{formatCurrency(metrics.currentValue)}</td>
                       <td className={styles.tableCell} >
                         <div className={styles.pnlCell}>
                           <span className={metrics.gainLoss >= 0 ? styles.profit : styles.loss}>
-                            {metrics.gainLoss >= 0 ? '+' : ''}₹{metrics.gainLoss.toLocaleString('en-IN', {maximumFractionDigits:2})}
+                            {metrics.gainLoss >= 0 ? '+' : ''}{formatCurrency(metrics.gainLoss)}
                           </span>
                           <span className={`${styles.pnlPercent} ${metrics.gainLoss >= 0 ? styles.profit : styles.loss}`}>
                             ({metrics.gainLossPercent}%)
@@ -507,7 +539,7 @@ export default function InvestmentList() {
                       <td className={styles.tableCell} >
                         <div className={styles.pnlCell}>
                           <span className={metrics.gainLossToday >= 0 ? styles.profit : styles.loss}>
-                            {metrics.gainLossToday >= 0 ? '+' : ''}₹{metrics.gainLossToday.toLocaleString('en-IN', {maximumFractionDigits:2})}
+                            {metrics.gainLossToday >= 0 ? '+' : ''}{formatCurrency(metrics.gainLossToday)}
                           </span>
                           <span className={`${styles.pnlPercent} ${metrics.gainLossToday >= 0 ? styles.profit : styles.loss}`}>
                             ({metrics.gainLossTodayPercent}%)
@@ -560,10 +592,10 @@ export default function InvestmentList() {
         </div>
       ))}
 
-      {investments.length === 0 && (
+      {tabInvestments.length === 0 && (
         <EmptyState
           icon="💰"
-          title="No investments yet"
+          title={`No ${activeTab === 'NASDAQ' ? 'US' : 'India'} investments yet`}
           message="Start by adding your first investment to track your portfolio."
           actionLabel="+ Add your first investment"
           onAction={() => navigate('/investments/new')}
@@ -577,7 +609,7 @@ export default function InvestmentList() {
             <h3>Close Investment - {selectedInvestment.ticker}</h3>
             <form onSubmit={handleCloseInvestment}>
               <div className={styles.formGroup}>
-                <label>Close Price (₹)</label>
+                <label>Close Price ({currencySymbol})</label>
                 <input
                   type="number"
                   value={closeForm.close_price}

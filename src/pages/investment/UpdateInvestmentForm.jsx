@@ -27,6 +27,7 @@ const UpdateInvestmentForm = () => {
         sector: '',
         marketCap: '',
         status: 'open',
+        currency: 'INR',
     });
     const [errors, setErrors] = useState({});
 
@@ -55,6 +56,7 @@ const UpdateInvestmentForm = () => {
                 buyBelow: investment.buyBelow || '',
                 isRecommended: false,
                 currentPrice: investment.currentPrice || '',
+                currency: investment.currency || 'INR',
             });
             setCurrentPrice(investment.currentPrice || null);
         } catch (error) {
@@ -127,7 +129,8 @@ const UpdateInvestmentForm = () => {
                 status: formData.status,
                 sector: formData.sector,
                 marketCap: formData.marketCap,
-                currentPrice: formData.currentPrice
+                currentPrice: formData.currentPrice,
+                currency: formData.currency
             };
             await updateInvestment(id, investmentData);
             if (notification) {
@@ -190,7 +193,7 @@ const UpdateInvestmentForm = () => {
                                     type="text"
                                     id="currentPrice"
                                     name="currentPrice"
-                                    value={currentPrice !== null && currentPrice !== undefined ? `$${Number(currentPrice).toFixed(2)}` : ''}
+                                    value={currentPrice !== null && currentPrice !== undefined ? `${formData.currency === 'INR' ? '₹' : '$'}${Number(currentPrice).toFixed(2)}` : ''}
                                     className={styles.input}
                                     placeholder="Auto-filled after ticker selection"
                                     readOnly
@@ -229,6 +232,23 @@ const UpdateInvestmentForm = () => {
                                 </select>
                             </div>
                         </div>
+                        <div className={styles.gridTwoCol}>
+                            <div className={styles.fieldGroup}>
+                                <label className={styles.label}>Currency *</label>
+                                <select
+                                    id="currency"
+                                    name="currency"
+                                    value={formData.currency}
+                                    onChange={handleInputChange}
+                                    className={styles.input}
+                                    disabled={saving}
+                                    required
+                                >
+                                    <option value="INR">INR (₹)</option>
+                                    <option value="USD">USD ($)</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <div className={styles.card}>
                         <h2 className={styles.cardTitle}>Investment Details</h2>
@@ -264,9 +284,9 @@ const UpdateInvestmentForm = () => {
                         </div>
                         <div className={styles.gridTwoCol}>
                             <div className={styles.fieldGroup}>
-                                <label htmlFor="avgBuyPrice" className={styles.label}>Buy Price ($) *</label>
+                                <label htmlFor="avgBuyPrice" className={styles.label}>Buy Price ({formData.currency === 'INR' ? '₹' : '$'}) *</label>
                                 <div className={styles.priceInputWrapper}>
-                                    <span className={styles.currencySymbol}>$</span>
+                                    <span className={styles.currencySymbol}>{formData.currency === 'INR' ? '₹' : '$'}</span>
                                     <input
                                         type="number"
                                         id="avgBuyPrice"

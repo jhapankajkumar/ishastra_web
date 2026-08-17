@@ -36,7 +36,7 @@ function getTopHoldings(investments, topN = 10) {
   };
 }
 
-const TopHoldingsBarChart = ({ investments }) => {
+const TopHoldingsBarChart = ({ investments, currencySymbol = '₹' }) => {
   const { labels, invested, profit, currentValue, loss } = getTopHoldings(investments);
   if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 16 }}>No holdings data</div>;
   return (
@@ -77,7 +77,7 @@ const TopHoldingsBarChart = ({ investments }) => {
             callbacks: {
               label: function(ctx) {
                 const label = ctx.dataset.label || '';
-                return `${label}: ₹${ctx.parsed.y.toLocaleString()}`;
+                return `${label}: ${currencySymbol}${ctx.parsed.y.toLocaleString()}`;
               }
             }
           }

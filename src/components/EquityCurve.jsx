@@ -13,16 +13,23 @@ const getMonthShort = (dateStr) => {
   return date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
 };
 
-const fmtRupee = (val) => {
-  if (val == null || isNaN(val)) return '₹0';
+// INR uses lakh/crore grouping; other currencies (USD) use K/M — the two
+// conventions don't mix, so which one applies depends on the symbol.
+const fmtAmount = (val, symbol = '₹') => {
+  if (val == null || isNaN(val)) return `${symbol}0`;
   const abs = Math.abs(val);
-  if (abs >= 10_000_000) return `₹${(val / 10_000_000).toFixed(2)}Cr`;
-  if (abs >= 100_000) return `₹${(val / 100_000).toFixed(2)}L`;
-  if (abs >= 1_000) return `₹${(val / 1_000).toFixed(1)}K`;
-  return `₹${val.toFixed(0)}`;
+  if (symbol === '₹') {
+    if (abs >= 10_000_000) return `${symbol}${(val / 10_000_000).toFixed(2)}Cr`;
+    if (abs >= 100_000) return `${symbol}${(val / 100_000).toFixed(2)}L`;
+    if (abs >= 1_000) return `${symbol}${(val / 1_000).toFixed(1)}K`;
+    return `${symbol}${val.toFixed(0)}`;
+  }
+  if (abs >= 1_000_000) return `${symbol}${(val / 1_000_000).toFixed(2)}M`;
+  if (abs >= 1_000) return `${symbol}${(val / 1_000).toFixed(1)}K`;
+  return `${symbol}${val.toFixed(0)}`;
 };
 
-const CustomTooltip = ({ active, payload, label, theme, initialCapital }) => {
+const CustomTooltip = ({ active, payload, label, theme, initialCapital, currencySymbol = '₹' }) => {
   if (!active || !payload || !payload.length) return null;
   const equity = payload[0]?.value;
   const change = equity - initialCapital;
@@ -40,17 +47,17 @@ const CustomTooltip = ({ active, payload, label, theme, initialCapital }) => {
     }}>
       <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 6, fontWeight: 600, letterSpacing: 0.3 }}>{label}</div>
       <div style={{ fontSize: 20, fontWeight: 800, color: isDark ? '#fff' : '#1e293b', marginBottom: 4 }}>
-        {fmtRupee(equity)}
+        {fmtAmount(equity, currencySymbol)}
       </div>
       <div style={{ fontSize: 13, fontWeight: 700, color: isUp ? '#10B981' : '#EF4444' }}>
-        {isUp ? '▲ +' : '▼ '}{fmtRupee(Math.abs(change))}
+        {isUp ? '▲ +' : '▼ '}{fmtAmount(Math.abs(change), currencySymbol)}
         <span style={{ marginLeft: 6, fontSize: 12, opacity: 0.85 }}>({isUp ? '+' : ''}{changePct}%)</span>
       </div>
     </div>
   );
 };
 
-const EquityCurve = ({ trades, initialCapital: propInitial }) => {
+const EquityCurve = ({ trades, initialCapital: propInitial, currencySymbol = '₹' }) => {
   const { theme } = useTheme();
   const isDark = theme !== 'light';
   const INITIAL_CAPITAL = propInitial > 0 ? propInitial : 100000;
@@ -150,13 +157,13 @@ const EquityCurve = ({ trades, initialCapital: propInitial }) => {
       <div style={{ display: 'flex', gap: 20, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>Current Value</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: isDark ? '#fff' : '#1e293b', lineHeight: 1 }}>{fmtRupee(currentEquity)}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: isDark ? '#fff' : '#1e293b', lineHeight: 1 }}>{fmtAmount(currentEquity, currencySymbol)}</div>
         </div>
         <div style={{ width: 1, height: 36, background: isDark ? '#2D3748' : '#E2E8F0' }} />
         <div>
           <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>Total P&amp;L</div>
           <div style={{ fontSize: 17, fontWeight: 800, color: lineColor, lineHeight: 1 }}>
-            {pnlAbs >= 0 ? '+' : ''}{fmtRupee(pnlAbs)}
+            {pnlAbs >= 0 ? '+' : ''}{fmtAmount(pnlAbs, currencySymbol)}
           </div>
         </div>
         <div style={{ width: 1, height: 36, background: isDark ? '#2D3748' : '#E2E8F0' }} />
@@ -169,7 +176,7 @@ const EquityCurve = ({ trades, initialCapital: propInitial }) => {
         <div style={{ width: 1, height: 36, background: isDark ? '#2D3748' : '#E2E8F0' }} />
         <div>
           <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>Starting Capital</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: isDark ? '#9CA3AF' : '#64748b', lineHeight: 1 }}>{fmtRupee(INITIAL_CAPITAL)}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: isDark ? '#9CA3AF' : '#64748b', lineHeight: 1 }}>{fmtAmount(INITIAL_CAPITAL, currencySymbol)}</div>
         </div>
       </div>
 
@@ -204,7 +211,7 @@ const EquityCurve = ({ trades, initialCapital: propInitial }) => {
             width={42}
           />
           <Tooltip
-            content={<CustomTooltip theme={theme} initialCapital={INITIAL_CAPITAL} />}
+            content={<CustomTooltip theme={theme} initialCapital={INITIAL_CAPITAL} currencySymbol={currencySymbol} />}
             cursor={{ stroke: isDark ? '#4B5563' : '#94a3b8', strokeWidth: 1, strokeDasharray: '4 4' }}
           />
           <ReferenceLine
