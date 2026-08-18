@@ -12,7 +12,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 function getSectorData(investments) {
   const sectorMap = {};
   investments.forEach(inv => {
-    const sector = inv.sector.toUpperCase() || 'Other';
+    const sector = inv.sector?.toUpperCase() || 'Other';
     const value = (inv.currentPrice || 0) * (inv.quantity || 0);
     sectorMap[sector] = (sectorMap[sector] || 0) + value;
   });
