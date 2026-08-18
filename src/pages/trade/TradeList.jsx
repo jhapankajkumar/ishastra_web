@@ -4,7 +4,8 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
-import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions } from "../../api/tradeApi";
+import { getAllTrades, getTradeById, deleteTrade, getTradeTransactions, updateTrailingStop } from "../../api/tradeApi";
+import TrackChangesOutlinedIcon from "@mui/icons-material/TrackChangesOutlined";
 import { getCapitalInfo } from "../../api/capitalApi";
 import TradeAdd from "./TradeAdd";
 import TradeDetailsPopup from "./TradeDetailsPopup";
@@ -13,11 +14,14 @@ import ErrorPage from "../../components/ErrorPage";
 import { useNotification } from "../../components/NotificationProvider";
 import { getTickerBySymbol } from '../../data/tickerData';
 import styles from "./TradeList.module.css";
-import { getExitTransactions, getLastExitDate, getAverageExitPrice, getPartialPL } from '../../common/Helper';
+import { getExitTransactions, getLastExitDate, getAverageExitPrice, getPartialPL, displayTicker } from '../../common/Helper';
 import { useAuth } from "../../contexts/AuthContext";
 import EmptyState from "../../components/EmptyState";
 import Pagination from "../../components/Pagination";
 import { exportToCsv } from "../../utils/exportCsv";
+import PageToolbar from "../../components/PageToolbar";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 
 const CLOSED_PAGE_SIZE = 20;
 
@@ -172,7 +176,42 @@ export default function TradeList() {
   const [loadingCapital, setLoadingCapital] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [tradeToDelete, setTradeToDelete] = useState(null);
+  const [trailTrade, setTrailTrade] = useState(null);
+  const [trailValue, setTrailValue] = useState('');
+  const [trailSaving, setTrailSaving] = useState(false);
   const notification = useNotification();
+
+  const handleTrailClick = (trade) => {
+    setTrailTrade(trade);
+    setTrailValue(String(trade.trailingStopLoss ?? trade.stopLoss ?? ''));
+  };
+
+  const handleTrailCancel = () => {
+    setTrailTrade(null);
+    setTrailValue('');
+  };
+
+  const handleTrailSubmit = async (e) => {
+    e.preventDefault();
+    if (!trailTrade) return;
+    const value = parseFloat(trailValue);
+    if (!value || value <= 0) {
+      notification.error('Enter a valid trailing stop price.');
+      return;
+    }
+    try {
+      setTrailSaving(true);
+      await updateTrailingStop(trailTrade.id, value);
+      notification.success(`Trailing stop updated for ${trailTrade.ticker}.`);
+      setTrades(prev => prev.map(t => t.id === trailTrade.id ? { ...t, trailingStopLoss: value } : t));
+      setTrailTrade(null);
+      setTrailValue('');
+    } catch (err) {
+      notification.error(err.message || 'Failed to update trailing stop');
+    } finally {
+      setTrailSaving(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -747,7 +786,7 @@ export default function TradeList() {
                   >
                     <div className={styles.mobileMainCard}>
                       <div className={styles.mobileTopRow}>
-                        <div className={styles.mobileTicker}>{trade.ticker}</div>
+                        <div className={styles.mobileTicker}>{displayTicker(trade.ticker)}</div>
                         <div className={styles.mobileDateBadge}>{formatDate(trade.entryDate)}</div>
                       </div>
                       <div className={styles.mobileTopRow}>
@@ -764,7 +803,7 @@ export default function TradeList() {
                           </div>
                           {(getTradeStatusDetailed(trade) == 'CLOSED') && (
                             <div className={styles.mobileTopRow}>
-                            <span className={styles.dim}>Sell Avg: </span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{symbol}{avgSellPrice.toLocaleString(undefined, { maximumFractionDigits: 0})}</span>
+                            <span className={styles.dim}>Sell Avg: </span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{symbol}{Number(avgSellPrice || 0).toLocaleString(undefined, { maximumFractionDigits: 0})}</span>
                           </div>
                           )}
 
@@ -778,7 +817,7 @@ export default function TradeList() {
                         )}
 
                         {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
-                          <div className={styles.mobilePriceLine}><span className={styles.mobilePriceLabel}>Stop</span> {symbol}{trade.stopLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
+                          <div className={styles.mobilePriceLine}><span className={styles.mobilePriceLabel}>Stop</span> {symbol}{Number(trade.stopLoss || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
                           <span >
                             {" • "}
                              </span>
@@ -787,6 +826,12 @@ export default function TradeList() {
                                 {(stopLossDistance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
                               </span>
                             )}
+                          </div>
+                        )}
+
+                        {(getTradeStatusDetailed(trade) !== 'CLOSED') && trade.trailingStopLoss != null && Number(trade.trailingStopLoss) !== stopLoss && (
+                          <div className={styles.mobilePriceLine}>
+                            <span className={styles.mobilePriceLabel}>TSL</span> {symbol}{Number(trade.trailingStopLoss).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         )}
 
@@ -862,6 +907,13 @@ export default function TradeList() {
                               title="Edit Trade"
                             >
                               <AutoFixHighOutlinedIcon fontSize="inherit" />
+                            </button>
+                            <button
+                              className={`${styles.mobileActionBtn} ${styles.editActionBtn}`}
+                              onClick={(e) => { e.stopPropagation(); handleTrailClick(trade); }}
+                              title="Update Trailing Stop"
+                            >
+                              <TrackChangesOutlinedIcon fontSize="inherit" />
                             </button>
                           </>
                         )}
@@ -965,7 +1017,7 @@ export default function TradeList() {
                   >
                     <td className={styles.tickerCell}>
                       <div className={styles.tickerInfo}>
-                        <span className={styles.ticker}>{trade.ticker}</span>
+                        <span className={styles.ticker} title={trade.ticker}>{displayTicker(trade.ticker)}</span>
                         <span className={styles.companyName}>
                           {(trade.tickerName || "")}
                         </span>
@@ -1008,6 +1060,11 @@ export default function TradeList() {
                             </span>
                           )}
                         </div>
+                        {trade.trailingStopLoss != null && Number(trade.trailingStopLoss) !== stopLoss && (
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                            TSL: {formatCurrency(Number(trade.trailingStopLoss), currency)}
+                          </div>
+                        )}
                       </td>
                     ) : (
                       <td className={styles.emptyCell}></td>
@@ -1101,6 +1158,13 @@ export default function TradeList() {
                             >
                               <AutoFixHighOutlinedIcon fontSize="inherit" />
                             </button>
+                            <button
+                              onClick={e => { e.stopPropagation(); handleTrailClick(trade); }}
+                              className={`${styles.actionBtn} ${styles.viewBtn}`}
+                              title="Update Trailing Stop"
+                            >
+                              <TrackChangesOutlinedIcon fontSize="inherit" />
+                            </button>
                           </>
                         )}
                         {user && (
@@ -1130,119 +1194,54 @@ export default function TradeList() {
 
   return (
     <div className={styles.container}>
-      {/* Beautiful Market Overview Cards */}
-      {!loadingCapital && capitalData.length > 0 && (
-        <div className={styles.marketOverview}>
-          {/* US Market Card */}
-          <div className={styles.compactMarketCard}>
-            <div className={styles.marketHeader}>
-              <span className={styles.marketFlag}>🇺🇸</span>
-              <span className={styles.marketName}>US Market</span>
-              <span className={styles.currencyBadge}>USD</span>
-            </div>
-            <div className={styles.marketMetrics}>
-              {/* Removed Total Capital for compact mobile view */}
-              <div className={styles.metric}>
-                <span className={styles.metricLabel}>Open Positions Value</span>
-                <span className={styles.metricValue}>
-                  {formatCurrency(calculateMarketMetrics('USD').totalInvested, 'USD')}
-                  {/* <small className={styles.metricPercent}>({calculateMarketMetrics('USD').investedPercentage}%)</small> */}
-                </span>
-              </div>
-              <div className={styles.metric}>
-                <span className={styles.metricLabel}>Profit/Loss</span>
-                <span className={`${styles.metricValue} ${calculateMarketMetrics('USD').totalPL >= 0 ? styles.positive : styles.negative}`}>
-                  {calculateMarketMetrics('USD').totalPL >= 0 ? '+' : ''}{formatCurrency(calculateMarketMetrics('USD').totalPL, 'USD')}
-                  <small className={styles.metricPercent}>({calculateMarketMetrics('USD').plPercentage >= 0 ? '+' : ''}{calculateMarketMetrics('USD').plPercentage}%)</small>
-                </span>
-              </div>
-              {(calculateMarketMetrics('USD').openTrades > 0 || calculateMarketMetrics('USD').partialTrades > 0) && (
-                <div className={styles.metric}>
-                  <span className={styles.metricLabel}>Today's P&L</span>
-                  <span className={`${styles.metricValue} ${calculateMarketMetrics('USD').todaysPL >= 0 ? styles.positive : styles.negative}`}>
-                    {calculateMarketMetrics('USD').todaysPL >= 0 ? '+' : ''}{formatCurrency(calculateMarketMetrics('USD').todaysPL, 'USD')}
-                    <small className={styles.metricPercent}>({calculateMarketMetrics('USD').todaysPlPercentage >= 0 ? '+' : ''}{calculateMarketMetrics('USD').todaysPlPercentage}%)</small>
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* India Market Card */}
-          {showIndiaMarket && (
-          <div className={styles.compactMarketCard}>
-            <div className={styles.marketHeader}>
-              <span className={styles.marketFlag}>🇮🇳</span>
-              <span className={styles.marketName}>India Market</span>
-              <span className={styles.currencyBadge}>INR</span>
-            </div>
-            <div className={styles.marketMetrics}>
-              {/* Removed Total Capital for compact mobile view */}
-              <div className={styles.metric}>
-                <span className={styles.metricLabel}>Total Invested</span>
-                <span className={styles.metricValue}>
-                  {formatCurrency(calculateMarketMetrics('INR').totalInvested, 'INR')}
-                  {/* <small className={styles.metricPercent}>({calculateMarketMetrics('INR').investedPercentage}%)</small> */}
-                </span>
-              </div>
-              <div className={styles.metric}>
-                <span className={styles.metricLabel}>Profit/Loss</span>
-                <span className={`${styles.metricValue} ${calculateMarketMetrics('INR').totalPL >= 0 ? styles.positive : styles.negative}`}>
-                  {calculateMarketMetrics('INR').totalPL >= 0 ? '+' : ''}{formatCurrency(calculateMarketMetrics('INR').totalPL, 'INR')}
-                  <small className={styles.metricPercent}>({calculateMarketMetrics('INR').plPercentage >= 0 ? '+' : ''}{calculateMarketMetrics('INR').plPercentage}%)</small>
-                </span>
-              </div>
-              {(calculateMarketMetrics('INR').openTrades > 0 || calculateMarketMetrics('INR').partialTrades > 0) && (
-                <div className={styles.metric}>
-                  <span className={styles.metricLabel}>Today's P&L</span>
-                  <span className={`${styles.metricValue} ${calculateMarketMetrics('INR').todaysPL >= 0 ? styles.positive : styles.negative}`}>
-                    {calculateMarketMetrics('INR').todaysPL >= 0 ? '+' : ''}{formatCurrency(calculateMarketMetrics('INR').todaysPL, 'INR')}
-                    <small className={styles.metricPercent}>({calculateMarketMetrics('INR').todaysPlPercentage >= 0 ? '+' : ''}{calculateMarketMetrics('INR').todaysPlPercentage}%)</small>
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>)}
-        </div>
-      )}
-
-      {/* Action Bar */}
-      <div className={styles.actionBar}>
-        <div className={styles.filters} />
-        <div style={{ display: 'flex', gap: 10 }}>
-          {displayedTrades.length > 0 && (
-            <button className={styles.filterSelect} onClick={handleExportCsv}>
-              ⬇ Export CSV
+      <PageToolbar
+        title="Trades"
+        subtitle="Every entry, exit and open position"
+        actions={
+          <>
+            {displayedTrades.length > 0 && (
+              <button className={styles.toolbarBtn} onClick={handleExportCsv}>
+                <FileDownloadOutlinedIcon fontSize="inherit" /> Export CSV
+              </button>
+            )}
+            <button className={styles.toolbarBtnPrimary} onClick={() => navigate('/trades/new')}>
+              <AddRoundedIcon fontSize="inherit" /> Add Trade
             </button>
-          )}
-          <button
-            className={styles.addButton}
-            onClick={() => navigate('/trades/new')}
-          >
-            + Add Trade
-          </button>
-        </div>
-      </div>
+          </>
+        }
+        scope={showIndiaMarket ? [
+          { key: 'NASDAQ', label: 'USD', flag: '🇺🇸' },
+          { key: 'NSE', label: 'INR', flag: '🇮🇳' },
+        ] : undefined}
+        activeScope={activeTab}
+        onScopeChange={setActiveTabWithPersist}
+      />
 
-      {/* Market Tabs */}
-      {showIndiaMarket && (
-      <div className={styles.tabContainer}>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'NASDAQ' ? styles.active : ''}`}
-          onClick={() => setActiveTabWithPersist('NASDAQ')}
-        >
-          🇺🇸 US (NASDAQ/NYSE)
-        </button>
-        {showIndiaMarket && (
-        <button
-          className={`${styles.tabButton} ${activeTab === 'NSE' ? styles.active : ''}`}
-          onClick={() => setActiveTabWithPersist('NSE')}
-        >
-          🇮🇳 India (NSE)
-        </button>
-        )}
-      </div>
-      )}
+      {/* Compact market summary — same stat-strip language as the dashboard hero */}
+      {!loadingCapital && (() => {
+        const cur = activeTab === 'NSE' ? 'INR' : 'USD';
+        const m = calculateMarketMetrics(cur);
+        const stat = (label, value, sub, color) => (
+          <div className={styles.stripStat}>
+            <div className={styles.stripLabel}>{label}</div>
+            <div className={styles.stripValue} style={color ? { color } : undefined}>{value}</div>
+            {sub && <div className={styles.stripSub}>{sub}</div>}
+          </div>
+        );
+        return (
+          <div className={styles.summaryStrip}>
+            {stat('Open Positions Value', formatCurrency(m.totalInvested, cur),
+              `${m.openTrades} open · ${m.partialTrades} partial`)}
+            {stat('Open P&L', `${m.totalPL >= 0 ? '+' : ''}${formatCurrency(m.totalPL, cur)}`,
+              `${m.plPercentage >= 0 ? '+' : ''}${m.plPercentage}% on deployed`,
+              m.totalPL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)')}
+            {stat("Today's P&L", `${m.todaysPL >= 0 ? '+' : ''}${formatCurrency(m.todaysPL, cur)}`,
+              `${m.todaysPlPercentage >= 0 ? '+' : ''}${m.todaysPlPercentage}% today`,
+              m.todaysPL >= 0 ? 'var(--profit-color)' : 'var(--loss-color)')}
+            {stat('Closed Trades', `${m.closedTrades}`, 'Realized and archived')}
+          </div>
+        );
+      })()}
 
       {/* Market-Based Trade Sections */}
       {Object.entries(marketGroups).map(([currency, marketData]) => {
@@ -1314,6 +1313,42 @@ export default function TradeList() {
                 Delete Trade
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trailing Stop Modal — only ever touches trailingStopLoss, never stopLoss */}
+      {trailTrade && (
+        <div className={styles.deleteConfirmOverlay}>
+          <div className={styles.deleteConfirmDialog}>
+            <h3 className={styles.deleteConfirmTitle}>Update Trailing Stop — {trailTrade.ticker}</h3>
+            <p className={styles.deleteConfirmMessage}>
+              Original stop loss stays at {formatCurrency(Number(trailTrade.stopLoss || 0), getCurrency(trailTrade))} — this only tracks where you've actually moved your live stop.
+            </p>
+            <form onSubmit={handleTrailSubmit}>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={trailValue}
+                onChange={e => setTrailValue(e.target.value)}
+                autoFocus
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: 8, marginBottom: 16,
+                  border: '1px solid var(--border-secondary)', background: 'var(--bg-tertiary)',
+                  color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box',
+                }}
+                placeholder="New trailing stop price"
+              />
+              <div className={styles.deleteConfirmActions}>
+                <button type="button" onClick={handleTrailCancel} className={styles.deleteConfirmCancel}>
+                  Cancel
+                </button>
+                <button type="submit" className={styles.deleteConfirmButton} disabled={trailSaving}>
+                  {trailSaving ? 'Saving...' : 'Update Trailing Stop'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

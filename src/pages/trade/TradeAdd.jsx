@@ -13,6 +13,7 @@ import { getCapitalInfo } from '../../api/capitalApi';
 import { useNotification } from '../../components/NotificationProvider';
 import ErrorPage from '../../components/ErrorPage';
 import { getTickerBySymbol } from '../../data/tickerData';
+import PageToolbar from '../../components/PageToolbar';
 
 const initialState = {
   tradeId: "",
@@ -457,6 +458,12 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
           </div>
         </div>
       )}
+      {isAdd && (
+        <PageToolbar
+          title="Add Trade"
+          subtitle="Log a new entry, or add to a position you already hold"
+        />
+      )}
       <div className={styles.formContainer}>
         <form onSubmit={handleSubmit}>
           {/* <TradeContextSection {...{form, handleChange, isReview, isUpdate, setups, setupsLoaded, entryDisabled, styles}} /> */}
@@ -487,12 +494,14 @@ export default function TradeAdd({ mode = "add", tradeData = null, onSubmit }) {
           <NotesSection {...{form, handleChange, entryDisabled, styles}} />
           <div className={styles.sectionDivider} />
           {isReview && <PostTradeAnalysisSection {...{form, handleChange, postDisabled, styles}} />}
+          <div className={styles.submitSectionRow}>
           <button type="submit" className={styles.submitButton} disabled={loading}>
             {loading 
               ? "Processing..." 
               : (isAdd ? "Add Trade" : isUpdate ? "Update Trade" : "Save Analysis")
             }
           </button>
+          </div>
         </form>
       </div>
     </div>

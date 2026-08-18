@@ -4,6 +4,7 @@ import { updateInvestment, getInvestmentById } from '../../api/investmentApi';
 import { useNotification } from '../../components/NotificationProvider';
 import { useTheme } from '../../contexts/ThemeContext';
 import styles from './InvestmentForm.module.css';
+import PageToolbar from '../../components/PageToolbar';
 
 const UpdateInvestmentForm = () => {
     const { id } = useParams();
@@ -163,14 +164,7 @@ const UpdateInvestmentForm = () => {
 
     return (
         <div className={`${styles.container} ${theme}`}>
-            <button
-                type="button"
-                onClick={() => navigate('/investments')}
-                className={styles.cancelButton}
-                disabled={saving}
-            >
-                Back
-            </button>
+            <PageToolbar title="Update Investment" subtitle="Edit holding details" />
             <div className={styles.formContainer}>
                 <form onSubmit={handleSubmit}>
                     <div className={styles.card}>

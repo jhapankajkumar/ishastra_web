@@ -1,4 +1,5 @@
 import React from "react";
+import { displayTicker } from "../common/Helper";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -28,7 +29,7 @@ function getTopHoldings(investments, topN = 10) {
     .sort((a, b) => b.currentValue - a.currentValue)
     .slice(0, topN);
   return {
-    labels: sorted.map(x => x.ticker),
+    labels: sorted.map(x => displayTicker(x.ticker)),
     invested: sorted.map(x => x.invested),
     profit: sorted.map(x => x.profit),
     loss: sorted.map(x => x.loss), // For future use if you want to show loss in red

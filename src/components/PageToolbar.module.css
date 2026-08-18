@@ -1,0 +1,155 @@
+/* Shared page toolbar: title row + underline view tabs + scope switch.
+   Replaces the old stacked "pill switcher over a segmented control" pattern,
+   which read as two competing tab bars doing different jobs. */
+
+.toolbar {
+  margin-bottom: 22px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.15;
+}
+
+.subtitle {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 5px 0 0;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---- Bar: tabs left, scope right, sharing one rule ---- */
+.bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 26px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 0 11px;
+  margin-bottom: -1px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.tab:hover { color: var(--text-primary); }
+
+.tabActive {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent-primary);
+}
+
+.tabIcon {
+  font-size: 17px;
+  width: 1em;
+  height: 1em;
+  color: currentColor;
+}
+
+.tabCount {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.tabActive .tabCount {
+  background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+  color: var(--accent-primary);
+}
+
+/* ---- Scope switch (currency / market) ---- */
+.scope {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 9px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  margin-bottom: 9px;
+}
+
+.scopeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.scopeBtn:hover { color: var(--text-primary); }
+
+.scopeBtnActive,
+.scopeBtnActive:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
+.scopeFlag {
+  font-size: 13px;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .toolbar { margin-bottom: 16px; }
+  .title { font-size: 19px; }
+  .titleRow { margin-bottom: 12px; }
+  .bar { gap: 10px; }
+  .tabs { gap: 20px; }
+  .tab { font-size: 13.5px; padding-bottom: 10px; }
+  .scope { margin-bottom: 8px; }
+  .scopeBtn { padding: 5px 9px; font-size: 11.5px; }
+}

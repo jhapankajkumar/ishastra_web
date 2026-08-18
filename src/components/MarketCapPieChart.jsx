@@ -1,4 +1,5 @@
 import React from "react";
+import { useTheme } from '../contexts/ThemeContext';
 import { Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -25,7 +26,10 @@ const palette = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#6366F1', '#F472B6', '#FBBF24', '#6EE7B7', '#818CF8', '#F87171', '#A3E635', '#FDE68A'
 ];
 
-const MarketCapPieChart = ({ investments }) => {
+const MarketCapPieChart = ({ investments, currencySymbol = "₹" }) => {
+  const { theme } = useTheme();
+  const isDark = theme !== 'light';
+  const legendColor = isDark ? '#E5E7EB' : '#475569';
   const isSmall = typeof window !== 'undefined' && window.innerWidth < 700;
   const { labels, data } = getMarketCapData(investments);
   if (!labels.length) return <div style={{ color: '#9CA3AF', fontSize: 13 }}>No market cap data</div>;
@@ -49,9 +53,9 @@ const MarketCapPieChart = ({ investments }) => {
             display: true,
             position: isSmall ? 'bottom' : 'right',
             align: 'center',
-            labels: { color: '#E5E7EB', font: { size: isSmall ? 9 : 10 } }
+            labels: { color: legendColor, font: { size: isSmall ? 9 : 10 }, boxWidth: 10, boxHeight: 10, padding: 10, usePointStyle: true, pointStyle: 'circle' }
           },
-          tooltip: { callbacks: { label: ctx => `${ctx.label}: ₹${ctx.parsed.toLocaleString()}` } }
+          tooltip: { callbacks: { label: ctx => `${ctx.label}: ${currencySymbol}${ctx.parsed.toLocaleString()}` } }
         },
         responsive: true,
         maintainAspectRatio: false,

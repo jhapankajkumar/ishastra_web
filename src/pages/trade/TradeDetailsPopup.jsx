@@ -5,6 +5,7 @@ import styles from "./TradeDetailsPopup.module.css";
 import { fetchExitTactics, fetchSetups } from '../../api/firebaseMetaApi';
 import { useTheme } from "../../contexts/ThemeContext";
 import config from "../../config/environment";
+import { displayTicker } from "../../common/Helper";
 
 export default function TradeDetailsPopup({ trade, onClose }) {
   const { theme } = useTheme();
@@ -316,17 +317,65 @@ export default function TradeDetailsPopup({ trade, onClose }) {
             </svg>
           </button>
 
-          {/* Header */}
+          {/* Header — doubles as the position summary, so the numbers that
+              matter are visible before any scrolling. */}
           <div className={styles.header}>
-            <div className={styles.headerTop}>
-              <div className={styles.tickerBadge}></div>
-              <h1 className={styles.tickerTitle}>
-                {trade.ticker}
-              </h1>
+            <div className={styles.headerMain}>
+              <div className={styles.headerLeft}>
+                <div className={styles.headerTop}>
+                  <h1 className={styles.tickerTitle} title={trade.ticker}>
+                    {displayTicker(trade.ticker)}
+                  </h1>
+                  <span className={`${styles.hBadge} ${styles.hBadgeDir}`}>
+                    {(trade.direction || 'LONG').toUpperCase()}
+                  </span>
+                  <span className={`${styles.hBadge} ${styles.hBadgeStatus}`}>
+                    {(trade.status || 'Open').toUpperCase()}
+                  </span>
+                </div>
+                <p className={styles.companyName}>
+                  {trade.tickerName || 'Trade details & analysis'}
+                </p>
+              </div>
+              <div className={styles.headerPnl}>
+                <div className={styles.headerPnlLabel}>Profit &amp; Loss</div>
+                <div
+                  className={styles.headerPnlValue}
+                  style={{
+                    color: plValue === "-"
+                      ? "var(--text-muted)"
+                      : String(plValue).includes("-")
+                        ? "var(--loss-color)"
+                        : "var(--profit-color)"
+                  }}
+                >
+                  {plValue}
+                </div>
+              </div>
             </div>
-            <p className={styles.companyName}>
-              Trade Details & Analysis
-            </p>
+
+            <div className={styles.headerStats}>
+              <div className={styles.hStat}>
+                <span className={styles.hStatLabel}>Invested</span>
+                <span className={styles.hStatValue}>{investedTotal}</span>
+              </div>
+              <div className={styles.hStat}>
+                <span className={styles.hStatLabel}>Current Value</span>
+                <span className={styles.hStatValue}>{currentValue}</span>
+              </div>
+              <div className={styles.hStat}>
+                <span className={styles.hStatLabel}>Quantity</span>
+                <span className={styles.hStatValue}>
+                  {remainingQuantity === originalQuantity
+                    ? Number(originalQuantity || 0).toLocaleString()
+                    : `${Number(remainingQuantity || 0).toLocaleString()} / ${Number(originalQuantity || 0).toLocaleString()}`}
+                </span>
+              </div>
+              <div className={styles.hStat}>
+                <span className={styles.hStatLabel}>Entry Date</span>
+                <span className={styles.hStatValue}>{formatDate(trade.entryDate)}</span>
+              </div>
+            </div>
           </div>
 
           {/* Main Content */}
@@ -338,20 +387,23 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                 <div className={styles.detailHeading}>Trade Snapshot</div>
                 <div className={styles.detailGrid}>
                   <div className={styles.fieldItem}>
-                    <span className={styles.detailLabel}>Entry Date</span>
-                    <span className={styles.detailValue}>{formatDate(trade.entryDate)}</span>
-                  </div>
-                  <div className={styles.fieldItem}>
-                    <span className={styles.detailLabel}>Original Quantity</span>
-                    <span className={styles.detailValue}>{originalQuantity.toLocaleString()}</span>
-                  </div>
-                  <div className={styles.fieldItem}>
                     <span className={styles.detailLabel}>Remaining Quantity</span>
                     <span
                       className={styles.detailValue}
-                      style={{ color: remainingQuantity === 0 ? "var(--status-success)" : "var(--status-warning)" }}
+                      style={{
+                        color: remainingQuantity === 0
+                          ? "var(--profit-color)"
+                          : remainingQuantity === originalQuantity
+                            ? "var(--text-primary)"
+                            : "var(--warning-color)"
+                      }}
                     >
-                      {remainingQuantity.toLocaleString()} {remainingQuantity === 0 ? "(Fully Exited)" : "(Partial)"}
+                      {remainingQuantity.toLocaleString()}{' '}
+                      {remainingQuantity === 0
+                        ? "(Fully Exited)"
+                        : remainingQuantity === originalQuantity
+                          ? "(Nothing exited)"
+                          : `(Partial — ${originalQuantity.toLocaleString()} original)`}
                     </span>
                   </div>
                   <div className={styles.fieldItem}>
@@ -376,6 +428,14 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                       )}
                     </span>
                   </div>
+                  {trade.trailingStopLoss != null && Number(trade.trailingStopLoss) !== Number(trade.stopLoss || 0) && (
+                    <div className={styles.fieldItem}>
+                      <span className={styles.detailLabel}>Trailing Stop</span>
+                      <span className={styles.detailValue} style={{ color: "var(--status-warning)" }}>
+                        {formatCurrency(trade.trailingStopLoss, 2)}
+                      </span>
+                    </div>
+                  )}
                   <div className={styles.fieldItem}>
                     <span className={styles.detailLabel}>Entry Commission</span>
                     <span className={styles.detailValue}>{entryCommissionDisplay}</span>
@@ -454,30 +514,6 @@ export default function TradeDetailsPopup({ trade, onClose }) {
                 </div>
               )}
 
-              <div className={styles.detailCard}>
-                <div className={styles.detailHeading}>Position Metrics</div>
-                <div className={styles.detailGrid}>
-                  <div className={styles.fieldItem}>
-                    <span className={styles.detailLabel}>Total Invested</span>
-                    <span className={styles.detailValue}>{investedTotal}</span>
-                  </div>
-                  <div className={styles.fieldItem}>
-                    <span className={styles.detailLabel}>Current Value</span>
-                    <span className={styles.detailValue}>{currentValue}</span>
-                  </div>
-                  <div className={styles.fieldItem}>
-                    <span className={styles.detailLabel}>Profit &amp; Loss</span>
-                    <span
-                      className={styles.detailValue}
-                      style={{
-                        color: plValue === "-" ? "var(--text-muted)" : plValue.includes("-") ? "var(--status-error)" : "var(--status-success)"
-                      }}
-                    >
-                      {plValue}
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {executionData && (

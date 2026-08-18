@@ -132,3 +132,9 @@ export function getRMultiple(trade) {
     const reward = isShort ? (entryPrice - exitPrice) : (exitPrice - entryPrice);
     return reward / risk;
 };
+// Display-only ticker: drop the exchange suffix Yahoo needs (.NS, .BO, .BSE)
+// but a human reading a portfolio doesn't. Never use this for lookups or for
+// anything sent back to the API — only for rendering.
+export function displayTicker(ticker) {
+    return (ticker || '').replace(/\.(NS|BO|BSE)$/i, '');
+}

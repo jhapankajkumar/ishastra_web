@@ -1,8 +1,8 @@
 /* InvestmentForm specific styles */
 .container {
-  max-width: none;
-  margin: 0;
-  padding: 24px 5%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 32px 56px;
   box-sizing: border-box;
   background: var(--bg-primary);
   min-height: 100vh;
@@ -42,72 +42,85 @@
 }
 
 .formContainer {
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
 }
 
 .card {
   background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 22px 24px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-primary);
   transition: background-color 0.3s ease, border-color 0.3s ease;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
 }
 
 .cardTitle {
-  font-size: 18px;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
   margin: 0 0 20px 0;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-color);
-  transition: color 0.3s ease, border-color 0.3s ease;
+}
+.cardTitle::before {
+  content: '';
+  width: 3px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--accent-primary);
+  flex-shrink: 0;
 }
 
 .gridTwoCol {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px 20px;
+  margin-bottom: 16px;
 }
+.gridTwoCol:last-child { margin-bottom: 0; }
 
 .fieldGroup {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
 }
 
 .label {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 650;
   color: var(--text-secondary);
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
   transition: color 0.3s ease;
 }
 
 .input, .select, .textarea {
   width: 100%;
-  padding: 12px 16px;
-  font-size: 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--bg-secondary);
-  color: var(--text-secondary);
+  height: 38px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border-secondary);
+  border-radius: 9px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
   outline: none;
   box-sizing: border-box;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .input:focus, .select:focus, .textarea:focus {
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px var(--shadow-primary);
-  transition: all 0.2s ease;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 18%, transparent);
 }
 
 .input:hover, .select:hover, .textarea:hover {
-  border-color: var(--accent-primary);
-  transition: all 0.2s ease;
+  border-color: var(--border-accent);
 }
 
 .input::placeholder, .textarea::placeholder {
@@ -335,31 +348,36 @@
 
 /* Textarea */
 .textarea {
+  min-height: 90px;
+  height: auto;
+  padding: 10px 12px;
   resize: vertical;
   line-height: 1.5;
   font-family: inherit;
+  font-variant-numeric: normal;
 }
 
 /* Form Actions */
 .submitSection {
   display: flex;
-  gap: 16px;
+  gap: 10px;
   justify-content: flex-end;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border-color);
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: none;
 }
 
 .cancelButton {
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: transparent;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 13.5px;
+  font-weight: 650;
+  border-radius: 9px;
+  border: 1px solid var(--border-secondary);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.18s ease, border-color 0.18s ease;
 }
 
 .cancelButton:hover {
@@ -375,17 +393,17 @@
 }
 
 .submitButton {
-  padding: 12px 32px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 8px;
+  height: 40px;
+  padding: 0 26px;
+  font-size: 13.5px;
+  font-weight: 650;
+  border-radius: 9px;
   background: var(--accent-primary);
-  color: var(--text-white);
-  border: none;
+  color: #fff;
+  border: 1px solid var(--accent-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-  min-width: 140px;
+  transition: opacity 0.18s ease;
+  min-width: 160px;
 }
 
 .submitButton:hover {
