@@ -1,8 +1,8 @@
 /* TradeAdd specific styles */
 .container {
-  max-width: none;
-  margin: 0;
-  padding: 24px 5%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 32px 56px;
   box-sizing: border-box;
   background: var(--bg-primary);
   min-height: 100vh;
@@ -96,42 +96,47 @@
 }
 
 
+/* The form itself is the page — cards inside carry the surface, so the
+   outer wrapper stays transparent instead of nesting card-in-card. */
 .formContainer {
-  background: var(--bg-secondary);
-  border-radius: 16px;
-  box-shadow: var(--shadow-lg);
-  padding: 32px 40px;
-  max-width: 900px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  max-width: 100%;
   width: 100%;
-  margin: 24px auto 0 auto;
-  border: 1px solid var(--border-primary);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  margin: 0;
 }
 
 .cardSection {
   background: var(--bg-secondary);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-  padding: 20px 24px;
-  margin-bottom: 18px;
+  border-radius: 16px;
+  padding: 22px 24px 24px;
+  margin-bottom: 16px;
   border: 1px solid var(--border-primary);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .sectionTitle {
-  color: var(--btn-primary-bg);
-  font-size: 1.35rem;
-  font-weight: 600;
-  margin-bottom: 18px;
-  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-primary);
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 20px 0;
+}
+.sectionTitle::before {
+  content: '';
+  width: 3px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--accent-primary);
+  flex-shrink: 0;
 }
 
 .sectionDivider {
-  height: 2px;
-  background: var(--border-color);
-  border-radius: 2px;
-  margin: 14px 0;
-  transition: background-color 0.3s ease;
+  display: none;
 }
 
 
@@ -146,9 +151,9 @@
 
 .gridTwoCol {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px 24px;
-  margin-bottom: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px 20px;
+  margin-bottom: 0;
 }
 
 .fieldGroup {
@@ -159,9 +164,10 @@
 
 .label {
   color: var(--text-secondary);
-  font-size: 1rem;
-  font-weight: 500;
-  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
 }
 
 .input,
@@ -169,14 +175,18 @@
 .textarea,
 .fileInput {
   background: var(--bg-tertiary);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   border: 1px solid var(--border-secondary);
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 1rem;
-  transition: border-color 0.2s, background-color 0.3s ease, color 0.3s ease;
+  border-radius: 9px;
+  padding: 0 12px;
+  height: 38px;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   width: 100%;
   box-sizing: border-box;
+  outline: none;
 }
 
 .inputEnabled {
@@ -192,29 +202,40 @@
   cursor: not-allowed;
 }
 
+.input:hover,
+.select:hover,
+.textarea:hover { border-color: var(--border-accent); }
+
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: var(--btn-primary-bg);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 18%, transparent);
   outline: none;
 }
 
+.input::placeholder,
+.textarea::placeholder { color: var(--text-disabled); font-weight: 400; }
+
 .textarea {
-  min-height: 48px;
+  min-height: 90px;
+  height: auto;
+  padding: 10px 12px;
+  line-height: 1.5;
   resize: vertical;
+  font-variant-numeric: normal;
 }
 
 .select {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 1rem;
-  width: 100%;
-  box-sizing: border-box;
   cursor: pointer;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 16px) 16px, calc(100% - 11px) 16px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
 }
 
 .select:disabled {
@@ -326,19 +347,27 @@
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+.submitSectionRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
 .submitButton {
   background: var(--accent-primary);
-  color: var(--text-primary);
-  border: none;
-  border-radius: 8px;
-  padding: 14px 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  width: 100%;
-  margin-top: 18px;
+  color: #fff;
+  border: 1px solid var(--accent-primary);
+  border-radius: 9px;
+  padding: 0 26px;
+  height: 40px;
+  font-size: 13.5px;
+  font-weight: 650;
+  width: auto;
+  min-width: 180px;
+  margin-top: 20px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
-  transition: all 0.2s;
+  transition: opacity 0.18s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -415,4 +444,29 @@
     grid-template-columns: 1fr;
     gap: 12px;
   }
+}
+
+/* File inputs: the raw browser control looks bolted-on next to styled fields */
+.fileInput {
+  height: auto;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.fileInput::file-selector-button {
+  margin-right: 12px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid var(--border-secondary);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+.fileInput::file-selector-button:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
 }

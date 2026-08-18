@@ -92,13 +92,16 @@ const CalendarHeatmap = ({ trades, currencySymbol = '₹' }) => {
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.monthLabels} style={{ gridTemplateColumns: `repeat(${weeks.length}, 17px)` }}>
+      {/* Columns flex to the container instead of a fixed 14px, so the full
+          trailing year still fits when this card sits in a half-width slot.
+          The 6px floor keeps cells tappable on phones (wrap scrolls instead). */}
+      <div className={styles.monthLabels} style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(6px, 1fr))` }}>
         {weeks.map((_, i) => {
           const marker = monthMarkers.find(m => m.index === i);
           return <div key={i} className={styles.monthLabel}>{marker ? marker.label : ''}</div>;
         })}
       </div>
-      <div className={styles.grid} style={{ gridTemplateColumns: `repeat(${weeks.length}, 14px)` }}>
+      <div className={styles.grid} style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(6px, 1fr))` }}>
         {weeks.map((week, wi) => (
           week.map((day, di) => (
             <div

@@ -6,6 +6,7 @@ import { searchTickers, getCurrentPrice } from '../../api/tickerApi';
 import { useNotification } from '../../components/NotificationProvider';
 import { useTheme } from '../../contexts/ThemeContext';
 import styles from './InvestmentForm.module.css';
+import PageToolbar from '../../components/PageToolbar';
 import TickerSearch from "../../components/TickerSearch";
 
 const InvestmentForm = () => {
@@ -287,14 +288,7 @@ const InvestmentForm = () => {
 
     return (
         <div className={`${styles.container} ${theme}`}>
-            <button
-                type="button"
-                onClick={() => navigate('/investments')}
-                className={styles.cancelButton}
-                disabled={saving}
-            >
-                Back
-            </button>
+            <PageToolbar title="Add Investment" subtitle="Record a long-term holding" />
             <div className={styles.formContainer}>
                 <form onSubmit={handleSubmit}>
                     <div className={styles.card}>

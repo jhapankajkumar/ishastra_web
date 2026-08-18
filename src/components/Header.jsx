@@ -6,22 +6,42 @@ import { useAuth } from "../contexts/AuthContext";
 import config from "../config/environment";
 import styles from "./Header.module.css";
 
+import SpaceDashboardOutlined from "@mui/icons-material/SpaceDashboardOutlined";
+import CandlestickChartOutlined from "@mui/icons-material/CandlestickChartOutlined";
+import AccountBalanceWalletOutlined from "@mui/icons-material/AccountBalanceWalletOutlined";
+import FactCheckOutlined from "@mui/icons-material/FactCheckOutlined";
+import RadarOutlined from "@mui/icons-material/RadarOutlined";
+import LightbulbOutlined from "@mui/icons-material/LightbulbOutlined";
+import InsightsOutlined from "@mui/icons-material/InsightsOutlined";
+import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
+import ShieldOutlined from "@mui/icons-material/ShieldOutlined";
+import EditNoteOutlined from "@mui/icons-material/EditNoteOutlined";
+import AccountBalanceOutlined from "@mui/icons-material/AccountBalanceOutlined";
+import LoginOutlined from "@mui/icons-material/LoginOutlined";
+import PersonOutlineOutlined from "@mui/icons-material/PersonOutlineOutlined";
+import LockOutlined from "@mui/icons-material/LockOutlined";
+import LogoutOutlined from "@mui/icons-material/LogoutOutlined";
+import LightModeOutlined from "@mui/icons-material/LightModeOutlined";
+import DarkModeOutlined from "@mui/icons-material/DarkModeOutlined";
+import MenuRounded from "@mui/icons-material/MenuRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
+
 // `access`: 'guest' (visible to everyone), 'auth' (any logged-in user),
 // 'superuser' (SUPERUSER only) — see isVisible() below. This is the single
 // source of truth all three nav render sites (desktop slice, mobile drawer,
 // bottom bar) derive from, instead of drifting apart independently.
 const navLinks = [
-  { to: "/", label: "Dashboard", icon: "📊", access: "guest" },
-  { to: "/risk-management", label: "Risk Management", icon: "⚖️", access: "auth" },
-  { to: "/trades", label: "Trades", icon: "💼", access: "guest" },
-  { to: "/watchlist", label: "Watchlist", icon: "👀", access: "auth" },
-  { to: "/scan", label: "Scan", icon: "🔎", access: "auth" },
-  { to: "/chart", label: "Analysis", icon: "📈", access: "guest" },
-  { to: "/quick-review", label: "Quick Review", icon: "🔍", access: "superuser" },
-  { to: "/investments", label: "Investments", icon: "💰", access: "guest" },
-  { to: "/recommendations", label: "Recommendations", icon: "💡", access: "guest" },
-  { to: "/journal", label: "Journal", icon: "📝", access: "guest" },
-  { to: "/capital", label: "Capital", icon: "🏦", access: "auth" },
+  { to: "/", label: "Dashboard", Icon: SpaceDashboardOutlined, access: "guest" },
+  { to: "/trades", label: "Trades", Icon: CandlestickChartOutlined, access: "guest" },
+  { to: "/investments", label: "Investments", Icon: AccountBalanceWalletOutlined, access: "guest" },
+  { to: "/risk-management", label: "Risk Management", Icon: ShieldOutlined, access: "auth" },
+  { to: "/capital", label: "Capital", Icon: AccountBalanceOutlined, access: "auth" },
+  { to: "/quick-review", label: "Quick Review", Icon: FactCheckOutlined, access: "superuser" },
+  { to: "/scan", label: "Scan", Icon: RadarOutlined, access: "auth" },
+  { to: "/recommendations", label: "Recommendations", Icon: LightbulbOutlined, access: "guest" },
+  { to: "/chart", label: "Analysis", Icon: InsightsOutlined, access: "guest" },
+  { to: "/watchlist", label: "Watchlist", Icon: VisibilityOutlined, access: "auth" },
+  { to: "/journal", label: "Journal", Icon: EditNoteOutlined, access: "guest" },
 ];
 
 function isVisible(link, user) {
@@ -104,7 +124,7 @@ export default function Header() {
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           title="Open menu"
         >
-          <span className={styles.navIcon}>☰</span>
+          <MenuRounded className={styles.navIcon} fontSize="small" />
         </button>
       </div>
 
@@ -126,20 +146,16 @@ export default function Header() {
               to={link.to}
               className={`${styles.navLink} ${location.pathname === link.to ? styles.navLinkActive : ''}`}
             >
-              <span className={styles.navIcon}>{link.icon}</span>
+              <link.Icon className={styles.navIcon} fontSize="small" />
               {link.label}
               {location.pathname === link.to && (
                 <div className={styles.activeIndicator} />
               )}
             </Link>
           ))}
-          <button
-            className={styles.themeToggle}
-            onClick={toggleTheme}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
+          {/* Theme toggle lives in the side menu footer now, not the sticky
+              top bar — one less icon competing for space next to the nav
+              links, and it's already reachable via the hamburger menu. */}
           {/* Account details live inside the main (hamburger) menu now —
               a separate top-bar dropdown used to get clipped/hidden behind
               page content (e.g. the Trades table) on some pages, since it
@@ -150,7 +166,7 @@ export default function Header() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             title="Open menu"
           >
-            <span className={styles.navIcon}>☰</span>
+            <MenuRounded className={styles.navIcon} fontSize="small" />
           </button>
         </nav>
       </div>
@@ -169,7 +185,7 @@ export default function Header() {
           >
             <div className={styles.sideMenuHeader}>
               <span className={styles.logoText}>Menu</span>
-              <button className={styles.closeButton} onClick={() => setMobileMenuOpen(false)}>✕</button>
+              <button className={styles.closeButton} onClick={() => setMobileMenuOpen(false)} aria-label="Close menu"><CloseRounded fontSize="small" /></button>
             </div>
             {user && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid var(--border-primary)' }}>
@@ -180,7 +196,7 @@ export default function Header() {
                     style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
                   />
                 ) : (
-                  <span style={{ fontSize: 22 }}>👤</span>
+                  <PersonOutlineOutlined style={{ fontSize: 26, color: 'var(--text-muted)' }} />
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -202,7 +218,7 @@ export default function Header() {
                   className={`${styles.sideMenuItem} ${location.pathname === link.to ? styles.sideMenuItemActive : ''}`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <span className={styles.navIcon}>{link.icon}</span>
+                  <link.Icon className={styles.navIcon} fontSize="small" />
                   {link.label}
                 </Link>
               ))}
@@ -213,7 +229,7 @@ export default function Header() {
                   className={styles.sideMenuItem}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <span className={styles.navIcon}>🔑</span>
+                  <LoginOutlined className={styles.navIcon} fontSize="small" />
                   Login
                 </Link>
               ) : (
@@ -223,7 +239,7 @@ export default function Header() {
                     className={styles.sideMenuItem}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className={styles.navIcon}>👤</span>
+                    <PersonOutlineOutlined className={styles.navIcon} fontSize="small" />
                     Profile{user.role === 'SUPERUSER' ? ' (Superuser)' : ''}
                   </Link>
                   <Link
@@ -231,7 +247,7 @@ export default function Header() {
                     className={styles.sideMenuItem}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <span className={styles.navIcon}>🔒</span>
+                    <LockOutlined className={styles.navIcon} fontSize="small" />
                     Update Password
                   </Link>
                   <button
@@ -242,7 +258,7 @@ export default function Header() {
                     }}
                     style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}
                   >
-                    <span className={styles.navIcon}>🚪</span>
+                    <LogoutOutlined className={styles.navIcon} fontSize="small" />
                     Logout
                   </button>
                 </>
@@ -254,8 +270,10 @@ export default function Header() {
                 onClick={toggleTheme}
                 title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
               >
-                {theme === 'dark' ? '☀️' : '🌙'}
-                {theme === 'dark' ? ' Light Mode' : ' Dark Mode'}
+                {theme === 'dark'
+                  ? <LightModeOutlined className={styles.navIcon} fontSize="small" />
+                  : <DarkModeOutlined className={styles.navIcon} fontSize="small" />}
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
               </button>
             </div>
           </nav>
@@ -273,7 +291,7 @@ export default function Header() {
             to={link.to}
             className={`${styles.bottomNavItem} ${location.pathname === link.to ? styles.bottomNavItemActive : ''}`}
           >
-            <span className={styles.bottomNavIcon}>{link.icon}</span>
+            <link.Icon className={styles.bottomNavIcon} fontSize="small" />
             {link.label}
           </Link>
         ))}

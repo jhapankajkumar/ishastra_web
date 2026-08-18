@@ -1,8 +1,8 @@
 /* InvestmentList specific styles */
 .container {
-  max-width: none;
-  margin: 0;
-  padding: 24px 5%;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 24px 32px 56px;
   box-sizing: border-box;
   background: var(--bg-primary);
   min-height: 100vh;
@@ -96,10 +96,9 @@
 /* Table Styles */
 .tableContainer {
   background: var(--bg-secondary);
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  overflow-x: auto;
+  border: 1px solid var(--border-primary);
   margin-bottom: 16px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
@@ -111,19 +110,18 @@
 }
 
 .tableHeader {
-  background: var(--bg-tertiary);
-  transition: background-color 0.3s ease;
+  background: transparent;
 }
 
 .tableHeaderCell {
-  padding: 16px 12px;
+  padding: 14px 12px 11px;
   text-align: left;
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--border-color);
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--border-primary);
   transition: color 0.3s ease, border-color 0.3s ease;
 }
 
@@ -137,10 +135,11 @@
 }
 
 .tableCell {
-  padding: 24px 12px;
+  padding: 14px 12px;
   color: var(--text-secondary);
   vertical-align: middle;
-  font-size: 13px;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
   transition: color 0.3s ease;
 }
 
@@ -229,49 +228,28 @@
 }
 
 .actionButton {
-  padding: 4px 10px;
-  border: none;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 7px;
   cursor: pointer;
-  font-size: 11px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  font-size: 11.5px;
+  font-weight: 650;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
+  color: var(--text-secondary);
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 
-.editButton {
-  background: var(--accent-primary);
-  color: var(--text-white);
-  transition: background-color 0.2s ease, transform 0.2s ease;
+.actionButton:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
 }
 
-.editButton:hover {
-  background: var(--accent-secondary);
-  transform: translateY(-1px);
-}
-
-.closeButton {
-  background: var(--status-warning);
-  color: var(--text-white);
-  transition: background-color 0.2s ease, transform 0.2s ease;
-}
-
-.closeButton:hover {
-  background: var(--status-warning);
-  opacity: 0.8;
-  transform: translateY(-1px);
-}
-
-.deleteButton {
-  background: var(--status-error);
-  color: var(--text-white);
-  transition: background-color 0.2s ease, transform 0.2s ease;
-}
-
-.deleteButton:hover {
-  background: var(--status-error);
-  opacity: 0.8;
-  transform: translateY(-1px);
-}
+.editButton:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+.closeButton:hover { border-color: var(--warning-color); color: var(--warning-color); }
+.deleteButton:hover { border-color: var(--loss-color); color: var(--loss-color); }
 
 .emptyState {
   text-align: center;
@@ -588,4 +566,104 @@
   background: var(--btn-primary-bg, #3b82f6);
   color: #ffffff;
   font-weight: 600;
+}
+
+/* ---- Toolbar buttons + summary strip (shared dashboard language) ---- */
+.toolbarBtnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--accent-primary);
+  border: 1px solid var(--accent-primary);
+  color: #fff;
+  transition: opacity 0.18s ease;
+}
+.toolbarBtnPrimary:hover { opacity: 0.9; }
+
+.summaryStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+.stripStat {
+  padding: 16px 20px 17px;
+  border-left: 1px solid var(--border-primary);
+  min-width: 0;
+}
+.stripStat:first-child { border-left: none; }
+.stripLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 7px;
+  white-space: nowrap;
+}
+.stripValue {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.stripSub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.stripSearch {
+  width: 100%;
+  height: 34px;
+  margin-top: 1px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 1px solid var(--border-secondary);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+.stripSearch:focus { border-color: var(--accent-primary); }
+.stripSearch::placeholder { color: var(--text-disabled); }
+
+@media (max-width: 900px) {
+  .summaryStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stripStat:nth-child(odd) { border-left: none; }
+  .stripStat:nth-child(n+3) { border-top: 1px solid var(--border-primary); }
+  .stripValue { font-size: 18px; }
+}
+
+.toolbarBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  color: var(--text-secondary);
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.toolbarBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
 }

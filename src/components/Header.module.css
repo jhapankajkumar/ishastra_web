@@ -303,7 +303,10 @@
   }
   .bottomNavIcon {
     font-size: 22px;
-    margin-bottom: 2px;
+    width: 1em;
+    height: 1em;
+    color: currentColor;
+    margin: 0 auto 3px;
     display: block;
   }
 }
@@ -575,8 +578,24 @@
 }
 
 .navIcon {
-  font-size: 16px;
+  font-size: 18px;
   display: inline-block;
+  flex-shrink: 0;
+  /* MUI icons render as <svg>; keep them optically aligned with the label
+     and inheriting nav colour instead of carrying their own. */
+  width: 1em;
+  height: 1em;
+  color: currentColor;
+  vertical-align: -0.18em;
+}
+
+.bottomNavIcon {
+  font-size: 21px;
+  width: 1em;
+  height: 1em;
+  color: currentColor;
+  display: block;
+  margin: 0 auto 2px;
 }
 
 .navLink:hover {

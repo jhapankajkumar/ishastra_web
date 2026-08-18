@@ -9,6 +9,11 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
 import EmptyState from "../../components/EmptyState";
 import styles from "./InvestmentList.module.css";
+import { displayTicker } from "../../common/Helper";
+import PageToolbar from "../../components/PageToolbar";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import { exportToCsv } from "../../utils/exportCsv";
 
 export default function InvestmentList() {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
@@ -117,6 +122,47 @@ export default function InvestmentList() {
     } catch (err) {
       notification.error(err.message || 'Failed to close investment');
     }
+  };
+
+  // Exports exactly what's on screen: the active currency tab, after search.
+  const handleExportCsv = () => {
+    const rows = allVisibleInvestments.map(inv => {
+      const m = calculateMetrics(inv);
+      return {
+        ticker: displayTicker(inv.ticker),
+        currency: getCurrency(inv),
+        sector: inv.sector || '',
+        marketCap: inv.marketCap || '',
+        entryDate: inv.entryDate ? String(inv.entryDate).slice(0, 10) : '',
+        quantity: inv.quantity,
+        avgBuyPrice: inv.avgBuyPrice != null ? Number(inv.avgBuyPrice).toFixed(2) : '',
+        currentPrice: m.currentPrice != null ? Number(m.currentPrice).toFixed(2) : '',
+        invested: Math.round(m.investedAmount),
+        currentValue: Math.round(m.currentValue),
+        pnl: Math.round(m.gainLoss),
+        pnlPercent: m.gainLossPercent,
+        notes: inv.notes || '',
+      };
+    });
+    exportToCsv(
+      rows,
+      [
+        { key: 'ticker', label: 'Ticker' },
+        { key: 'currency', label: 'Currency' },
+        { key: 'sector', label: 'Sector' },
+        { key: 'marketCap', label: 'Market Cap' },
+        { key: 'entryDate', label: 'Entry Date' },
+        { key: 'quantity', label: 'Quantity' },
+        { key: 'avgBuyPrice', label: 'Avg Buy Price' },
+        { key: 'currentPrice', label: 'Current Price' },
+        { key: 'invested', label: 'Invested' },
+        { key: 'currentValue', label: 'Current Value' },
+        { key: 'pnl', label: 'Unrealized P&L' },
+        { key: 'pnlPercent', label: 'P&L %' },
+        { key: 'notes', label: 'Notes' },
+      ],
+      `investments_${new Date().toISOString().slice(0, 10)}.csv`
+    );
   };
 
   const formatDate = (dateStr) => {
@@ -251,6 +297,7 @@ export default function InvestmentList() {
     if (!text) return true;
     return (
       (inv.ticker && inv.ticker.toLowerCase().includes(text)) ||
+      (inv.ticker && displayTicker(inv.ticker).toLowerCase().includes(text)) ||
       (inv.notes && inv.notes.toLowerCase().includes(text))
     );
   });
@@ -260,10 +307,13 @@ export default function InvestmentList() {
     ? { all: filteredInvestments }
     : groupInvestments(filteredInvestments);
 
-  // Calculate combined totals for currently displayed investments
-  let summaryTotals = null;
+  // Calculate combined totals for currently displayed investments.
+  // Always an object, never null — the search input lives inside this block,
+  // so returning null on a zero-match search used to unmount the very field
+  // being typed into (and take the rest of the page with it).
   const allVisibleInvestments = Object.values(groupedInvestments).flat();
-  if (allVisibleInvestments.length > 0) {
+  let summaryTotals = { invested: 0, current: 0, profit: 0, profitPercent: '0.00' };
+  {
     let invested = 0, current = 0;
     allVisibleInvestments.forEach(inv => {
       invested += (inv.quantity || 0) * (inv.avgBuyPrice || 0);
@@ -285,76 +335,64 @@ export default function InvestmentList() {
         title="Long-Term Investments"
         subtitle="Track and monitor your investment portfolio"
       /> */}
-      {/* Market Tabs */}
-      <div className={styles.tabContainer}>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'NASDAQ' ? styles.active : ''}`}
-          onClick={() => setActiveTabWithPersist('NASDAQ')}
-        >
-          🇺🇸 US (NASDAQ/NYSE)
-        </button>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'NSE' ? styles.active : ''}`}
-          onClick={() => setActiveTabWithPersist('NSE')}
-        >
-          🇮🇳 India (NSE)
-        </button>
-      </div>
+      <PageToolbar
+        title="Investments"
+        subtitle="Long-term holdings and portfolio allocation"
+        actions={
+          <>
+            {allVisibleInvestments.length > 0 && (
+              <button className={styles.toolbarBtn} onClick={handleExportCsv}>
+                <FileDownloadOutlinedIcon fontSize="inherit" /> Export CSV
+              </button>
+            )}
+            <button className={styles.toolbarBtnPrimary} onClick={() => navigate('/investments/new')}>
+              <AddRoundedIcon fontSize="inherit" /> Add Investment
+            </button>
+          </>
+        }
+        scope={[
+          { key: 'NASDAQ', label: 'USD', flag: '🇺🇸' },
+          { key: 'NSE', label: 'INR', flag: '🇮🇳' },
+        ]}
+        activeScope={activeTab}
+        onScopeChange={setActiveTabWithPersist}
+      />
 
-      {/* Action Bar */}
-      <div className={styles.actionBar}>
-        <div className={styles.filters}>
-          <div className={styles.filterGroup}>
+      {summaryTotals && (
+        <div className={styles.summaryStrip}>
+          <div className={styles.stripStat}>
+            <div className={styles.stripLabel}>Current Value</div>
+            <div className={styles.stripValue}>{formatCurrency(summaryTotals.current)}</div>
+            <div className={styles.stripSub}>
+              {allVisibleInvestments.length} holding{allVisibleInvestments.length !== 1 ? 's' : ''}
+              {searchText.trim() ? ` of ${tabInvestments.length}` : ''}
+            </div>
+          </div>
+          <div className={styles.stripStat}>
+            <div className={styles.stripLabel}>Invested</div>
+            <div className={styles.stripValue}>{formatCurrency(summaryTotals.invested)}</div>
+            <div className={styles.stripSub}>Cost basis at purchase</div>
+          </div>
+          <div className={styles.stripStat}>
+            <div className={styles.stripLabel}>Unrealized P&amp;L</div>
+            <div
+              className={styles.stripValue}
+              style={{ color: summaryTotals.profit >= 0 ? 'var(--profit-color)' : 'var(--loss-color)' }}
+            >
+              {summaryTotals.profit >= 0 ? '+' : ''}{formatCurrency(summaryTotals.profit)}
+            </div>
+            <div className={styles.stripSub}>{summaryTotals.profitPercent}% on cost</div>
+          </div>
+          <div className={styles.stripStat}>
+            <div className={styles.stripLabel}>Search</div>
             <input
               type="text"
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
-              placeholder="Search by Ticker or Notes..."
-              className={styles.filterSelect}
-              style={{ minWidth: 220 }}
+              placeholder="Ticker or notes…"
+              className={styles.stripSearch}
             />
           </div>
-          <div className={styles.filterGroup}>
-            <label htmlFor="showCombinedToggle" style={{ marginRight: 8 }}>Show Combined:</label>
-            <input
-              id="showCombinedToggle"
-              type="checkbox"
-              checked={showCombined}
-              onChange={e => setShowCombined(e.target.checked)}
-              className={styles.checkbox}
-            />
-          </div>
-          {/* Removed sort selection dropdown and button. Sorting is now only via table headers. */}
-        </div>
-        <button
-          className={styles.addButton}
-          onClick={() => navigate('/investments/new')}
-        >
-          + Add Investment
-        </button>
-      </div>
-
-      {/* Show summary row always, calculated from currently displayed investments */}
-      {summaryTotals && (
-        <div className={styles.summaryCard}>
-          <span className={styles.summaryItem}>
-            <span className={styles.summaryIcon}>💰</span>
-            <span className={styles.summaryLabel}>Total Invested:</span>
-            <strong className={styles.summaryValue}>{formatCurrency(summaryTotals.invested)}</strong>
-          </span>
-          <span className={styles.summaryItem}>
-            <span className={styles.summaryIcon}>📈</span>
-            <span className={`${styles.summaryLabel} ${styles.summarySuccess}`}>Current Value:</span>
-            <strong className={styles.summaryValue}>{formatCurrency(summaryTotals.current)}</strong>
-          </span>
-          <span className={styles.summaryItem}>
-            <span className={styles.summaryIcon}>{summaryTotals.profit >= 0 ? '🟢' : '🔴'}</span>
-            <span className={`${styles.summaryLabel} ${summaryTotals.profit >= 0 ? styles.summarySuccess : styles.summaryError}`}>Profit/Loss:</span>
-            <strong className={`${styles.summaryValue} ${summaryTotals.profit >= 0 ? styles.summarySuccess : styles.summaryError}`}>
-              {summaryTotals.profit >= 0 ? '+' : ''}{formatCurrency(summaryTotals.profit)}
-              <span className={styles.summaryPercent}>({summaryTotals.profitPercent}%)</span>
-            </strong>
-          </span>
         </div>
       )}
 
@@ -369,7 +407,7 @@ export default function InvestmentList() {
               return (
                 <div key={inv.id} className={styles.mobileCard} onClick={() => navigate(`/investments/update/${inv.id}`)}>
                   <div className={styles.mobileTopRow}>
-                    <div className={styles.mobileTicker}>{inv.ticker}</div>
+                    <div className={styles.mobileTicker}>{displayTicker(inv.ticker)}</div>
                     <button className={styles.editIconBtn} onClick={(e)=>{e.stopPropagation(); navigate(`/investments/update/${inv.id}`);}}>✏️ Edit</button>
                   </div>
                   <div className={styles.mobileMeta}>Qty. {inv.quantity?.toLocaleString()} <span style={{opacity:.6, margin:'0 6px'}}>•</span> Avg. {inv.avgBuyPrice?.toLocaleString()}</div>
@@ -496,7 +534,7 @@ export default function InvestmentList() {
                       <td className={`${styles.tableCell} ${styles.tickerCell}`}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.2rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span className={styles.ticker}>{investment.ticker}</span>
+                            <span className={styles.ticker} title={investment.ticker}>{displayTicker(investment.ticker)}</span>
                             {investment.buyBelow > 0 && (
                               <span className={styles.linkedBadge} title={`From recommendation: Buy below ${formatCurrency(investment.buyBelow)}`}>Rec</span>
                             )}
@@ -591,6 +629,16 @@ export default function InvestmentList() {
           </div>
         </div>
       ))}
+
+      {tabInvestments.length > 0 && allVisibleInvestments.length === 0 && (
+        <EmptyState
+          icon="🔍"
+          title={`No holdings match "${searchText}"`}
+          message="Try a different ticker or clear the search to see all holdings."
+          actionLabel="Clear search"
+          onAction={() => setSearchText('')}
+        />
+      )}
 
       {tabInvestments.length === 0 && (
         <EmptyState

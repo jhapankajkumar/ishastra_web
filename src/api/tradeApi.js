@@ -236,3 +236,7 @@ export const deleteTrade = (id) => API.delete(`/trades/${id}`);
 // creating a second independent trade.
 export const addQuantityToTrade = (id, { date, price, quantity, commission }) =>
   API.put(`/trades/${id}/add-quantity`, { date, price, quantity, commission });
+
+// Update trailing stop only — never touches the original stopLoss.
+export const updateTrailingStop = (id, trailingStopLoss) =>
+  API.put(`/trades/${id}/trailing-stop`, { trailingStopLoss });
