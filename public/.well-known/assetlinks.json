@@ -1,0 +1,41 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "sg.com.income.snack.sit2",
+      "sha256_cert_fingerprints": [
+        "31:78:AB:F4:32:B9:5B:3C:E8:BE:BB:4E:F3:A2:A4:E1:CA:6B:90:4C:60:2E:0A:2D:2C:70:7D:83:2A:3D:72:CE",
+        "3D:F0:43:9F:CB:7B:52:C5:88:E6:12:CC:DC:BD:EF:D1:AD:5E:D5:A8:B0:CA:9D:31:83:9D:7C:62:EC:06:4C:AE"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "sg.com.income.snack.uat2",
+      "sha256_cert_fingerprints": [
+        "31:78:AB:F4:32:B9:5B:3C:E8:BE:BB:4E:F3:A2:A4:E1:CA:6B:90:4C:60:2E:0A:2D:2C:70:7D:83:2A:3D:72:CE",
+        "F9:2E:E9:C5:13:BE:24:DE:FF:2F:1D:D3:97:5F:33:4D:66:FA:4E:3B:D7:7B:15:57:65:41:37:06:2B:4D:C6:5E"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "sg.com.income.snack.prod",
+      "sha256_cert_fingerprints": [
+        "31:78:AB:F4:32:B9:5B:3C:E8:BE:BB:4E:F3:A2:A4:E1:CA:6B:90:4C:60:2E:0A:2D:2C:70:7D:83:2A:3D:72:CE",
+        "8E:92:F9:C9:2F:58:24:9A:0F:3E:AF:23:8C:B1:5B:12:86:70:AD:D1:B9:4F:E2:2D:5D:2B:86:DB:10:DC:29:AA"
+      ]
+    }
+  }
+]
