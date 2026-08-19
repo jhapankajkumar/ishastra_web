@@ -772,8 +772,11 @@ export default function TradeList() {
                   : null;
                 const stopLoss = trade.stopLoss ? Number(trade.stopLoss) : 0;
                 const stopLossDistance = entryPrice > 0 ? (entryPrice - stopLoss) / entryPrice * 100 : 0;
+                const isClosed = getTradeStatusDetailed(trade) === 'CLOSED';
+                const rMultiple = isClosed ? getRMultiple(trade, avgSellPrice) : null;
+                const currentValue = isClosed ? (invested + plValue) : (ltp * Number(trade.quantity||0));
                 return (
-                  <div key={trade.id} className={styles.mobileCardShell}
+                  <div key={trade.id} className={styles.mobileCard}
                     role="button"
                     tabIndex={0}
                     onClick={() => handleShowDetails(trade)}
@@ -784,132 +787,115 @@ export default function TradeList() {
                       }
                     }}
                   >
-                    <div className={styles.mobileMainCard}>
-                      <div className={styles.mobileTopRow}>
-                        <div className={styles.mobileTicker}>{displayTicker(trade.ticker)}</div>
-                        <div className={styles.mobileDateBadge}>{formatDate(trade.entryDate)}</div>
-                      </div>
-                      <div className={styles.mobileTopRow}>
-                        <div className={styles.mobileCompactSummary}>
-                          <span className={styles.dim}>Qty.</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{Number(trade.quantity||0).toLocaleString()}</span>
-                          <span className={styles.dot}>•</span>
-                          <span className={styles.dim}>Buy Avg.</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{Number(trade.entryPrice||0).toLocaleString(undefined,{maximumFractionDigits:2})} </span>
-                        </div>
-                      </div>
-                      <div className={styles.mobileRow}>
-                        <div className={styles.mobileLeft}>
-                          <div className={styles.mobileTopRow}>
-                            <span className={styles.dim}>Invested:</span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{symbol}{invested.toLocaleString(undefined, { maximumFractionDigits: 0})}</span>
-                          </div>
-                          {(getTradeStatusDetailed(trade) == 'CLOSED') && (
-                            <div className={styles.mobileTopRow}>
-                            <span className={styles.dim}>Sell Avg: </span> <span className={`${styles.plValue} ${styles.ltpRow}`}>{symbol}{Number(avgSellPrice || 0).toLocaleString(undefined, { maximumFractionDigits: 0})}</span>
-                          </div>
-                          )}
-
-                          {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
-                          <div className={styles.mobilePriceLine}><span className={styles.mobilePriceLabel}>LTP</span> {symbol}{ltp.toLocaleString(undefined, { maximumFractionDigits: 2})} {ltpPct==null? '' : (
-                            <span className={ltpPct>=0? styles.plPositive: styles.plNegative}>
-                              ({ltpPct>=0?'+':''}{ltpPct.toFixed(2)}%)
-                            </span>
-                          )}
-                          </div>
-                        )}
-
-                        {(getTradeStatusDetailed(trade) !== 'CLOSED') && (
-                          <div className={styles.mobilePriceLine}><span className={styles.mobilePriceLabel}>Stop</span> {symbol}{Number(trade.stopLoss || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
-                          <span >
-                            {" • "}
-                             </span>
-                            {stopLossDistance && (
-                              <span className={`${styles.ltpRow} ${stopLossDistance > 0 ? styles.negative : styles.positive}`}>
-                                {(stopLossDistance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        {(getTradeStatusDetailed(trade) !== 'CLOSED') && trade.trailingStopLoss != null && Number(trade.trailingStopLoss) !== stopLoss && (
-                          <div className={styles.mobilePriceLine}>
-                            <span className={styles.mobilePriceLabel}>TSL</span> {symbol}{Number(trade.trailingStopLoss).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                        )}
-
-                        </div>
-                        <div className={styles.mobileRight}>
-                          <div className={`${styles.plValue} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
-                           {symbol}{Math.abs(plValue).toLocaleString()}
-                          </div>
-                          <div className={`${styles.plValue} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
-                            {plPct>=0?'+':''}{plPct.toFixed(2)}%
-                          </div>
-                        </div>
-                      </div>
-                      <div className={styles.mobileStatsGrid}>
-                        <div className={styles.mobileStatItem}>
-                          <span className={styles.mobileStatLabel}>P&L</span>
-                          <span className={`${styles.mobileStatValue} ${plValue >= 0 ? styles.footerPositive : styles.footerNegative}`}>
-                            {plValue >= 0 ? '+' : ''}{formatCurrency(plValue, currency)}
+                    <div className={styles.mCardHead}>
+                      <div className={styles.mCardHeadLeft}>
+                        <div className={styles.mCardTickerRow}>
+                          <span className={styles.mCardTicker}>{displayTicker(trade.ticker)}</span>
+                          <span className={styles.mCardDateBadge}>
+                            {isClosed
+                              ? formatDate(getLastExitDate(trade) || trade.exitDate)
+                              : formatDate(trade.entryDate)}
                           </span>
                         </div>
-                        {status === 'CLOSED' ? (() => {
-                          const rMultiple = getRMultiple(trade, avgSellPrice);
-                          return (
-                            <div className={styles.mobileStatItem}>
-                              <span className={styles.mobileStatLabel}>R Multiple</span>
-                              <span
-                                className={`${styles.mobileStatValue} ${rMultiple == null ? '' : rMultiple >= 0 ? styles.footerPositive : styles.footerNegative}`}
-                                title={rMultiple == null ? 'No stop-loss recorded for this trade' : undefined}
-                              >
-                                {rMultiple == null ? 'No stop' : `${rMultiple >= 0 ? '+' : ''}${rMultiple.toFixed(2)}R`}
-                              </span>
-                            </div>
-                          );
-                        })() : (
-                          <div className={styles.mobileStatItem}>
-                            <span className={styles.mobileStatLabel}>Today</span>
-                            <span className={`${styles.mobileStatValue} ${todaysPL.value >= 0 ? styles.footerPositive : styles.footerNegative}`}>
-                              {`${todaysPL.value >= 0 ? '+' : ''}${formatCurrency(todaysPL.value, currency)}`}
-                            </span>
-                          </div>
-                        )}
+                        <span className={styles.mCardMeta}>
+                          QTY {Number(trade.quantity||0).toLocaleString()}
+                          {!isClosed && <> &middot; avg {symbol}{Number(trade.entryPrice||0).toLocaleString(undefined,{maximumFractionDigits:2})}</>}
+                        </span>
+                      </div>
+                      <div className={styles.mCardHeadRight}>
+                        <span className={`${styles.mCardPL} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
+                          {plValue>=0?'+':'-'}{symbol}{Math.abs(plValue).toLocaleString(undefined,{maximumFractionDigits:0})}
+                        </span>
+                        <span className={`${styles.mCardPLPct} ${plValue>=0? styles.plPositive: styles.plNegative}`}>
+                          {plPct>=0?'+':''}{plPct.toFixed(2)}%
+                        </span>
                       </div>
                     </div>
-                    <div className={styles.mobileActionPanel}>
-                      <div className={styles.mobileActionRail}>
+
+                    <div className={styles.mCardStrip}>
+                      <div className={styles.mCardStripItem}>
+                        <span className={styles.mCardStripLabel}>Invested</span>
+                        <span className={styles.mCardStripValueLg}>{symbol}{invested.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+                      </div>
+                      <div className={`${styles.mCardStripItem} ${styles.mCardStripItemRight}`}>
+                        <span className={styles.mCardStripLabel}>{isClosed ? 'Final Value' : 'Current Value'}</span>
+                        <span className={`${styles.mCardStripValueLg} ${plValue>=0? styles.plPositive: styles.plNegative}`}>{symbol}{currentValue.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+                      </div>
+                    </div>
+
+                    <div className={styles.mCardSubline}>
+                      {isClosed ? (
+                        <>
+                          <span>Buy {symbol}{entryPrice.toLocaleString(undefined,{maximumFractionDigits:2})}</span>
+                          <span className={styles.mCardSublineArrow}>&rarr;</span>
+                          <span>Sell {symbol}{Number(avgSellPrice || 0).toLocaleString(undefined,{maximumFractionDigits:2})}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>LTP {symbol}{ltp.toLocaleString(undefined,{maximumFractionDigits:2})}{ltpPct!=null && (
+                            <span className={ltpPct>=0? styles.plPositive: styles.plNegative}> ({ltpPct>=0?'+':''}{ltpPct.toFixed(2)}%)</span>
+                          )}</span>
+                          <span className={styles.mCardSublineDot}>&middot;</span>
+                          <span>SL {symbol}{Number(trade.stopLoss || 0).toLocaleString(undefined,{maximumFractionDigits:2})}{!!stopLossDistance && (
+                            <span className={stopLossDistance > 0 ? styles.plNegative : styles.plPositive}> ({stopLossDistance.toFixed(2)}%)</span>
+                          )}</span>
+                          {trade.trailingStopLoss != null && Number(trade.trailingStopLoss) !== stopLoss && (
+                            <>
+                              <span className={styles.mCardSublineDot}>&middot;</span>
+                              <span>TSL {symbol}{Number(trade.trailingStopLoss).toLocaleString(undefined,{maximumFractionDigits:2})}</span>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    <div className={styles.mCardFoot}>
+                      <div className={styles.mCardFootLeft}>
+                        {isClosed ? (
+                          <>
+                            <span className={styles.mCardFootLabel}>R:R</span>
+                            <span
+                              className={`${styles.mCardFootValue} ${rMultiple == null ? '' : rMultiple >= 0 ? styles.footerPositive : styles.footerNegative}`}
+                              title={rMultiple == null ? 'No stop-loss recorded for this trade' : undefined}
+                            >
+                              {rMultiple == null ? 'No stop' : `${rMultiple >= 0 ? '+' : ''}${rMultiple.toFixed(2)}R`}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className={styles.mCardFootLabel}>Today</span>
+                            <span className={`${styles.mCardFootValue} ${todaysPL.value >= 0 ? styles.footerPositive : styles.footerNegative}`}>
+                              {`${todaysPL.value >= 0 ? '+' : ''}${formatCurrency(todaysPL.value, currency)}`}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <div className={styles.mCardActions}>
                         <button
-                          className={styles.mobileActionBtn}
+                          className={styles.mCardActionBtn}
                           onClick={(e) => { e.stopPropagation(); handleShowDetails(trade); }}
                           title="View Details"
                         >
                           <VisibilityOutlinedIcon fontSize="inherit" />
                         </button>
-                        {getTradeStatusDetailed(trade) === 'CLOSED' ? (
-                          <button
-                            className={`${styles.mobileActionBtn} ${styles.reviewActionBtn}`}
-                            onClick={(e) => { e.stopPropagation(); handleReview(trade); }}
-                            title="Add Review"
-                          >
-                            <EditOutlinedIcon fontSize="inherit" />
-                          </button>
-                        ) : (
+                        {!isClosed && (
                           <>
                             <button
-                              className={`${styles.mobileActionBtn} ${styles.updateActionBtn}`}
+                              className={styles.mCardActionBtn}
                               onClick={(e) => { e.stopPropagation(); handleEdit(trade); }}
                               title="Update Trade"
                             >
                               <EditOutlinedIcon fontSize="inherit" />
                             </button>
                             <button
-                              className={`${styles.mobileActionBtn} ${styles.editActionBtn}`}
+                              className={styles.mCardActionBtn}
                               onClick={(e) => { e.stopPropagation(); navigate(`/trades/edit/${trade.id}`); }}
                               title="Edit Trade"
                             >
                               <AutoFixHighOutlinedIcon fontSize="inherit" />
                             </button>
                             <button
-                              className={`${styles.mobileActionBtn} ${styles.editActionBtn}`}
+                              className={styles.mCardActionBtn}
                               onClick={(e) => { e.stopPropagation(); handleTrailClick(trade); }}
                               title="Update Trailing Stop"
                             >
@@ -919,7 +905,7 @@ export default function TradeList() {
                         )}
                         {user && (
                           <button
-                            className={`${styles.mobileActionBtn} ${styles.deleteActionBtn}`}
+                            className={`${styles.mCardActionBtn} ${styles.mCardActionBtnDanger}`}
                             onClick={(e) => { e.stopPropagation(); handleDeleteClick(trade); }}
                             title="Delete Trade"
                           >
@@ -973,7 +959,7 @@ export default function TradeList() {
 
                 {renderSortableHeader('P&L', 'pl', status)}
                 {status === 'CLOSED' ? (
-                  renderSortableHeader('R Multiple', 'rMultiple', status)
+                  renderSortableHeader('R:R', 'rMultiple', status)
                 ) : (
                   renderSortableHeader("Today's P&L", 'todaysPL', status)
                 )}

@@ -838,179 +838,207 @@
     flex-direction: column;
     gap: 10px;
   }
+
   .mobileCard {
     background: var(--bg-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: 12px;
-    padding: 10px 12px;
-    box-shadow: var(--shadow-sm);
+    border-radius: 16px;
+    padding: 14px;
     cursor: pointer;
-  }
-  .mobileTopRow {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-    color: var(--text-secondary);
-    font-size: 12px;
-  }
-  .mobileCardShell {
-    display: flex;
-    align-items: stretch;
-    gap: 6px;
-  }
-  .mobileMainCard {
-    flex: 1;
-    min-width: 0;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: 12px;
-    padding: 10px 11px;
-    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 12px;
+    transition: border-color 0.15s ease, transform 0.15s ease;
   }
-  .mobileCompactSummary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
-    line-height: 1.15;
+  .mobileCard:active {
+    transform: scale(0.995);
   }
-  .mobileActionRail {
-    width: 50px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex-shrink: 0;
-    margin-top: 0;
-  }
-  .mobileActionPanel {
-    flex-shrink: 0;
-    padding: 4px;
-    background: linear-gradient(180deg, var(--bg-secondary), var(--bg-tertiary));
-    border: 1px solid var(--border-primary);
-    border-radius: 14px;
-    box-shadow: var(--shadow-sm);
-  }
-  .mobileActionBtn {
-    width: 100%;
-    min-height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 12px;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-    box-shadow: var(--shadow-sm);
-    flex-shrink: 0;
-    border: 1px solid var(--border-primary);
-  }
-  .mobileActionBtn:hover {
-    transform: translateY(-1px);
-  }
-  .updateActionBtn:hover {
-    background: var(--success-bg);
-    color: var(--success-color);
-    border-color: var(--success-color);
-  }
-  .editActionBtn:hover {
-    background: var(--info-bg);
-    color: var(--info-color);
-    border-color: var(--info-color);
-  }
-  .reviewActionBtn:hover {
-    background: var(--warning-bg);
-    color: var(--warning-color);
-    border-color: var(--warning-color);
-  }
-  .deleteActionBtn:hover {
-    background: var(--error-bg);
-    color: var(--error-color);
-    border-color: var(--error-color);
-  }
-  .dim { color: var(--text-muted); }
-  .dot { margin: 0 6px; opacity: 0.6; }
-  .mobileTicker { font-size: 15px; font-weight: 800; letter-spacing: 0.3px; color: var(--text-primary); }
-  .mobileRow {
+
+  /* Head: ticker + qty/avg on the left, P&L on the right */
+  .mCardHead {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 10px;
   }
-  .mobileLeft {
+  .mCardHeadLeft {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    color: var(--text-secondary);
-    font-size: 12px;
-  }
-  .mobileRight {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-  }
-  .mobileStatsGrid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px 10px;
-    margin-top: 2px;
-    padding-top: 5px;
-    border-top: 1px solid var(--border-primary);
-    align-items: start;
-  }
-  .mobileStatItem {
+    gap: 3px;
     min-width: 0;
+  }
+  .mCardTickerRow {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
   }
-  .mobileStatLabel {
-    font-size: 9px;
-    letter-spacing: 0.35px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    font-weight: 700;
-  }
-  .mobileStatValue {
-    font-size: 11px;
+  .mCardTicker {
+    font-size: 16px;
     font-weight: 800;
-    line-height: 1.1;
+    letter-spacing: 0.2px;
+    color: var(--text-primary);
+  }
+  .mCardDateBadge {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+  .mCardMeta {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .mobilePriceLine {
-    font-size: 12px;
-    font-weight: 400;
-    color: #111827;
-    line-height: 1.08;
-    margin: 0;
+  .mCardHeadRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
   }
-  .mobilePriceLabel {
-    font-weight: 400;
-    color: #111827;
-  }
-  .mobilePriceLine span:not(.mobilePriceLabel) {
+  .mCardPL {
+    font-size: 16px;
     font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
   }
-  .mobileDateBadge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 8px;
-    border-radius: 999px;
-    background: var(--bg-tertiary);
+  .mCardPLPct {
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Strip: invested / LTP / stop / TSL, hairline-divided */
+  .mCardStrip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 10px 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-primary);
+  }
+  .mCardStripItem {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .mCardStripItemRight {
+    align-items: flex-end;
+    text-align: right;
+  }
+  .mCardStripLabel {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     color: var(--text-muted);
-    border: 1px solid var(--border-primary);
-    font-size: 10px;
-    line-height: 1;
-    white-space: nowrap;
+    font-weight: 700;
   }
+  .mCardStripValue {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .mCardStripValueLg {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .mCardInlinePct {
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .mCardSubline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding-bottom: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    border-bottom: 1px solid var(--border-primary);
+  }
+  .mCardSublineArrow,
+  .mCardSublineDot {
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+
+  /* Foot: R-multiple/today + date on the left, action icons on the right */
+  .mCardFoot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .mCardFootLeft {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+  }
+  .mCardFootLabel {
+    font-size: 10px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .mCardFootValue {
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+  }
+  .mCardDate {
+    font-size: 10px;
+    color: var(--text-muted);
+    padding-left: 6px;
+    border-left: 1px solid var(--border-primary);
+  }
+
+  .mCardActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .mCardActionBtn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-primary);
+    border-radius: 9px;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 15px;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .mCardActionBtn:hover {
+    background: var(--info-bg);
+    color: var(--info-color);
+    border-color: var(--info-color);
+  }
+  .mCardActionBtnDanger:hover {
+    background: var(--error-bg);
+    color: var(--error-color);
+    border-color: var(--error-color);
+  }
+
   .footerPositive {
     color: var(--profit-color);
   }
