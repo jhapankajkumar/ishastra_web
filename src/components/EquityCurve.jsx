@@ -87,16 +87,22 @@ const EquityCurve = ({ trades, initialCapital: propInitial, currencySymbol = '�
           allExits.push({ date: trade.exitDate, pnl: sign * (Number(trade.exitPrice) - entry) * soldQty - commission });
         }
       } else if (txs.length > 0) {
-        const lastTxDate = txs.reduce((latest, tx) => {
-          const d = tx.transactionDate;
-          return (!latest || new Date(d) > new Date(latest)) ? d : latest;
-        }, null);
-        txs.forEach(tx => {
-          if (!tx.transactionDate || tx.price == null || tx.quantity == null) return;
+        // Find the LAST transaction by array position after a stable sort,
+        // not by date equality — two exits can share the same date (e.g. two
+        // partial sells the same day), and comparing by date value would
+        // then flag both as "last," double-deducting the trade's commission.
+        const orderedTxs = txs
+          .map((tx, idx) => ({ tx, idx }))
+          .filter(({ tx }) => tx.transactionDate && tx.price != null && tx.quantity != null)
+          .sort((a, b) => {
+            const dateDiff = new Date(a.tx.transactionDate) - new Date(b.tx.transactionDate);
+            return dateDiff !== 0 ? dateDiff : a.idx - b.idx;
+          });
+        orderedTxs.forEach(({ tx }, i) => {
           const d = typeof tx.transactionDate === 'number'
             ? new Date(tx.transactionDate).toISOString().slice(0, 10)
             : String(tx.transactionDate).slice(0, 10);
-          const isLast = tx.transactionDate === lastTxDate;
+          const isLast = i === orderedTxs.length - 1;
           allExits.push({ date: d, pnl: sign * (Number(tx.price) - entry) * Number(tx.quantity) - (isLast ? commission : 0) });
         });
       }
@@ -111,7 +117,35 @@ const EquityCurve = ({ trades, initialCapital: propInitial, currencySymbol = '�
 
     const monthMap = new Map();
     raw.forEach(d => { monthMap.set(d.label, d); });
-    const chartData = [{ label: 'Start', equity: INIT }, ...Array.from(monthMap.values())];
+
+    // Open positions' unrealized P&L, mark-to-market — same formula as
+    // capitalMetrics.openTradePnl in dashboard.js, so the curve's endpoint
+    // and the Portfolio Value card always agree on "Total P&L".
+    const openPnl = (trades || []).reduce((sum, t) => {
+      const remaining = t.remainingQuantity != null ? Number(t.remainingQuantity) : Number(t.quantity || 0);
+      const status = (t.status || '').toLowerCase();
+      const isOpen = remaining > 0 || status === 'open' || status === 'partially closed';
+      if (!isOpen) return sum;
+      const entry = Number(t.entryPrice || 0);
+      const price = Number(t.currentPrice || 0);
+      let pnl = (price - entry) * remaining;
+      // Trades that already went through the closed-walk above (t.exitDate
+      // set) had their full commission deducted there even if still
+      // partially open. A trade with no exitDate at all never passed
+      // through that walk, so its commission — a real, already-incurred
+      // cost — would otherwise never be subtracted anywhere.
+      if (!t.exitDate) {
+        pnl -= Number(t.entryCommission || 0) + Number(t.exitCommission || 0);
+      }
+      return sum + pnl;
+    }, 0);
+
+    equity += openPnl;
+    const chartData = [
+      { label: 'Start', equity: INIT },
+      ...Array.from(monthMap.values()),
+      ...(openPnl !== 0 || monthMap.size > 0 ? [{ label: 'Now', equity: parseFloat(equity.toFixed(2)) }] : []),
+    ];
 
     const equities = chartData.map(d => d.equity);
     const minE = Math.min(...equities);
