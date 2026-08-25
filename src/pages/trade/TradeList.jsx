@@ -756,7 +756,14 @@ export default function TradeList() {
         {isMobile ? (
           <div className={styles.mobileList}>
             {[...sortedTrades]
-              .sort((a,b)=> (a.ticker||'').localeCompare(b.ticker||''))
+              .sort((a,b)=> {
+                if (status === 'CLOSED') {
+                  const aDate = new Date(getLastExitDate(a) || a.exitDate || 0);
+                  const bDate = new Date(getLastExitDate(b) || b.exitDate || 0);
+                  return bDate - aDate;
+                }
+                return new Date(b.entryDate || 0) - new Date(a.entryDate || 0);
+              })
               .map((trade)=>{
                 const currency = getCurrency(trade);
                 const entryPrice = Number(trade.entryPrice || 0);
@@ -819,7 +826,7 @@ export default function TradeList() {
                       </div>
                       <div className={`${styles.mCardStripItem} ${styles.mCardStripItemRight}`}>
                         <span className={styles.mCardStripLabel}>{isClosed ? 'Final Value' : 'Current Value'}</span>
-                        <span className={`${styles.mCardStripValueLg} ${plValue>=0? styles.plPositive: styles.plNegative}`}>{symbol}{currentValue.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+                        <span className={styles.mCardStripValueLg}>{symbol}{currentValue.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
                       </div>
                     </div>
 
